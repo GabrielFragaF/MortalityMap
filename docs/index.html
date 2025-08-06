@@ -4,141 +4,164 @@
   <meta charset="utf-8" />
   <title>Sea-turtle mortality map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link
-    href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css"
-    rel="stylesheet"
-  />
+  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
   <style>
     html, body { margin:0; padding:0; height:100%; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
     #panel {
       position:absolute; top:10px; left:10px; z-index:10;
-      background:white; padding:8px; border-radius:4px;
+      background:white; padding:10px; border-radius:5px;
       font-family:sans-serif; font-size:14px;
-      box-shadow:0 1px 4px rgba(0,0,0,0.3);
-      max-height:90%; overflow:auto;
+      box-shadow:0 1px 8px rgba(0,0,0,0.20);
+      max-height:96%; overflow:auto;
+      min-width:230px;
     }
-    #panel label { display:block; margin-top:6px; font-weight:bold; }
-    #panel select { width:100%; margin-top:4px; }
-    #panel button { margin-top:8px; width:100%; }
+    #panel label { margin:7px 0 2px 0; font-weight:bold; display:block; }
+    #panel select { width:100%; }
+    #panel button { margin:12px 0 5px 0; width:100%; font-weight:bold; padding:7px 0; }
     #legend {
       position:absolute; bottom:30px; left:10px; z-index:10;
-      background:white; padding:6px; border-radius:4px;
-      font-family:sans-serif; font-size:12px;
-      box-shadow:0 1px 4px rgba(0,0,0,0.3);
+      background:white; padding:7px 12px; border-radius:4px;
+      font-family:sans-serif; font-size:13px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.2);
     }
-    .swatch {
-      display:inline-block; width:20px; height:12px;
-      margin-right:4px; vertical-align:middle;
-      border:1px solid #666;
-    }
+    .swatch { display:inline-block; width:20px; height:12px; margin-right:4px; border:1px solid #666; }
+    details { margin:5px 0; }
+    summary { cursor:pointer; font-weight:normal; padding:2px 0;}
+    .filter-multiselect { width:100%; min-height:25px; margin-top:2px; }
+    .filter-multiselect option { padding:3px 0; }
   </style>
 </head>
 <body>
-  <div id="map"></div>
-  <div id="panel">
-    <label>Resolution (hex-size):</label>
-    <select id="resolution">
-      <option value="r3">r3 (coarse)</option>
-      <option value="r4" selected>r4</option>
-      <option value="r5">r5</option>
-      <option value="r6">r6 (fine)</option>
-    </select>
-    <label>Mortality data type:</label>
-    <select id="datatype">
-      <option value="weight">Mortality position (weight)</option>
-      <option value="new_weight">Mortality position (new_weight)</option>
-      <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
-      <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
-      <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
-    </select>
-    <label>Species</label>
-    <select id="speciesFilter" multiple size="6">
+<div id="map"></div>
+<div id="panel">
+  <label for="resolution">Resolution (hex-size):</label>
+  <select id="resolution">
+    <option value="r3">r3 (coarse)</option>
+    <option value="r4" selected>r4</option>
+    <option value="r5">r5</option>
+    <option value="r6">r6 (fine)</option>
+  </select>
+
+  <label for="counttype">Count Type:</label>
+  <select id="counttype">
+    <option value="weight">Mortality position</option>
+    <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+    <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+    <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
+  </select>
+
+  <details>
+    <summary>Species</summary>
+    <select id="speciesFilter" multiple class="filter-multiselect" size="6">
       <option value="Caretta caretta">Caretta caretta</option>
       <option value="Chelonia mydas">Chelonia mydas</option>
       <option value="Dermochelys coriacea">Dermochelys coriacea</option>
       <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
       <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
-      <option value="all" selected>All</option>
     </select>
-    <!-- ... all your other filters (as before) ... -->
-    <label>Stage</label>
-    <select id="stageFilter" multiple size="5">
+  </details>
+
+  <details>
+    <summary>Stage</summary>
+    <select id="stageFilter" multiple class="filter-multiselect" size="5">
       <option value="Adulto">Adulto</option>
       <option value="Juvenil">Juvenil</option>
       <option value="Filhote">Filhote</option>
       <option value="Indeterminado">Indeterminado</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Sex</label>
-    <select id="sexFilter" multiple size="4">
+  </details>
+
+  <details>
+    <summary>Sex</summary>
+    <select id="sexFilter" multiple class="filter-multiselect" size="4">
       <option value="Fêmea">Fêmea</option>
       <option value="Macho">Macho</option>
       <option value="Indefinido">Indefinido</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Fishing</label>
-    <select id="FishingFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Fishing</summary>
+    <select id="FishingFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Marine Debris</label>
-    <select id="Marine_DebrisFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Marine Debris</summary>
+    <select id="Marine_DebrisFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Agression</label>
-    <select id="AgressionFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Agression</summary>
+    <select id="AgressionFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Boat Collision</label>
-    <select id="Boat_collisionFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Boat Collision</summary>
+    <select id="Boat_collisionFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Dredging</label>
-    <select id="DredgingFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Dredging</summary>
+    <select id="DredgingFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Oil</label>
-    <select id="OilFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Oil</summary>
+    <select id="OilFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Petrol</label>
-    <select id="PetrolFilter" multiple size="3">
+  </details>
+
+  <details>
+    <summary>Petrol</summary>
+    <select id="PetrolFilter" multiple class="filter-multiselect" size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Decomposition</label>
-    <select id="decompFilter" multiple size="6">
+  </details>
+
+  <details>
+    <summary>Decomposition</summary>
+    <select id="decompFilter" multiple class="filter-multiselect" size="6">
       <option value="1.0">1</option>
       <option value="2.0">2</option>
       <option value="3.0">3</option>
       <option value="4.0">4</option>
       <option value="5.0">5</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Season</label>
-    <select id="seasonFilter" multiple size="5">
+  </details>
+
+  <details>
+    <summary>Season</summary>
+    <select id="seasonFilter" multiple class="filter-multiselect" size="5">
       <option value="Spring">Spring</option>
       <option value="Summer">Summer</option>
       <option value="Autumn">Autumn</option>
       <option value="Winter">Winter</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Year</label>
-    <select id="yearFilter" multiple size="11">
+  </details>
+
+  <details>
+    <summary>Year</summary>
+    <select id="yearFilter" multiple class="filter-multiselect" size="11">
       <option value="2015.0">2015</option>
       <option value="2016.0">2016</option>
       <option value="2017.0">2017</option>
@@ -149,10 +172,12 @@
       <option value="2022.0">2022</option>
       <option value="2023.0">2023</option>
       <option value="2024.0">2024</option>
-      <option value="all" selected>All</option>
     </select>
-    <label>Month</label>
-    <select id="monthFilter" multiple size="13">
+  </details>
+
+  <details>
+    <summary>Month</summary>
+    <select id="monthFilter" multiple class="filter-multiselect" size="13">
       <option value="1.0">January</option>
       <option value="2.0">February</option>
       <option value="3.0">March</option>
@@ -165,126 +190,132 @@
       <option value="10.0">October</option>
       <option value="11.0">November</option>
       <option value="12.0">December</option>
-      <option value="all" selected>All</option>
     </select>
-    <button id="loadBtn">Load Layer</button>
-  </div>
-  <div id="legend"></div>
-  <script>
-    const map = new maplibregl.Map({
-      container: 'map',
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            tiles: [
-              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            ],
-            tileSize: 256
-          }
-        },
-        layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-      },
-      center: [-45, -24],
-      zoom: 5
-    });
+  </details>
 
-    const ramps = {
-      all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
-      'Caretta caretta': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
-      'Chelonia mydas':   ['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b'],
-      'Dermochelys coriacea': ['#f7fbff','#c6dbef','#6baed6','#2171b5','#08306b'],
-      'Eretmochelys imbricata':['#fff7fb','#ece2f0','#a6bddb','#8771a8','#4d004b'],
-      'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
-    };
-
-    function buildFilter() {
-      const f = ['all'];
-      const props = [
-        'species','development_stage','sex','Fishing','Marine_Debris',
-        'Agression','Boat_collision','Dredging','Oil','Petrol',
-        'decomposition_code','season','year','month'
-      ];
-      props.forEach(prop => {
-        const sel = document.getElementById(prop+'Filter');
-        const vals = Array.from(sel.selectedOptions).map(o=>o.value);
-        // If "all" is selected or nothing, don't filter that property:
-        if(!vals.includes('all') && vals.length) {
-          f.push(['in',['get',prop],['literal',vals]]);
-        }
-      });
-      return f;
-    }
-
-    function updateLegend(ramp, values){
-      const L = document.getElementById('legend');
-      L.innerHTML = '';
-      const min = Math.min(...values),
-            max = Math.max(...values);
-      ramp.forEach((c,i)=>{
-        const sw = document.createElement('span');
-        sw.className='swatch'; sw.style.background = c;
-        L.appendChild(sw);
-        const v = (min + (i+0.5)/ramp.length*(max-min)).toFixed(1);
-        L.appendChild(document.createTextNode(v+' '));
-      });
-    }
-
-    function loadLayer(){
-      const res = document.getElementById('resolution').value;
-      const datatype = document.getElementById('datatype').value;
-      const spSel = Array.from(
-        document.getElementById('speciesFilter').selectedOptions
-      ).map(o=>o.value).filter(v=>v!=='all');
-      const species = spSel.length ? spSel[0] : 'all';
-      const ramp = ramps[species] || ramps.all;
-      const file = `hexgrid_${res}_${datatype}.geojson`;
-
-      if(map.getSource('mort')){
-        map.removeLayer('mort-fill');
-        map.removeSource('mort');
+  <button id="loadBtn">Load Layer</button>
+</div>
+<div id="legend"></div>
+<script>
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: [
+          'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256
       }
-      map.addSource('mort',{ type:'geojson', data: file });
-      map.addLayer({
-        id: 'mort-fill', type: 'fill', source: 'mort',
-        paint: {
-          'fill-color': [
-            'interpolate',['linear'],['get','sum_val'],
-            0, ramp[0], 10, ramp[1], 50, ramp[2], 200, ramp[3]
-          ],
-          'fill-opacity': 0.6
-        }
-      });
-      map.setFilter('mort-fill', buildFilter());
+    },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+  },
+  center: [-45, -24],
+  zoom: 5
+});
 
-      fetch(file)
-        .then(r=>r.json())
-        .then(j=>{
-          const vals = j.features.map(f=>f.properties.sum_val);
-          updateLegend(ramp, vals);
-        });
+const ramps = {
+  all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
+  'Caretta caretta': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
+  'Chelonia mydas':   ['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b'],
+  'Dermochelys coriacea': ['#f7fbff','#c6dbef','#6baed6','#2171b5','#08306b'],
+  'Eretmochelys imbricata':['#fff7fb','#ece2f0','#a6bddb','#8771a8','#4d004b'],
+  'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
+};
+
+function buildFilter() {
+  const f = ['all'];
+  const props = [
+    'species','development_stage','sex','Fishing','Marine_Debris',
+    'Agression','Boat_collision','Dredging','Oil','Petrol',
+    'decomposition_code','season','year','month'
+  ];
+  props.forEach(prop => {
+    const sel = document.getElementById(prop+'Filter');
+    const vals = Array.from(sel.selectedOptions).map(o=>o.value);
+    if(vals.length) f.push(['in',['get',prop],['literal',vals]]);
+  });
+  return f;
+}
+
+function updateLegend(ramp, values){
+  const L = document.getElementById('legend');
+  L.innerHTML = '';
+  const min = Math.min(...values), max = Math.max(...values);
+  ramp.forEach((c,i)=>{
+    const sw = document.createElement('span');
+    sw.className='swatch'; sw.style.background = c;
+    L.appendChild(sw);
+    const v = (min + (i+0.5)/ramp.length*(max-min)).toFixed(1);
+    L.appendChild(document.createTextNode(v+' '));
+  });
+}
+
+function getPopupLabel(counttype, props) {
+  if(counttype === "weight") {
+    return `<b>Mortality position</b>: ${props.sum_val}`;
+  } else if(counttype === "new_mortality_est_bf_mean") {
+    return `<b>Mortality est. (mean)</b>: ${props.mean_val}`;
+  } else if(counttype === "new_mortality_est_bf_low") {
+    return `<b>Mortality est. (low)</b>: ${props.low_val}`;
+  } else if(counttype === "new_mortality_est_bf_high") {
+    return `<b>Mortality est. (high)</b>: ${props.high_val}`;
+  } else {
+    return "";
+  }
+}
+
+function loadLayer(){
+  const res = document.getElementById('resolution').value;
+  const counttype = document.getElementById('counttype').value;
+  const spSel = Array.from(document.getElementById('speciesFilter').selectedOptions)
+    .map(o=>o.value);
+  const species = spSel.length ? spSel[0] : 'all';
+  const ramp = ramps[species] || ramps.all;
+  const file = `hexgrid_${res}_${counttype}.geojson`;
+
+  if(map.getSource('mort')){
+    map.removeLayer('mort-fill');
+    map.removeSource('mort');
+  }
+  map.addSource('mort',{ type:'geojson', data: file });
+  map.addLayer({
+    id: 'mort-fill', type: 'fill', source: 'mort',
+    paint: {
+      'fill-color': [
+        'interpolate',['linear'],['get','sum_val'],
+        0, ramp[0], 10, ramp[1], 50, ramp[2], 200, ramp[3]
+      ],
+      'fill-opacity': 0.6
     }
+  });
+  map.setFilter('mort-fill', buildFilter());
 
-    const popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
-    map.on('mousemove','mort-fill', e=>{
-      const p = e.lngLat, pr = e.features[0].properties;
-      popup.setLngLat(p)
-        .setHTML(`<b>sum_val:</b> ${pr.sum_val}<br><b>mortality:</b> ${pr.mortality}`)
-        .addTo(map);
-    });
-    map.on('mouseleave','mort-fill', ()=>popup.remove());
-
-    document.getElementById('loadBtn').onclick = loadLayer;
-    document.getElementById('resolution').onchange = loadLayer;
-    document.getElementById('datatype').onchange = loadLayer;
-    document.querySelectorAll('#panel select').forEach(s=>{
-      s.onchange = ()=> map.getSource('mort') && map.setFilter('mort-fill',buildFilter());
+  fetch(file)
+    .then(r=>r.json())
+    .then(j=>{
+      const vals = j.features.map(f=>f.properties.sum_val);
+      updateLegend(ramp, vals);
     });
 
-    map.on('load', ()=> loadLayer());
-  </script>
+  // Remove previous popup
+  map.on('mousemove','mort-fill', e=>{
+    const p = e.lngLat, pr = e.features[0].properties;
+    popup.setLngLat(p)
+      .setHTML(getPopupLabel(counttype, pr))
+      .addTo(map);
+  });
+  map.on('mouseleave','mort-fill', ()=>popup.remove());
+}
+
+const popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
+
+document.getElementById('loadBtn').onclick = loadLayer;
+
+</script>
 </body>
 </html>
