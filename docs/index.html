@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Sea‐turtle mortality map</title>
+  <title>Sea-turtle mortality map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link
     href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css"
@@ -38,7 +38,7 @@
 <body>
   <div id="map"></div>
   <div id="panel">
-    <label>Resolution (hex‐size):</label>
+    <label>Resolution (hex-size):</label>
     <select id="resolution">
       <option value="r3">r3 (coarse)</option>
       <option value="r4">r4</option>
@@ -154,129 +154,132 @@
       <option value="11.0">November</option>
       <option value="12.0">December</option>
     </select>
-
-    <button id="loadBtn">Load Layer</button>
   </div>
 
   <div id="legend"></div>
 
-<script>
-// 1) init map
-const map = new maplibregl.Map({
-  container:'map',
-  style:{
-    version:8,
-    sources:{
-      osm:{
-        type:'raster',
-        tiles:[
-          'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        ],
-        tileSize:256
-      }
-    },
-    layers:[{id:'osm',type:'raster',source:'osm'}]
-  },
-  center:[-45,-24], zoom:5
-});
+  <script>
+    // 1) initialize map
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            tiles: [
+              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256
+          }
+        },
+        layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+      },
+      center: [-45, -24],
+      zoom: 5
+    });
 
-// 2) color ramps
-const ramps={
-  all:['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
-  'Caretta caretta':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
-  'Chelonia mydas':['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b'],
-  'Dermochelys coriacea':['#f7fbff','#c6dbef','#6baed6','#2171b5','#08306b'],
-  'Eretmochelys imbricata':['#fff7fb','#ece2f0','#a6bddb','#8771a8','#4d004b'],
-  'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
-};
+    // 2) color ramps
+    const ramps = {
+      all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
+      'Caretta caretta': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
+      'Chelonia mydas':   ['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b'],
+      'Dermochelys coriacea': ['#f7fbff','#c6dbef','#6baed6','#2171b5','#08306b'],
+      'Eretmochelys imbricata':['#fff7fb','#ece2f0','#a6bddb','#8771a8','#4d004b'],
+      'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
+    };
 
-// 3) build unified filter
-function buildFilter(){
-  const out=['all'];
-  const props=[
-    'species','development_stage','sex','Fishing','Marine_Debris',
-    'Agression','Boat_collision','Dredging','Oil','Petrol',
-    'decomposition_code','season','year','month'
-  ];
-  props.forEach(prop=>{
-    const sel=document.getElementById(prop+'Filter');
-    const vals=Array.from(sel.selectedOptions).map(o=>o.value);
-    if(vals.length) out.push(['in',['get',prop],['literal',vals]]);
-  });
-  return out;
-}
-
-// 4) update legend
-function updateLegend(ramp,arr){
-  const L=document.getElementById('legend');
-  L.innerHTML='';
-  const min=Math.min(...arr),max=Math.max(...arr);
-  ramp.forEach((c,i)=>{
-    const sw=document.createElement('span');
-    sw.className='swatch'; sw.style.background=c;
-    L.appendChild(sw);
-    const v=(min + (i+0.5)/ramp.length*(max-min)).toFixed(1);
-    L.appendChild(document.createTextNode(v+' '));
-  });
-}
-
-// 5) load/resolver
-function loadLayer(){
-  const res=document.getElementById('resolution').value;
-  const sp=Array.from(
-    document.getElementById('speciesFilter').selectedOptions
-  ).map(o=>o.value).filter(v=>v!=='all');
-  const species=sp.length?sp[0]:'all';
-  const ramp=ramps[species];
-  const file=`hexgrid_${res}_${species}.geojson`;
-
-  if(map.getSource('mort')){
-    map.removeLayer('mort-fill');
-    map.removeSource('mort');
-  }
-  map.addSource('mort',{type:'geojson',data:file});
-  map.addLayer({
-    id:'mort-fill', type:'fill', source:'mort',
-    paint:{
-      'fill-color':[
-        'interpolate',['linear'],['get','sum_val'],
-        0,ramp[0],10,ramp[1],50,ramp[2],200,ramp[3]
-      ],
-      'fill-opacity':0.6
+    // 3) build filter expression
+    function buildFilter() {
+      const f = ['all'];
+      const props = [
+        'species','development_stage','sex','Fishing','Marine_Debris',
+        'Agression','Boat_collision','Dredging','Oil','Petrol',
+        'decomposition_code','season','year','month'
+      ];
+      props.forEach(prop => {
+        const sel = document.getElementById(prop+'Filter');
+        const vals = Array.from(sel.selectedOptions).map(o=>o.value);
+        if(vals.length && !vals.includes('all')) {
+          f.push(['in',['get',prop],['literal',vals]]);
+        }
+      });
+      return f;
     }
-  });
-  map.setFilter('mort-fill',buildFilter());
 
-  // legend from data
-  fetch(file).then(r=>r.json()).then(j=>{
-    const arr=j.features.map(f=>f.properties.sum_val);
-    updateLegend(ramp,arr);
-  });
-}
+    // 4) refresh legend
+    function updateLegend(ramp, values){
+      const L = document.getElementById('legend');
+      L.innerHTML = '';
+      const min = Math.min(...values),
+            max = Math.max(...values);
+      ramp.forEach((c,i)=>{
+        const sw = document.createElement('span');
+        sw.className='swatch'; sw.style.background = c;
+        L.appendChild(sw);
+        const v = (min + (i+0.5)/ramp.length*(max-min)).toFixed(1);
+        L.appendChild(document.createTextNode(v+' '));
+      });
+    }
 
-// 6) hover popup
-const popup=new maplibregl.Popup({closeButton:false,closeOnClick:false});
-map.on('mousemove','mort-fill',(e)=>{
-  const p=e.lngLat, pr=e.features[0].properties;
-  popup.setLngLat(p)
-    .setHTML(`
-      <b>sum_val:</b> ${pr.sum_val}<br>
-      <b>mortality:</b> ${pr.mortality}
-    `)
-    .addTo(map);
-});
-map.on('mouseleave','mort-fill',()=>popup.remove());
+    // 5) load a new layer
+    function loadLayer(){
+      const res = document.getElementById('resolution').value;
+      const spSel = Array.from(
+        document.getElementById('speciesFilter').selectedOptions
+      ).map(o=>o.value).filter(v=>v!=='all');
+      const species = spSel.length ? spSel[0] : 'all';
+      const ramp = ramps[species] || ramps.all;
+      const file = `hexgrid_${res}_${species}.geojson`;
 
-// 7) wire up
-document.getElementById('loadBtn').onclick=loadLayer;
-document.querySelectorAll('#panel select').forEach(s=>{
-  s.onchange=()=> map.getLayer('mort-fill') && map.setFilter('mort-fill',buildFilter());
-});
+      // remove old
+      if(map.getSource('mort')){
+        map.removeLayer('mort-fill');
+        map.removeSource('mort');
+      }
+      // add new
+      map.addSource('mort',{ type:'geojson', data: file });
+      map.addLayer({
+        id: 'mort-fill', type: 'fill', source: 'mort',
+        paint: {
+          'fill-color': [
+            'interpolate',['linear'],['get','sum_val'],
+            0, ramp[0], 10, ramp[1], 50, ramp[2], 200, ramp[3]
+          ],
+          'fill-opacity': 0.6
+        }
+      });
+      map.setFilter('mort-fill', buildFilter());
 
-// 8) initial load
-loadLayer();
-</script>
+      // load data to build legend
+      fetch(file)
+        .then(r=>r.json())
+        .then(j=>{
+          const vals = j.features.map(f=>f.properties.sum_val);
+          updateLegend(ramp, vals);
+        });
+    }
+
+    // 6) popup on hover
+    const popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
+    map.on('mousemove','mort-fill', e=>{
+      const p = e.lngLat, pr = e.features[0].properties;
+      popup.setLngLat(p)
+        .setHTML(`<b>sum_val:</b> ${pr.sum_val}<br><b>mortality:</b> ${pr.mortality}`)
+        .addTo(map);
+    });
+    map.on('mouseleave','mort-fill', ()=>popup.remove());
+
+    // 7) wire controls
+    document.getElementById('resolution').onchange = loadLayer;
+    document.querySelectorAll('#panel select').forEach(s=>{
+      s.onchange = ()=> map.getSource('mort') && map.setFilter('mort-fill',buildFilter());
+    });
+
+    // 8) initial load on map ready
+    map.on('load', ()=> loadLayer());
+  </script>
 </body>
 </html>
