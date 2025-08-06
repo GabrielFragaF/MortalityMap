@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Sea-turtle mortality map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- MapLibre GL JS -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+
+  <style>
+    html,body {margin:0;height:100%}
+    #map      {position:absolute;top:0;bottom:0;width:100%}
+    #panel{
+      position:absolute;top:10px;left:10px;z-index:2;
+      background:#fff;padding:6px 10px;border-radius:4px;
+      font-family:sans-serif;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.3)
+    }
+    #layerSel{min-width:260px}
+  </style>
+</head>
+<body>
+
+<!-- ----------  UI panel ---------- -->
+<div id="panel">
+  <select id="layerSel">
+    <!-- ----------  R3  ---------- -->
+    <optgroup label="H3 res 3">
+      <option value="hexgrid_r3_weight.geojson">r3 weight</option>
+      <option value="hexgrid_r3_new_weight.geojson">r3 new_weight</option>
+      <option value="hexgrid_r3_new_mortality_est_bf_mean.geojson">r3 bf_mean</option>
+      <option value="hexgrid_r3_new_mortality_est_bf_low.geojson">r3 bf_low</option>
+      <option value="hexgrid_r3_new_mortality_est_bf_high.geojson">r3 bf_high</option>
+    </optgroup>
+
+    <!-- ----------  R4  ---------- -->
+    <optgroup label="H3 res 4">
+      <option value="hexgrid_r4_weight.geojson">r4 weight</option>
+      <option value="hexgrid_r4_new_weight.geojson">r4 new_weight</option>
+      <option value="hexgrid_r4_new_mortality_est_bf_mean.geojson">r4 bf_mean</option>
+      <option value="hexgrid_r4_new_mortality_est_bf_low.geojson">r4 bf_low</option>
+      <option value="hexgrid_r4_new_mortality_est_bf_high.geojson">r4 bf_high</option>
+    </optgroup>
+
+    <!-- ----------  R5  ---------- -->
+    <optgroup label="H3 res 5">
+      <option value="hexgrid_r5_weight.geojson">r5 weight</option>
+      <option value="hexgrid_r5_new_weight.geojson">r5 new_weight</option>
+      <option value="hexgrid_r5_new_mortality_est_bf_mean.geojson">r5 bf_mean</option>
+      <option value="hexgrid_r5_new_mortality_est_bf_low.geojson">r5 bf_low</option>
+      <option value="hexgrid_r5_new_mortality_est_bf_high.geojson">r5 bf_high</option>
+    </optgroup>
+
+    <!-- ----------  R6  ---------- -->
+    <optgroup label="H3 res 6">
+      <option value="hexgrid_r6_weight.geojson">r6 weight</option>
+      <option value="hexgrid_r6_new_weight.geojson">r6 new_weight</option>
+      <option value="hexgrid_r6_new_mortality_est_bf_mean.geojson">r6 bf_mean</option>
+      <option value="hexgrid_r6_new_mortality_est_bf_low.geojson">r6 bf_low</option>
+      <option value="hexgrid_r6_new_mortality_est_bf_high.geojson">r6 bf_high</option>
+    </optgroup>
+  </select>
+
+  <button id="loadBtn">load layer</button>
+</div>
+<!-- -------------------------------- -->
+
+<div id="map"></div>
+
+<script>
+/* --------  Initialise Map  -------- */
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {version:8,sources:{},layers:[]},
+  center: [-45, -24],   // adjust to your region
+  zoom:   5
+});
+
+/* --------  Helper: load / replace GeoJSON layer  -------- */
+function loadGeoJSON(url){
+  const id = 'mortality';          // single reusable id
+  if(map.getSource(id)){           // if old layer exists, remove
+    map.removeLayer(id+'-fill');
+    map.removeSource(id);
+  }
+  map.addSource(id,{type:'geojson',data:url});
+  map.addLayer({
+    id: id+'-fill',
+    type:'fill',
+    source: id,
+    paint:{
+      'fill-color': [
+        'interpolate',['linear'],['get','sum_val'],
+        0,'#edf8fb', 10,'#b2e2e2',
+        50,'#66c2a4',200,'#238b45'
+      ],
+      'fill-opacity':0.6
+    }
+  });
+}
+
+/* --------  Wire UI  -------- */
+document.getElementById('loadBtn').onclick = () => {
+  const file = document.getElementById('layerSel').value;
+  loadGeoJSON(file);
+};
+</script>
+</body>
+</html>
+
