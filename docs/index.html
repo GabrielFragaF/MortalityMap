@@ -2,111 +2,281 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Sea-turtle mortality map</title>
+  <title>Sea‐turtle mortality map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- MapLibre GL JS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" />
+  <link
+    href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css"
+    rel="stylesheet"
+  />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-
   <style>
-    html,body {margin:0;height:100%}
-    #map      {position:absolute;top:0;bottom:0;width:100%}
-    #panel{
-      position:absolute;top:10px;left:10px;z-index:2;
-      background:#fff;padding:6px 10px;border-radius:4px;
-      font-family:sans-serif;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.3)
+    html, body { margin:0; padding:0; height:100%; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    #panel {
+      position:absolute; top:10px; left:10px; z-index:10;
+      background:white; padding:8px; border-radius:4px;
+      font-family:sans-serif; font-size:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.3);
+      max-height:90%; overflow:auto;
     }
-    #layerSel{min-width:260px}
+    #panel label { display:block; margin-top:6px; font-weight:bold; }
+    #panel select { width:100%; margin-top:4px; }
+    #panel button { margin-top:8px; width:100%; }
+    #legend {
+      position:absolute; bottom:30px; left:10px; z-index:10;
+      background:white; padding:6px; border-radius:4px;
+      font-family:sans-serif; font-size:12px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.3);
+    }
+    .swatch {
+      display:inline-block; width:20px; height:12px;
+      margin-right:4px; vertical-align:middle;
+      border:1px solid #666;
+    }
   </style>
 </head>
 <body>
+  <div id="map"></div>
+  <div id="panel">
+    <label>Resolution (hex‐size):</label>
+    <select id="resolution">
+      <option value="r3">r3 (coarse)</option>
+      <option value="r4">r4</option>
+      <option value="r5">r5</option>
+      <option value="r6">r6 (fine)</option>
+    </select>
 
-<!-- ----------  UI panel ---------- -->
-<div id="panel">
-  <select id="layerSel">
-    <!-- ----------  R3  ---------- -->
-    <optgroup label="H3 res 3">
-      <option value="hexgrid_r3_weight.geojson">r3 weight</option>
-      <option value="hexgrid_r3_new_weight.geojson">r3 new_weight</option>
-      <option value="hexgrid_r3_new_mortality_est_bf_mean.geojson">r3 bf_mean</option>
-      <option value="hexgrid_r3_new_mortality_est_bf_low.geojson">r3 bf_low</option>
-      <option value="hexgrid_r3_new_mortality_est_bf_high.geojson">r3 bf_high</option>
-    </optgroup>
+    <label>Species</label>
+    <select id="speciesFilter" multiple size="6">
+      <option value="all" selected>All</option>
+      <option value="Caretta caretta">Caretta caretta</option>
+      <option value="Chelonia mydas">Chelonia mydas</option>
+      <option value="Dermochelys coriacea">Dermochelys coriacea</option>
+      <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
+      <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
+    </select>
 
-    <!-- ----------  R4  ---------- -->
-    <optgroup label="H3 res 4">
-      <option value="hexgrid_r4_weight.geojson">r4 weight</option>
-      <option value="hexgrid_r4_new_weight.geojson">r4 new_weight</option>
-      <option value="hexgrid_r4_new_mortality_est_bf_mean.geojson">r4 bf_mean</option>
-      <option value="hexgrid_r4_new_mortality_est_bf_low.geojson">r4 bf_low</option>
-      <option value="hexgrid_r4_new_mortality_est_bf_high.geojson">r4 bf_high</option>
-    </optgroup>
+    <label>Stage</label>
+    <select id="stageFilter" multiple size="4">
+      <option value="Adulto">Adulto</option>
+      <option value="Juvenil">Juvenil</option>
+      <option value="Filhote">Filhote</option>
+      <option value="Indeterminado">Indeterminado</option>
+    </select>
 
-    <!-- ----------  R5  ---------- -->
-    <optgroup label="H3 res 5">
-      <option value="hexgrid_r5_weight.geojson">r5 weight</option>
-      <option value="hexgrid_r5_new_weight.geojson">r5 new_weight</option>
-      <option value="hexgrid_r5_new_mortality_est_bf_mean.geojson">r5 bf_mean</option>
-      <option value="hexgrid_r5_new_mortality_est_bf_low.geojson">r5 bf_low</option>
-      <option value="hexgrid_r5_new_mortality_est_bf_high.geojson">r5 bf_high</option>
-    </optgroup>
+    <label>Sex</label>
+    <select id="sexFilter" multiple size="3">
+      <option value="Fêmea">Fêmea</option>
+      <option value="Macho">Macho</option>
+      <option value="Indefinido">Indefinido</option>
+    </select>
 
-    <!-- ----------  R6  ---------- -->
-    <optgroup label="H3 res 6">
-      <option value="hexgrid_r6_weight.geojson">r6 weight</option>
-      <option value="hexgrid_r6_new_weight.geojson">r6 new_weight</option>
-      <option value="hexgrid_r6_new_mortality_est_bf_mean.geojson">r6 bf_mean</option>
-      <option value="hexgrid_r6_new_mortality_est_bf_low.geojson">r6 bf_low</option>
-      <option value="hexgrid_r6_new_mortality_est_bf_high.geojson">r6 bf_high</option>
-    </optgroup>
-  </select>
+    <label>Fishing</label>
+    <select id="FishingFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
 
-  <button id="loadBtn">load layer</button>
-</div>
-<!-- -------------------------------- -->
+    <label>Marine Debris</label>
+    <select id="Marine_DebrisFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
 
-<div id="map"></div>
+    <label>Agression</label>
+    <select id="AgressionFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <label>Boat Collision</label>
+    <select id="Boat_collisionFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <label>Dredging</label>
+    <select id="DredgingFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <label>Oil</label>
+    <select id="OilFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <label>Petrol</label>
+    <select id="PetrolFilter" multiple size="2">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <label>Decomposition</label>
+    <select id="decompFilter" multiple size="5">
+      <option value="1.0">1</option>
+      <option value="2.0">2</option>
+      <option value="3.0">3</option>
+      <option value="4.0">4</option>
+      <option value="5.0">5</option>
+    </select>
+
+    <label>Season</label>
+    <select id="seasonFilter" multiple size="4">
+      <option value="Spring">Spring</option>
+      <option value="Summer">Summer</option>
+      <option value="Autumn">Autumn</option>
+      <option value="Winter">Winter</option>
+    </select>
+
+    <label>Year</label>
+    <select id="yearFilter" multiple size="10">
+      <option>2015.0</option><option>2016.0</option>
+      <option>2017.0</option><option>2018.0</option>
+      <option>2019.0</option><option>2020.0</option>
+      <option>2021.0</option><option>2022.0</option>
+      <option>2023.0</option><option>2024.0</option>
+    </select>
+
+    <label>Month</label>
+    <select id="monthFilter" multiple size="6">
+      <option value="1.0">January</option>
+      <option value="2.0">February</option>
+      <option value="3.0">March</option>
+      <option value="4.0">April</option>
+      <option value="5.0">May</option>
+      <option value="6.0">June</option>
+      <option value="7.0">July</option>
+      <option value="8.0">August</option>
+      <option value="9.0">September</option>
+      <option value="10.0">October</option>
+      <option value="11.0">November</option>
+      <option value="12.0">December</option>
+    </select>
+
+    <button id="loadBtn">Load Layer</button>
+  </div>
+
+  <div id="legend"></div>
 
 <script>
-/* --------  Initialise Map  -------- */
+// 1) init map
 const map = new maplibregl.Map({
-  container: 'map',
-  style: {version:8,sources:{},layers:[]},
-  center: [-45, -24],   // adjust to your region
-  zoom:   5
+  container:'map',
+  style:{
+    version:8,
+    sources:{
+      osm:{
+        type:'raster',
+        tiles:[
+          'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        ],
+        tileSize:256
+      }
+    },
+    layers:[{id:'osm',type:'raster',source:'osm'}]
+  },
+  center:[-45,-24], zoom:5
 });
 
-/* --------  Helper: load / replace GeoJSON layer  -------- */
-function loadGeoJSON(url){
-  const id = 'mortality';          // single reusable id
-  if(map.getSource(id)){           // if old layer exists, remove
-    map.removeLayer(id+'-fill');
-    map.removeSource(id);
+// 2) color ramps
+const ramps={
+  all:['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
+  'Caretta caretta':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
+  'Chelonia mydas':['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b'],
+  'Dermochelys coriacea':['#f7fbff','#c6dbef','#6baed6','#2171b5','#08306b'],
+  'Eretmochelys imbricata':['#fff7fb','#ece2f0','#a6bddb','#8771a8','#4d004b'],
+  'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
+};
+
+// 3) build unified filter
+function buildFilter(){
+  const out=['all'];
+  const props=[
+    'species','development_stage','sex','Fishing','Marine_Debris',
+    'Agression','Boat_collision','Dredging','Oil','Petrol',
+    'decomposition_code','season','year','month'
+  ];
+  props.forEach(prop=>{
+    const sel=document.getElementById(prop+'Filter');
+    const vals=Array.from(sel.selectedOptions).map(o=>o.value);
+    if(vals.length) out.push(['in',['get',prop],['literal',vals]]);
+  });
+  return out;
+}
+
+// 4) update legend
+function updateLegend(ramp,arr){
+  const L=document.getElementById('legend');
+  L.innerHTML='';
+  const min=Math.min(...arr),max=Math.max(...arr);
+  ramp.forEach((c,i)=>{
+    const sw=document.createElement('span');
+    sw.className='swatch'; sw.style.background=c;
+    L.appendChild(sw);
+    const v=(min + (i+0.5)/ramp.length*(max-min)).toFixed(1);
+    L.appendChild(document.createTextNode(v+' '));
+  });
+}
+
+// 5) load/resolver
+function loadLayer(){
+  const res=document.getElementById('resolution').value;
+  const sp=Array.from(
+    document.getElementById('speciesFilter').selectedOptions
+  ).map(o=>o.value).filter(v=>v!=='all');
+  const species=sp.length?sp[0]:'all';
+  const ramp=ramps[species];
+  const file=`hexgrid_${res}_${species}.geojson`;
+
+  if(map.getSource('mort')){
+    map.removeLayer('mort-fill');
+    map.removeSource('mort');
   }
-  map.addSource(id,{type:'geojson',data:url});
+  map.addSource('mort',{type:'geojson',data:file});
   map.addLayer({
-    id: id+'-fill',
-    type:'fill',
-    source: id,
+    id:'mort-fill', type:'fill', source:'mort',
     paint:{
-      'fill-color': [
+      'fill-color':[
         'interpolate',['linear'],['get','sum_val'],
-        0,'#edf8fb', 10,'#b2e2e2',
-        50,'#66c2a4',200,'#238b45'
+        0,ramp[0],10,ramp[1],50,ramp[2],200,ramp[3]
       ],
       'fill-opacity':0.6
     }
   });
+  map.setFilter('mort-fill',buildFilter());
+
+  // legend from data
+  fetch(file).then(r=>r.json()).then(j=>{
+    const arr=j.features.map(f=>f.properties.sum_val);
+    updateLegend(ramp,arr);
+  });
 }
 
-/* --------  Wire UI  -------- */
-document.getElementById('loadBtn').onclick = () => {
-  const file = document.getElementById('layerSel').value;
-  loadGeoJSON(file);
-};
+// 6) hover popup
+const popup=new maplibregl.Popup({closeButton:false,closeOnClick:false});
+map.on('mousemove','mort-fill',(e)=>{
+  const p=e.lngLat, pr=e.features[0].properties;
+  popup.setLngLat(p)
+    .setHTML(`
+      <b>sum_val:</b> ${pr.sum_val}<br>
+      <b>mortality:</b> ${pr.mortality}
+    `)
+    .addTo(map);
+});
+map.on('mouseleave','mort-fill',()=>popup.remove());
+
+// 7) wire up
+document.getElementById('loadBtn').onclick=loadLayer;
+document.querySelectorAll('#panel select').forEach(s=>{
+  s.onchange=()=> map.getLayer('mort-fill') && map.setFilter('mort-fill',buildFilter());
+});
+
+// 8) initial load
+loadLayer();
 </script>
 </body>
 </html>
-
