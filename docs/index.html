@@ -3,31 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <title>Sea-turtle mortality map</title>
-  <title>Sea-turtle mortality map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- MapLibre GL JS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" />
+  <link
+    href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css"
+    rel="stylesheet"
+  />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-
   <style>
-    html, body { margin:0; height:100%; }
+    html, body { margin:0; padding:0; height:100%; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
     #panel {
-      position:absolute; top:10px; left:10px; z-index:2;
-      background:#fff; padding:6px 10px; border-radius:4px;
+      position:absolute; top:10px; left:10px; z-index:10;
+      background:white; padding:8px; border-radius:4px;
       font-family:sans-serif; font-size:14px;
-      box-shadow:0 1px 4px rgba(0,0,0,.3); max-height:90%; overflow:auto;
+      box-shadow:0 1px 4px rgba(0,0,0,0.3);
+      max-height:90%; overflow:auto;
     }
-    #layerSel{ width:200px; margin-bottom:8px }
-    details { margin-bottom:6px; }
-    details summary {
-      cursor: pointer;
-      font-weight: bold;
-      margin-bottom: 4px;
+    #panel label { display:block; margin-top:6px; font-weight:bold; }
+    #panel select { width:100%; margin-top:4px; }
+    #panel button { margin-top:8px; width:100%; }
+    #legend {
+      position:absolute; bottom:30px; left:10px; z-index:10;
+      background:white; padding:6px; border-radius:4px;
+      font-family:sans-serif; font-size:12px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.3);
     }
-    details select { width:100%; }
+    .swatch {
+      display:inline-block; width:20px; height:12px;
+      margin-right:4px; vertical-align:middle;
+      border:1px solid #666;
+    }
   </style>
 </head>
 <body>
@@ -50,135 +55,91 @@
       <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
       <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
     </select>
-  </details>
 
-  <!-- Development stage -->
-  <details>
-    <summary>Stage</summary>
+    <label>Stage</label>
     <select id="stageFilter" multiple size="4">
       <option value="Adulto">Adulto</option>
+      <option value="Juvenil">Juvenil</option>
       <option value="Filhote">Filhote</option>
       <option value="Indeterminado">Indeterminado</option>
-      <option value="Juvenil">Juvenil</option>
     </select>
-  </details>
 
-  <!-- Sex -->
-  <details>
-    <summary>Sex</summary>
+    <label>Sex</label>
     <select id="sexFilter" multiple size="3">
       <option value="Fêmea">Fêmea</option>
       <option value="Macho">Macho</option>
       <option value="Indefinido">Indefinido</option>
     </select>
-  </details>
 
-  <!-- Fishing -->
-  <details>
-    <summary>Fishing</summary>
+    <label>Fishing</label>
     <select id="FishingFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Marine debris -->
-  <details>
-    <summary>Marine Debris</summary>
+    <label>Marine Debris</label>
     <select id="Marine_DebrisFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Aggression -->
-  <details>
-    <summary>Agression</summary>
+    <label>Agression</label>
     <select id="AgressionFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Boat collision -->
-  <details>
-    <summary>Boat Collision</summary>
+    <label>Boat Collision</label>
     <select id="Boat_collisionFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Dredging -->
-  <details>
-    <summary>Dredging</summary>
+    <label>Dredging</label>
     <select id="DredgingFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Oil -->
-  <details>
-    <summary>Oil</summary>
+    <label>Oil</label>
     <select id="OilFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Petrol -->
-  <details>
-    <summary>Petrol</summary>
+    <label>Petrol</label>
     <select id="PetrolFilter" multiple size="2">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
-  </details>
 
-  <!-- Decomposition -->
-  <details>
-    <summary>Decomposition</summary>
-    <select id="decomposition_codeFilter" multiple size="5">
-      <option value="1.0">1.0</option>
-      <option value="2.0">2.0</option>
-      <option value="3.0">3.0</option>
-      <option value="4.0">4.0</option>
-      <option value="5.0">5.0</option>
+    <label>Decomposition</label>
+    <select id="decompFilter" multiple size="5">
+      <option value="1.0">1</option>
+      <option value="2.0">2</option>
+      <option value="3.0">3</option>
+      <option value="4.0">4</option>
+      <option value="5.0">5</option>
     </select>
-  </details>
 
-  <!-- Season -->
-  <details>
-    <summary>Season</summary>
+    <label>Season</label>
     <select id="seasonFilter" multiple size="4">
       <option value="Spring">Spring</option>
       <option value="Summer">Summer</option>
       <option value="Autumn">Autumn</option>
       <option value="Winter">Winter</option>
     </select>
-  </details>
 
-  <!-- Year -->
-  <details>
-    <summary>Year</summary>
-    <select id="yearFilter" multiple size="6">
-      <option value="2015.0">2015</option>
-      <option value="2016.0">2016</option>
-      <option value="2017.0">2017</option>
-      <option value="2018.0">2018</option>
-      <option value="2019.0">2019</option>
-      <option value="2020.0">2020</option>
-      <option value="2021.0">2021</option>
-      <option value="2022.0">2022</option>
-      <option value="2023.0">2023</option>
-      <option value="2024.0">2024</option>
+    <label>Year</label>
+    <select id="yearFilter" multiple size="10">
+      <option>2015.0</option><option>2016.0</option>
+      <option>2017.0</option><option>2018.0</option>
+      <option>2019.0</option><option>2020.0</option>
+      <option>2021.0</option><option>2022.0</option>
+      <option>2023.0</option><option>2024.0</option>
     </select>
-  </details>
 
-  <!-- Month -->
-  <details>
-    <summary>Month</summary>
+    <label>Month</label>
     <select id="monthFilter" multiple size="6">
       <option value="1.0">January</option>
       <option value="2.0">February</option>
@@ -195,7 +156,7 @@
     </select>
   </div>
 
-<div id="map"></div>
+  <div id="legend"></div>
 
   <script>
     // 1) initialize map
