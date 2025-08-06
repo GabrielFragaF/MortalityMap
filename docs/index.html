@@ -41,106 +41,118 @@
     <label>Resolution (hex-size):</label>
     <select id="resolution">
       <option value="r3">r3 (coarse)</option>
-      <option value="r4">r4</option>
+      <option value="r4" selected>r4</option>
       <option value="r5">r5</option>
       <option value="r6">r6 (fine)</option>
     </select>
-
+    <label>Mortality data type:</label>
+    <select id="datatype">
+      <option value="weight">Mortality position (weight)</option>
+      <option value="new_weight">Mortality position (new_weight)</option>
+      <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+      <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+      <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
+    </select>
     <label>Species</label>
     <select id="speciesFilter" multiple size="6">
-      <option value="all" selected>All</option>
       <option value="Caretta caretta">Caretta caretta</option>
       <option value="Chelonia mydas">Chelonia mydas</option>
       <option value="Dermochelys coriacea">Dermochelys coriacea</option>
       <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
       <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
+      <option value="all" selected>All</option>
     </select>
-
+    <!-- ... all your other filters (as before) ... -->
     <label>Stage</label>
-    <select id="stageFilter" multiple size="4">
+    <select id="stageFilter" multiple size="5">
       <option value="Adulto">Adulto</option>
       <option value="Juvenil">Juvenil</option>
       <option value="Filhote">Filhote</option>
       <option value="Indeterminado">Indeterminado</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Sex</label>
-    <select id="sexFilter" multiple size="3">
+    <select id="sexFilter" multiple size="4">
       <option value="Fêmea">Fêmea</option>
       <option value="Macho">Macho</option>
       <option value="Indefinido">Indefinido</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Fishing</label>
-    <select id="FishingFilter" multiple size="2">
+    <select id="FishingFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Marine Debris</label>
-    <select id="Marine_DebrisFilter" multiple size="2">
+    <select id="Marine_DebrisFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Agression</label>
-    <select id="AgressionFilter" multiple size="2">
+    <select id="AgressionFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Boat Collision</label>
-    <select id="Boat_collisionFilter" multiple size="2">
+    <select id="Boat_collisionFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Dredging</label>
-    <select id="DredgingFilter" multiple size="2">
+    <select id="DredgingFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Oil</label>
-    <select id="OilFilter" multiple size="2">
+    <select id="OilFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Petrol</label>
-    <select id="PetrolFilter" multiple size="2">
+    <select id="PetrolFilter" multiple size="3">
       <option value="Yes">Yes</option>
       <option value="No">No</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Decomposition</label>
-    <select id="decompFilter" multiple size="5">
+    <select id="decompFilter" multiple size="6">
       <option value="1.0">1</option>
       <option value="2.0">2</option>
       <option value="3.0">3</option>
       <option value="4.0">4</option>
       <option value="5.0">5</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Season</label>
-    <select id="seasonFilter" multiple size="4">
+    <select id="seasonFilter" multiple size="5">
       <option value="Spring">Spring</option>
       <option value="Summer">Summer</option>
       <option value="Autumn">Autumn</option>
       <option value="Winter">Winter</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Year</label>
-    <select id="yearFilter" multiple size="10">
-      <option>2015.0</option><option>2016.0</option>
-      <option>2017.0</option><option>2018.0</option>
-      <option>2019.0</option><option>2020.0</option>
-      <option>2021.0</option><option>2022.0</option>
-      <option>2023.0</option><option>2024.0</option>
+    <select id="yearFilter" multiple size="11">
+      <option value="2015.0">2015</option>
+      <option value="2016.0">2016</option>
+      <option value="2017.0">2017</option>
+      <option value="2018.0">2018</option>
+      <option value="2019.0">2019</option>
+      <option value="2020.0">2020</option>
+      <option value="2021.0">2021</option>
+      <option value="2022.0">2022</option>
+      <option value="2023.0">2023</option>
+      <option value="2024.0">2024</option>
+      <option value="all" selected>All</option>
     </select>
-
     <label>Month</label>
-    <select id="monthFilter" multiple size="6">
+    <select id="monthFilter" multiple size="13">
       <option value="1.0">January</option>
       <option value="2.0">February</option>
       <option value="3.0">March</option>
@@ -153,13 +165,12 @@
       <option value="10.0">October</option>
       <option value="11.0">November</option>
       <option value="12.0">December</option>
+      <option value="all" selected>All</option>
     </select>
+    <button id="loadBtn">Load Layer</button>
   </div>
-
   <div id="legend"></div>
-
   <script>
-    // 1) initialize map
     const map = new maplibregl.Map({
       container: 'map',
       style: {
@@ -181,7 +192,6 @@
       zoom: 5
     });
 
-    // 2) color ramps
     const ramps = {
       all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
       'Caretta caretta': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
@@ -191,7 +201,6 @@
       'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
     };
 
-    // 3) build filter expression
     function buildFilter() {
       const f = ['all'];
       const props = [
@@ -202,14 +211,14 @@
       props.forEach(prop => {
         const sel = document.getElementById(prop+'Filter');
         const vals = Array.from(sel.selectedOptions).map(o=>o.value);
-        if(vals.length && !vals.includes('all')) {
+        // If "all" is selected or nothing, don't filter that property:
+        if(!vals.includes('all') && vals.length) {
           f.push(['in',['get',prop],['literal',vals]]);
         }
       });
       return f;
     }
 
-    // 4) refresh legend
     function updateLegend(ramp, values){
       const L = document.getElementById('legend');
       L.innerHTML = '';
@@ -224,22 +233,20 @@
       });
     }
 
-    // 5) load a new layer
     function loadLayer(){
       const res = document.getElementById('resolution').value;
+      const datatype = document.getElementById('datatype').value;
       const spSel = Array.from(
         document.getElementById('speciesFilter').selectedOptions
       ).map(o=>o.value).filter(v=>v!=='all');
       const species = spSel.length ? spSel[0] : 'all';
       const ramp = ramps[species] || ramps.all;
-      const file = `hexgrid_${res}_${species}.geojson`;
+      const file = `hexgrid_${res}_${datatype}.geojson`;
 
-      // remove old
       if(map.getSource('mort')){
         map.removeLayer('mort-fill');
         map.removeSource('mort');
       }
-      // add new
       map.addSource('mort',{ type:'geojson', data: file });
       map.addLayer({
         id: 'mort-fill', type: 'fill', source: 'mort',
@@ -253,7 +260,6 @@
       });
       map.setFilter('mort-fill', buildFilter());
 
-      // load data to build legend
       fetch(file)
         .then(r=>r.json())
         .then(j=>{
@@ -262,7 +268,6 @@
         });
     }
 
-    // 6) popup on hover
     const popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
     map.on('mousemove','mort-fill', e=>{
       const p = e.lngLat, pr = e.features[0].properties;
@@ -272,13 +277,13 @@
     });
     map.on('mouseleave','mort-fill', ()=>popup.remove());
 
-    // 7) wire controls
+    document.getElementById('loadBtn').onclick = loadLayer;
     document.getElementById('resolution').onchange = loadLayer;
+    document.getElementById('datatype').onchange = loadLayer;
     document.querySelectorAll('#panel select').forEach(s=>{
       s.onchange = ()=> map.getSource('mort') && map.setFilter('mort-fill',buildFilter());
     });
 
-    // 8) initial load on map ready
     map.on('load', ()=> loadLayer());
   </script>
 </body>
