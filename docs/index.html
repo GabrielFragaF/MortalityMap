@@ -2,13 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Sea-turtle mortality map</title>
+  <title>Sea-turtle mortality map (Leaflet + PMTiles)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
-  <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-  <script src="https://unpkg.com/pmtiles@3.1.2/dist/pmtiles.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@protomaps/leaflet.pmtiles@2.7.0/dist/leaflet-pmtiles.js"></script>
   <style>
-    html, body { margin:0; padding:0; height:100%; }
+    html, body { height:100%; margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
     #panel {
       position:absolute; top:10px; left:10px; z-index:10;
@@ -192,35 +192,16 @@
       <option value="12.0">December</option>
     </select>
   </details>
-
   <button id="loadBtn">Load Layer</button>
 </div>
 <div id="legend"></div>
 <script>
-// Register PMTiles protocol
-maplibregl.addProtocol("pmtiles", new pmtiles.Protocol());
+// Basemap
+const map = L.map('map').setView([-24, -45], 5);
 
-// Set up MapLibre base map
-const map = new maplibregl.Map({
-  container: 'map',
-  style: {
-    version: 8,
-    sources: {
-      osm: {
-        type: 'raster',
-        tiles: [
-          'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        ],
-        tileSize: 256
-      }
-    },
-    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-  },
-  center: [-45, -24],
-  zoom: 5
-});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
 // Color ramps by species
 const ramps = {
@@ -232,24 +213,14 @@ const ramps = {
   'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
 };
 
-// Build MapLibre filter from selected dropdowns
-function buildFilter() {
-  const f = ['all'];
-  const props = [
-    'species','development_stage','sex','Fishing','Marine_Debris',
-    'Agression','Boat_collision','Dredging','Oil','Petrol',
-    'decomposition_code','season','year','month'
-  ];
-  props.forEach(prop => {
-    const sel = document.getElementById(prop+'Filter');
-    if (!sel) return;
-    const vals = Array.from(sel.selectedOptions).map(o=>o.value);
-    if(vals.length) f.push(['in',['get',prop],['literal',vals]]);
-  });
-  return f;
+let currentLayer = null;
+
+function getSelected(selId) {
+  const el = document.getElementById(selId);
+  if (!el) return [];
+  return Array.from(el.selectedOptions).map(o=>o.value);
 }
 
-// Legend is static (adjust as needed)
 function updateLegend(ramp){
   const L = document.getElementById('legend');
   L.innerHTML = '';
@@ -261,75 +232,73 @@ function updateLegend(ramp){
   });
 }
 
-function getPopupLabel(counttype, props) {
-  let val = props.sum_val;
-  let label = "Mortality";
-  if(counttype === "weight") {
-    label = "Mortality position";
-  } else if(counttype === "new_mortality_est_bf_mean") {
-    label = "Mortality est. (mean)";
-  } else if(counttype === "new_mortality_est_bf_low") {
-    label = "Mortality est. (low)";
-  } else if(counttype === "new_mortality_est_bf_high") {
-    label = "Mortality est. (high)";
-  }
-  return `<b>${label}</b>: ${val}`;
-}
-
-let popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
-
-function loadLayer(){
+// Main function: load and filter
+document.getElementById('loadBtn').onclick = function(){
   const res = document.getElementById('resolution').value;
   const counttype = document.getElementById('counttype').value;
-  const spSel = Array.from(document.getElementById('speciesFilter').selectedOptions)
-    .map(o=>o.value);
-  const species = spSel.length ? spSel[0] : 'all';
-  const ramp = ramps[species] || ramps.all;
-  const pmtilesUrl = `pmtiles://hexgrid_${res}_${counttype}.pmtiles`;
-  const sourceLayer = `hexgrid_${res}_${counttype}`;
 
-  // Remove previous
-  if(map.getLayer('mort-fill')) map.removeLayer('mort-fill');
-  if(map.getSource('mort')) map.removeSource('mort');
+  // For now, color ramp by "all" (can use species if desired)
+  const ramp = ramps['all'];
 
-  map.addSource('mort', {
-    type: 'vector',
-    url: pmtilesUrl
-  });
+  const pmtilesUrl = `hexgrid_${res}_${counttype}.pmtiles`;
 
-  map.addLayer({
-    id: 'mort-fill',
-    type: 'fill',
-    source: 'mort',
-    'source-layer': sourceLayer,
-    paint: {
-      'fill-color': [
-        'interpolate', ['linear'], ['get', 'sum_val'],
-        0, ramp[0], 10, ramp[1], 50, ramp[2], 200, ramp[3]
-      ],
-      'fill-opacity': 0.6
+  if(currentLayer) map.removeLayer(currentLayer);
+
+  currentLayer = L.pmtilesVectorTileLayer(pmtilesUrl, {
+    style: function(feature) {
+      // Apply filters client-side
+      const filters = {
+        species: getSelected('speciesFilter'),
+        development_stage: getSelected('stageFilter'),
+        sex: getSelected('sexFilter'),
+        Fishing: getSelected('FishingFilter'),
+        Marine_Debris: getSelected('Marine_DebrisFilter'),
+        Agression: getSelected('AgressionFilter'),
+        Boat_collision: getSelected('Boat_collisionFilter'),
+        Dredging: getSelected('DredgingFilter'),
+        Oil: getSelected('OilFilter'),
+        Petrol: getSelected('PetrolFilter'),
+        decomposition_code: getSelected('decompFilter'),
+        season: getSelected('seasonFilter'),
+        year: getSelected('yearFilter'),
+        month: getSelected('monthFilter')
+      };
+      // If a filter is not empty and feature doesn't match, skip styling
+      for(let key in filters){
+        const selected = filters[key];
+        if(selected && selected.length > 0) {
+          if(!selected.includes(String(feature.properties[key]))) {
+            return {fillOpacity: 0}; // Hide feature
+          }
+        }
+      }
+      // Passed all filters; style based on value
+      const value = feature.properties.sum_val;
+      let color = ramp[0];
+      if(value > 500) color = ramp[4];
+      else if(value > 200) color = ramp[3];
+      else if(value > 50) color = ramp[2];
+      else if(value > 10) color = ramp[1];
+      return {
+        fillColor: color,
+        fillOpacity: 0.6,
+        color: color,
+        weight: 0.7
+      };
     },
-    filter: buildFilter()
-  });
-
-  // Remove previous popup event if any
-  map.off('mousemove', onMouseMove);
-  map.on('mousemove','mort-fill', onMouseMove);
-  map.on('mouseleave','mort-fill', ()=>popup.remove());
+    onEachFeature: function(feature, layer) {
+      layer.on('mouseover', function(e) {
+        const v = feature.properties.sum_val;
+        layer.bindPopup('Value: ' + v).openPopup();
+      });
+      layer.on('mouseout', function(e) {
+        layer.closePopup();
+      });
+    }
+  }).addTo(map);
 
   updateLegend(ramp);
-}
-
-function onMouseMove(e){
-  const p = e.lngLat;
-  const pr = e.features[0].properties;
-  const counttype = document.getElementById('counttype').value;
-  popup.setLngLat(p)
-    .setHTML(getPopupLabel(counttype, pr))
-    .addTo(map);
-}
-
-document.getElementById('loadBtn').onclick = loadLayer;
+};
 </script>
 </body>
 </html>
