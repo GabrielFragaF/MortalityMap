@@ -17,87 +17,48 @@
 
   <style>
     :root{
-      --bg:#0b1220; --panel:#ffffff; --accent:#0ea5e9; --accent2:#10b981;
+      --bg:#0b1220; --panel:#ffffff; --accent:#0ea5e9;
       --text:#111827; --muted:#6b7280; --shadow:0 8px 24px rgba(0,0,0,.18);
     }
     html, body { height:100%; margin:0; padding:0; background:var(--bg); }
-    #map { position:absolute; inset:0; }
-    /* Panel */
+    #map { position:absolute; inset:0; z-index:0; }
     #panel {
-      position:absolute; top:14px; left:14px; z-index:1000;
-      background:var(--panel); padding:14px 14px 10px 14px; border-radius:12px;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      position:absolute; top:14px; left:14px; z-index:1001; /* FIX: above map */
+      background:var(--panel); padding:14px; border-radius:12px;
+      font-family: system-ui, sans-serif;
       font-size:14px; box-shadow:var(--shadow); width:300px; max-height:85vh; overflow:auto;
       border:1px solid #e5e7eb;
     }
-    #panel h1 { font-size:16px; margin:0 0 10px 0; font-weight:700; color:var(--text); }
-    #panel .row { margin:10px 0; }
-    #panel label { font-weight:600; color:var(--text); display:block; margin:6px 0 4px; }
-    #panel select { width:100%; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; }
-    .filter-multiselect { min-height:38px; }
+    #panel h1 { font-size:16px; margin:0 0 10px; font-weight:700; color:var(--text); }
     details { border:1px solid #e5e7eb; border-radius:10px; padding:6px 8px; margin:8px 0; }
-    summary { cursor:pointer; font-weight:600; color:var(--text); outline:none; }
-    .btn {
-      width:100%; padding:10px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:700; margin-top:10px;
-    }
+    summary { cursor:pointer; font-weight:600; color:var(--text); }
+    select { width:100%; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; }
+    .filter-multiselect { min-height:38px; }
+    .btn { width:100%; padding:10px; border-radius:10px; border:none; cursor:pointer; font-weight:700; margin-top:10px; }
     .btn-primary { background:var(--accent); color:white; }
-    .btn-ghost { background:#f3f4f6; color:#111; }
-    .btn-row { display:flex; gap:8px; }
-    .btn-row .btn { flex:1; }
+    .btn-ghost { background:#f3f4f6; }
     #legend {
-      position:absolute; bottom:18px; left:14px; z-index:1000;
-      background:var(--panel); padding:10px 12px; border-radius:10px; box-shadow:var(--shadow);
-      font-family:inherit; font-size:13px; border:1px solid #e5e7eb; color:var(--text);
+      position:absolute; bottom:18px; left:14px; z-index:1001;
+      background:var(--panel); padding:10px; border-radius:10px; box-shadow:var(--shadow);
+      font-size:13px; border:1px solid #e5e7eb; color:var(--text);
     }
-    .swatch { display:inline-block; width:22px; height:12px; margin-right:6px; border-radius:3px; border:1px solid #9ca3af; vertical-align:middle; }
-    .row-inline { display:flex; gap:8px; align-items:center; }
-    .muted { color:var(--muted); font-size:12px; }
-    /* Spinner + toast */
-    #spinner {
-      position:absolute; top:14px; right:14px; z-index:1000; display:none;
-      background:var(--panel); padding:8px 10px; border-radius:10px; box-shadow:var(--shadow);
-      border:1px solid #e5e7eb; font-size:13px;
-    }
-    #toast {
-      position:absolute; top:70px; right:14px; z-index:1000; display:none;
-      background:#fee2e2; color:#991b1b; padding:8px 10px; border-radius:10px; border:1px solid #fecaca; box-shadow:var(--shadow);
-      font-size:13px;
-    }
-    .topbar {
-      display:flex; align-items:center; justify-content:space-between; gap:8px;
-      position:sticky; top:0; background:var(--panel); padding-bottom:8px; z-index:1;
-    }
-    .topbar button { padding:6px 10px; border-radius:8px; border:1px solid #e5e7eb; background:#f9fafb; cursor:pointer; }
-    .tag { background:#eef2ff; color:#3730a3; padding:2px 6px; border-radius:999px; font-size:12px; font-weight:700; }
-    @media (max-width: 520px){
-      #panel { width: calc(100% - 28px); }
-    }
+    .swatch { display:inline-block; width:22px; height:12px; margin-right:6px; border-radius:3px; border:1px solid #9ca3af; }
   </style>
 </head>
 <body>
-<div id="map" aria-label="Interactive map"></div>
-
-<!-- UI Panel -->
+<div id="map"></div>
 <div id="panel">
-  <div class="topbar">
-    <h1>Mortality map <span class="tag">beta</span></h1>
-    <div style="display:flex; gap:6px;">
-      <button id="collapsePanel" title="Collapse">–</button>
-      <button id="permalink" title="Copy permalink">🔗</button>
-    </div>
-  </div>
-
-  <div class="row">
-    <label for="resolution">Resolution (hex size)</label>
+  <h1>Mortality map</h1>
+  <div>
+    <label for="resolution">Resolution</label>
     <select id="resolution">
-      <option value="r3">r3 (coarse)</option>
+      <option value="r3">r3</option>
       <option value="r4" selected>r4</option>
       <option value="r5">r5</option>
-      <option value="r6">r6 (fine)</option>
+      <option value="r6">r6</option>
     </select>
   </div>
-
-  <div class="row">
+  <div>
     <label for="counttype">Count Type</label>
     <select id="counttype">
       <option value="weight">Mortality position</option>
@@ -106,167 +67,25 @@
       <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
     </select>
   </div>
-
-  <!-- All filter dropdowns -->
-  <details open><summary>Species</summary>
-    <select id="speciesFilter" multiple class="filter-multiselect" size="6">
-      <option value="Caretta caretta">Caretta caretta</option>
-      <option value="Chelonia mydas">Chelonia mydas</option>
-      <option value="Dermochelys coriacea">Dermochelys coriacea</option>
-      <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
-      <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
-    </select>
-  </details>
-
-  <details><summary>Stage</summary>
-    <select id="stageFilter" multiple class="filter-multiselect" size="5">
-      <option value="Adulto">Adulto</option>
-      <option value="Juvenil">Juvenil</option>
-      <option value="Filhote">Filhote</option>
-      <option value="Indeterminado">Indeterminado</option>
-    </select>
-  </details>
-
-  <details><summary>Sex</summary>
-    <select id="sexFilter" multiple class="filter-multiselect" size="4">
-      <option value="Fêmea">Fêmea</option>
-      <option value="Macho">Macho</option>
-      <option value="Indefinido">Indefinido</option>
-    </select>
-  </details>
-
-  <details><summary>Fishing</summary>
-    <select id="FishingFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Marine Debris</summary>
-    <select id="Marine_DebrisFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Agression</summary>
-    <select id="AgressionFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Boat Collision</summary>
-    <select id="Boat_collisionFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Dredging</summary>
-    <select id="DredgingFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Oil</summary>
-    <select id="OilFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Petrol</summary>
-    <select id="PetrolFilter" multiple class="filter-multiselect" size="3">
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
-  </details>
-
-  <details><summary>Decomposition</summary>
-    <select id="decompFilter" multiple class="filter-multiselect" size="6">
-      <option value="1.0">1</option>
-      <option value="2.0">2</option>
-      <option value="3.0">3</option>
-      <option value="4.0">4</option>
-      <option value="5.0">5</option>
-    </select>
-  </details>
-
-  <details><summary>Season</summary>
-    <select id="seasonFilter" multiple class="filter-multiselect" size="5">
-      <option value="Spring">Spring</option>
-      <option value="Summer">Summer</option>
-      <option value="Autumn">Autumn</option>
-      <option value="Winter">Winter</option>
-    </select>
-  </details>
-
-  <details><summary>Year</summary>
-    <select id="yearFilter" multiple class="filter-multiselect" size="11">
-      <option value="2015.0">2015</option>
-      <option value="2016.0">2016</option>
-      <option value="2017.0">2017</option>
-      <option value="2018.0">2018</option>
-      <option value="2019.0">2019</option>
-      <option value="2020.0">2020</option>
-      <option value="2021.0">2021</option>
-      <option value="2022.0">2022</option>
-      <option value="2023.0">2023</option>
-      <option value="2024.0">2024</option>
-    </select>
-  </details>
-
-  <details><summary>Month</summary>
-    <select id="monthFilter" multiple class="filter-multiselect" size="13">
-      <option value="1.0">January</option>
-      <option value="2.0">February</option>
-      <option value="3.0">March</option>
-      <option value="4.0">April</option>
-      <option value="5.0">May</option>
-      <option value="6.0">June</option>
-      <option value="7.0">July</option>
-      <option value="8.0">August</option>
-      <option value="9.0">September</option>
-      <option value="10.0">October</option>
-      <option value="11.0">November</option>
-      <option value="12.0">December</option>
-    </select>
-  </details>
-
-  <div class="btn-row">
-    <button id="loadBtn" class="btn btn-primary">Reload data</button>
-    <button id="resetBtn" class="btn btn-ghost" title="Clear all filters">Reset</button>
-  </div>
-  <div class="row-inline muted">
-    <span>Tip: filters auto-apply on change.</span>
-  </div>
+  <div id="dynamicFilters"></div>
+  <button id="loadBtn" class="btn btn-primary">Reload</button>
+  <button id="resetBtn" class="btn btn-ghost">Reset</button>
 </div>
-
-<!-- Legend -->
-<div id="legend" aria-label="Legend"></div>
-
-<!-- Spinner + toast -->
-<div id="spinner">Loading layer…</div>
-<div id="toast"></div>
+<div id="legend"></div>
 
 <script>
-  const map = L.map('map', { zoomSnap: 0.25 }).setView([-24, -45], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  const map = L.map('map').setView([-24, -45], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:'&copy; OpenStreetMap contributors', maxZoom: 18
   }).addTo(map);
 
-  const protocol = new pmtiles.Protocol();
   const origFetch = window.fetch.bind(window);
   window.fetch = (input, init) => {
     if (typeof input === 'string' && input.startsWith('pmtiles://')) {
       const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
       if (!m) return Promise.reject(new Error('Bad pmtiles URL: ' + input));
-      const archive = m[1];
-      const z = +m[2], x = +m[3], y = +m[4];
-      const p = new pmtiles.PMTiles(archive);
-      return p.getZxy(z, x, y).then(tile => {
+      const p = new pmtiles.PMTiles(m[1]);
+      return p.getZxy(+m[2], +m[3], +m[4]).then(tile => {
         if (!tile || !tile.data) return new Response(null, {status:204});
         return new Response(tile.data, {status:200});
       });
@@ -274,27 +93,26 @@
     return origFetch(input, init);
   };
 
-  const el = id => document.getElementById(id);
-  const filtersIds = [
-    'speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter',
-    'Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter',
-    'yearFilter','monthFilter'
-  ];
-  function getSelected(id){ return Array.from(el(id).selectedOptions).map(o => o.value); }
-  function clearSelections(){ filtersIds.forEach(id => Array.from(el(id).options).forEach(o => o.selected=false)); }
-
   const ramps = {
     all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
     'Caretta caretta': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
-    'Chelonia mydas':   ['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b'],
-    'Dermochelys coriacea': ['#f7fbff','#c6dbef','#6baed6','#2171b5','#08306b'],
-    'Eretmochelys imbricata':['#fff7fb','#ece2f0','#a6bddb','#8771a8','#4d004b'],
-    'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
+    'Chelonia mydas': ['#f7fcf5','#c7e9c0','#74c476','#238b45','#00441b']
+    // add other species ramps as needed
   };
 
+  let currentLayer = null;
+  let currentLayerName = null;
+  let fieldNames = [];
+
+  function buildUrl(){
+    const res = document.getElementById('resolution').value;
+    const counttype = document.getElementById('counttype').value;
+    return `hexgrid_${res}_${counttype}.pmtiles`;
+  }
+
   function updateLegend(ramp){
-    const legend = el('legend');
-    legend.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">Hex value</div>';
+    const legend = document.getElementById('legend');
+    legend.innerHTML = '<b>Hex value</b><br>';
     const breaks = [0,10,50,200,500];
     for (let i=0;i<breaks.length;i++){
       const sw = `<span class="swatch" style="background:${ramp[i]||'#fff'}"></span>`;
@@ -303,21 +121,49 @@
     }
   }
 
-  let currentLayer = null;
-  const LAYER_NAME_IN_TILE = 'hexgrid';
+  function passFilters(props){
+    for (const fname of fieldNames){
+      const sel = getSelected(fname);
+      if (sel.length > 0){
+        const v = (props[fname] ?? '').toString();
+        if (!sel.includes(v)) return false;
+      }
+    }
+    return true;
+  }
 
-  function buildUrl(){
-    const res = el('resolution').value;
-    const counttype = el('counttype').value;
-    return `hexgrid_${res}_${counttype}.pmtiles`;
+  function getSelected(fname){
+    const el = document.getElementById(`filter-${fname}`);
+    return el ? Array.from(el.selectedOptions).map(o=>o.value) : [];
   }
-  function getActiveRamp(){
-    const sp = getSelected('speciesFilter');
-    if (sp.length===1 && ramps[sp[0]]) return ramps[sp[0]];
-    return ramps['all'];
+
+  function clearSelections(){
+    for (const fname of fieldNames){
+      const el = document.getElementById(`filter-${fname}`);
+      if (el) Array.from(el.options).forEach(o=>o.selected=false);
+    }
   }
+
+  async function loadMetadata(pmtilesFile){
+    const p = new pmtiles.PMTiles(pmtilesFile);
+    const meta = await p.getMetadata();
+    currentLayerName = meta.vector_layers?.[0]?.id || null;
+    fieldNames = Object.keys(meta.vector_layers?.[0]?.fields || {});
+    buildFilterUI();
+  }
+
+  function buildFilterUI(){
+    const container = document.getElementById('dynamicFilters');
+    container.innerHTML = '';
+    for (const fname of fieldNames){
+      const details = document.createElement('details');
+      details.innerHTML = `<summary>${fname}</summary><select id="filter-${fname}" multiple class="filter-multiselect"></select>`;
+      container.appendChild(details);
+    }
+  }
+
   function featureStyle(properties, ramp){
-    const value = properties.sum_val;
+    const value = properties.sum_val || 0;
     let color = ramp[0];
     if (value > 500) color = ramp[4];
     else if (value > 200) color = ramp[3];
@@ -325,72 +171,42 @@
     else if (value > 10) color = ramp[1];
     return { fill: true, fillColor: color, fillOpacity: 0.6, stroke: true, color: color, weight: 0.7 };
   }
-  function passFilters(props){
-    const filters = {
-      species: getSelected('speciesFilter'),
-      development_stage: getSelected('stageFilter'),
-      sex: getSelected('sexFilter'),
-      Fishing: getSelected('FishingFilter'),
-      Marine_Debris: getSelected('Marine_DebrisFilter'),
-      Agression: getSelected('AgressionFilter'),
-      Boat_collision: getSelected('Boat_collisionFilter'),
-      Dredging: getSelected('DredgingFilter'),
-      Oil: getSelected('OilFilter'),
-      Petrol: getSelected('PetrolFilter'),
-      decomposition_code: getSelected('decompFilter'),
-      season: getSelected('seasonFilter'),
-      year: getSelected('yearFilter'),
-      month: getSelected('monthFilter')
-    };
-    for (const k in filters){
-      const sel = filters[k];
-      if (sel.length>0){
-        const v = (props[k]===undefined || props[k]===null) ? '' : String(props[k]);
-        if (!sel.includes(v)) return false;
-      }
-    }
-    return true;
-  }
 
   function loadLayer(){
     const pmtilesFile = buildUrl();
-    const ramp = getActiveRamp();
+    const ramp = ramps.all; // could change based on species selection
     updateLegend(ramp);
 
-    const urlTemplate = `pmtiles://${pmtilesFile}/{z}/{x}/{y}.pbf`;
-    if (currentLayer) { currentLayer.remove(); currentLayer = null; }
+    if (currentLayer) currentLayer.remove();
 
+    const urlTemplate = `pmtiles://${pmtilesFile}/{z}/{x}/{y}.pbf`;
     currentLayer = L.vectorGrid.protobuf(urlTemplate, {
       maxNativeZoom: 14,
       maxZoom: 18,
       vectorTileLayerStyles: {
-        [LAYER_NAME_IN_TILE]: (properties) => {
+        [currentLayerName]: (properties) => {
           return passFilters(properties) ? featureStyle(properties, ramp) : {fill:false, stroke:false};
         }
       },
-      interactive: true,
-      getFeatureId: f => f.properties && f.properties.id ? f.properties.id : undefined
+      interactive: true
     })
-    .on('mouseover', e => { e.layer.setStyle({ weight: 2.5, color: '#000' }); })
-    .on('mouseout', e => { e.layer.setStyle({ weight: 0.7, color: e.layer.options.color }); })
     .on('click', e => {
       const p = e.layer.properties || {};
       const html = Object.entries(p).map(([k,v]) => `<div><b>${k}:</b> ${v}</div>`).join('');
-      L.popup({offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+      L.popup().setLatLng(e.latlng).setContent(html).openOn(map);
     })
     .addTo(map);
   }
 
-  el('loadBtn').addEventListener('click', loadLayer);
-  el('resetBtn').addEventListener('click', () => { clearSelections(); loadLayer(); });
-  filtersIds.forEach(id => el(id).addEventListener('change', loadLayer));
-  el('collapsePanel').addEventListener('click', () => {
-    const p = el('panel');
-    if (p.style.height==='36px'){ p.style.height = ''; p.style.overflow='auto'; }
-    else { p.style.height = '36px'; p.style.overflow='hidden'; }
-  });
+  document.getElementById('loadBtn').addEventListener('click', loadLayer);
+  document.getElementById('resetBtn').addEventListener('click', () => { clearSelections(); loadLayer(); });
 
-  loadLayer();
+  // First metadata load, then layer
+  (async ()=>{
+    const firstFile = buildUrl();
+    await loadMetadata(firstFile);
+    loadLayer();
+  })();
 </script>
 </body>
 </html>
