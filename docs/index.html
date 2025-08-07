@@ -285,7 +285,7 @@ function loadLayer(){
     .map(o=>o.value);
   const species = spSel.length ? spSel[0] : 'all';
   const ramp = ramps[species] || ramps.all;
-  const pmtilesUrl = `pmtiles://web_hex_layers_rich/hexgrid_${res}_${counttype}.pmtiles`;
+  const pmtilesUrl = `pmtiles://hexgrid_${res}_${counttype}.pmtiles`;
   const sourceLayer = `hexgrid_${res}_${counttype}`;
 
   // Remove previous
