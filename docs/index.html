@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@3.1.2/dist/pmtiles.js"></script>
   <style>
     html, body { margin:0; padding:0; height:100%; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -14,8 +15,7 @@
       background:white; padding:10px; border-radius:5px;
       font-family:sans-serif; font-size:14px;
       box-shadow:0 1px 8px rgba(0,0,0,0.20);
-      max-height:96%; overflow:auto;
-      min-width:230px;
+      max-height:96%; overflow:auto; min-width:230px;
     }
     #panel label { margin:7px 0 2px 0; font-weight:bold; display:block; }
     #panel select { width:100%; }
@@ -197,6 +197,10 @@
 </div>
 <div id="legend"></div>
 <script>
+// Register PMTiles protocol
+maplibregl.addProtocol("pmtiles", new pmtiles.Protocol());
+
+// Set up MapLibre base map
 const map = new maplibregl.Map({
   container: 'map',
   style: {
@@ -218,6 +222,7 @@ const map = new maplibregl.Map({
   zoom: 5
 });
 
+// Color ramps by species
 const ramps = {
   all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b'],
   'Caretta caretta': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
@@ -227,6 +232,7 @@ const ramps = {
   'Lepidochelys olivacea':['#fff7ec','#fee8c8','#fdbb84','#e34a33','#b30000']
 };
 
+// Build MapLibre filter from selected dropdowns
 function buildFilter() {
   const f = ['all'];
   const props = [
@@ -236,38 +242,41 @@ function buildFilter() {
   ];
   props.forEach(prop => {
     const sel = document.getElementById(prop+'Filter');
+    if (!sel) return;
     const vals = Array.from(sel.selectedOptions).map(o=>o.value);
     if(vals.length) f.push(['in',['get',prop],['literal',vals]]);
   });
   return f;
 }
 
-function updateLegend(ramp, values){
+// Legend is static (adjust as needed)
+function updateLegend(ramp){
   const L = document.getElementById('legend');
   L.innerHTML = '';
-  const min = Math.min(...values), max = Math.max(...values);
-  ramp.forEach((c,i)=>{
+  [0, 10, 50, 200, 500].forEach((v,i)=>{
     const sw = document.createElement('span');
-    sw.className='swatch'; sw.style.background = c;
+    sw.className='swatch'; sw.style.background = ramp[i] || '#fff';
     L.appendChild(sw);
-    const v = (min + (i+0.5)/ramp.length*(max-min)).toFixed(1);
-    L.appendChild(document.createTextNode(v+' '));
+    L.appendChild(document.createTextNode(v + (i < ramp.length-1 ? ' - ' : '+ ')));
   });
 }
 
 function getPopupLabel(counttype, props) {
+  let val = props.sum_val;
+  let label = "Mortality";
   if(counttype === "weight") {
-    return `<b>Mortality position</b>: ${props.sum_val}`;
+    label = "Mortality position";
   } else if(counttype === "new_mortality_est_bf_mean") {
-    return `<b>Mortality est. (mean)</b>: ${props.mean_val}`;
+    label = "Mortality est. (mean)";
   } else if(counttype === "new_mortality_est_bf_low") {
-    return `<b>Mortality est. (low)</b>: ${props.low_val}`;
+    label = "Mortality est. (low)";
   } else if(counttype === "new_mortality_est_bf_high") {
-    return `<b>Mortality est. (high)</b>: ${props.high_val}`;
-  } else {
-    return "";
+    label = "Mortality est. (high)";
   }
+  return `<b>${label}</b>: ${val}`;
 }
+
+let popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
 
 function loadLayer(){
   const res = document.getElementById('resolution').value;
@@ -276,46 +285,51 @@ function loadLayer(){
     .map(o=>o.value);
   const species = spSel.length ? spSel[0] : 'all';
   const ramp = ramps[species] || ramps.all;
-  const file = `hexgrid_${res}_${counttype}.geojson`;
+  const pmtilesUrl = `pmtiles://web_hex_layers_rich/hexgrid_${res}_${counttype}.pmtiles`;
+  const sourceLayer = `hexgrid_${res}_${counttype}`;
 
-  if(map.getSource('mort')){
-    map.removeLayer('mort-fill');
-    map.removeSource('mort');
-  }
-  map.addSource('mort',{ type:'geojson', data: file });
+  // Remove previous
+  if(map.getLayer('mort-fill')) map.removeLayer('mort-fill');
+  if(map.getSource('mort')) map.removeSource('mort');
+
+  map.addSource('mort', {
+    type: 'vector',
+    url: pmtilesUrl
+  });
+
   map.addLayer({
-    id: 'mort-fill', type: 'fill', source: 'mort',
+    id: 'mort-fill',
+    type: 'fill',
+    source: 'mort',
+    'source-layer': sourceLayer,
     paint: {
       'fill-color': [
-        'interpolate',['linear'],['get','sum_val'],
+        'interpolate', ['linear'], ['get', 'sum_val'],
         0, ramp[0], 10, ramp[1], 50, ramp[2], 200, ramp[3]
       ],
       'fill-opacity': 0.6
-    }
+    },
+    filter: buildFilter()
   });
-  map.setFilter('mort-fill', buildFilter());
 
-  fetch(file)
-    .then(r=>r.json())
-    .then(j=>{
-      const vals = j.features.map(f=>f.properties.sum_val);
-      updateLegend(ramp, vals);
-    });
-
-  // Remove previous popup
-  map.on('mousemove','mort-fill', e=>{
-    const p = e.lngLat, pr = e.features[0].properties;
-    popup.setLngLat(p)
-      .setHTML(getPopupLabel(counttype, pr))
-      .addTo(map);
-  });
+  // Remove previous popup event if any
+  map.off('mousemove', onMouseMove);
+  map.on('mousemove','mort-fill', onMouseMove);
   map.on('mouseleave','mort-fill', ()=>popup.remove());
+
+  updateLegend(ramp);
 }
 
-const popup = new maplibregl.Popup({ closeButton:false, closeOnClick:false });
+function onMouseMove(e){
+  const p = e.lngLat;
+  const pr = e.features[0].properties;
+  const counttype = document.getElementById('counttype').value;
+  popup.setLngLat(p)
+    .setHTML(getPopupLabel(counttype, pr))
+    .addTo(map);
+}
 
 document.getElementById('loadBtn').onclick = loadLayer;
-
 </script>
 </body>
 </html>
