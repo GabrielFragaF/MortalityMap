@@ -32,12 +32,17 @@ details .content{padding:10px 12px}
 .controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
 #resetBtn,#applyBtn{flex:1;background:#0ea5e9;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
 #resetBtn{background:#e11d48}
-#legend{position:absolute;bottom:18px;left:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:220px}
+#legend{
+  position:absolute;bottom:18px;right:14px;z-index:1000;
+  background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;
+  padding:10px 12px;font-size:13px;min-width:220px
+}
 .leghdr{font-weight:800;margin-bottom:8px}.legend-row{display:flex;align-items:center;margin:4px 0}
 .swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
 #spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
 #toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:320px}
 .leaflet-popup-content{margin:8px 12px}.kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}small.muted{color:#64748b}
+.help{font-size:12px;color:var(--muted);margin-top:4px}
 </style>
 </head>
 <body>
@@ -62,7 +67,9 @@ details .content{padding:10px 12px}
         <option value="r5">r5</option>
         <option value="r6">r6</option>
       </select>
+      <div class="help">Start at r3 for speed; switch to r6 for detail.</div>
     </div>
+
     <div class="row">
       <label for="counttype">Count Type</label>
       <select id="counttype">
@@ -78,8 +85,9 @@ details .content{padding:10px 12px}
       <summary>Species & Stage</summary>
       <div class="content">
         <div class="row">
-          <label for="speciesFilter">Species (multi-select)</label>
-          <select id="speciesFilter" multiple size="5">
+          <label for="speciesFilter">Species</label>
+          <select id="speciesFilter" multiple size="6">
+            <option value="__ALL__" selected>(All)</option>
             <option value="Caretta caretta">Caretta caretta</option>
             <option value="Chelonia mydas">Chelonia mydas</option>
             <option value="Dermochelys coriacea">Dermochelys coriacea</option>
@@ -89,7 +97,8 @@ details .content{padding:10px 12px}
         </div>
         <div class="row">
           <label for="stageFilter">Development stage</label>
-          <select id="stageFilter" multiple size="6">
+          <select id="stageFilter" multiple size="7">
+            <option value="__ALL__" selected>(All)</option>
             <option value="Adulto">Adulto</option><option value="Juvenil">Juvenil</option>
             <option value="Filhote">Filhote</option><option value="Indeterminado">Indeterminado</option>
             <option value="Adult">Adult</option><option value="Juvenile">Juvenile</option>
@@ -97,7 +106,8 @@ details .content{padding:10px 12px}
         </div>
         <div class="row">
           <label for="sexFilter">Sex</label>
-          <select id="sexFilter" multiple size="6">
+          <select id="sexFilter" multiple size="7">
+            <option value="__ALL__" selected>(All)</option>
             <option value="Fêmea">Fêmea</option><option value="Macho">Macho</option><option value="Indefinido">Indefinido</option>
             <option value="Female">Female</option><option value="Male">Male</option><option value="Unknown">Unknown</option>
           </select>
@@ -109,25 +119,39 @@ details .content{padding:10px 12px}
       <summary>Human interactions</summary>
       <div class="content">
         <div class="row"><label for="FishingFilter">Fishing</label>
-          <select id="FishingFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="FishingFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
         <div class="row"><label for="Marine_DebrisFilter">Marine Debris</label>
-          <select id="Marine_DebrisFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="Marine_DebrisFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
         <div class="row"><label for="AgressionFilter">Aggression</label>
-          <select id="AgressionFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="AgressionFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
         <div class="row"><label for="Boat_collisionFilter">Boat collision</label>
-          <select id="Boat_collisionFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="Boat_collisionFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
         <div class="row"><label for="DredgingFilter">Dredging</label>
-          <select id="DredgingFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="DredgingFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
         <div class="row"><label for="OilFilter">Oil</label>
-          <select id="OilFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="OilFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
         <div class="row"><label for="PetrolFilter">Petrol</label>
-          <select id="PetrolFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+          <select id="PetrolFilter" multiple size="5">
+            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
+          </select>
         </div>
       </div>
     </details>
@@ -137,21 +161,24 @@ details .content{padding:10px 12px}
       <div class="content">
         <div class="row">
           <label for="decompFilter">Decomposition code</label>
-          <select id="decompFilter" multiple size="10">
+          <select id="decompFilter" multiple size="11">
+            <option value="__ALL__" selected>(All)</option>
             <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
             <option>1.0</option><option>2.0</option><option>3.0</option><option>4.0</option><option>5.0</option>
           </select>
         </div>
         <div class="row">
           <label for="seasonFilter">Season</label>
-          <select id="seasonFilter" multiple size="8">
+          <select id="seasonFilter" multiple size="9">
+            <option value="__ALL__" selected>(All)</option>
             <option>Autumn</option><option>Spring</option><option>Summer</option><option>Winter</option>
             <option>Outono</option><option>Primavera</option><option>Verão</option><option>Inverno</option>
           </select>
         </div>
         <div class="row">
           <label for="yearFilter">Year</label>
-          <select id="yearFilter" multiple size="12">
+          <select id="yearFilter" multiple size="13">
+            <option value="__ALL__" selected>(All)</option>
             <option>2010</option><option>2011</option><option>2012</option><option>2013</option><option>2014</option>
             <option>2015</option><option>2016</option><option>2017</option><option>2018</option><option>2019</option>
             <option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option>
@@ -161,7 +188,8 @@ details .content{padding:10px 12px}
         </div>
         <div class="row">
           <label for="monthFilter">Month</label>
-          <select id="monthFilter" multiple size="12">
+          <select id="monthFilter" multiple size="13">
+            <option value="__ALL__" selected>(All)</option>
             <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
             <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
           </select>
@@ -182,11 +210,11 @@ details .content{padding:10px 12px}
 
 <!-- App logic (ESM; CSP-safe) -->
 <script type="module">
-import { PMTiles } from "https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/+esm?v=5";
-import vectorTileLayer from "https://cdn.jsdelivr.net/npm/leaflet-vector-tile-layer@0.16.1/+esm?v=5";
-import { VectorTile } from "https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@1.3.1/+esm?v=5";
-import Pbf from "https://cdn.jsdelivr.net/npm/pbf@3.2.1/+esm?v=5";
-import * as ss from "https://cdn.jsdelivr.net/npm/simple-statistics@7.8.3/+esm?v=5";
+import { PMTiles } from "https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/+esm?v=7";
+import vectorTileLayer from "https://cdn.jsdelivr.net/npm/leaflet-vector-tile-layer@0.16.1/+esm?v=7";
+import { VectorTile } from "https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@1.3.1/+esm?v=7";
+import Pbf from "https://cdn.jsdelivr.net/npm/pbf@3.2.1/+esm?v=7";
+import * as ss from "https://cdn.jsdelivr.net/npm/simple-statistics@7.8.3/+esm?v=7";
 
 /* Map */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
@@ -199,9 +227,42 @@ const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.d
 const hideSpinner = () => { spinner.style.display='none'; };
 const showToast=(m,ms=3500)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
 $('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
-const getMulti = id => Array.from($(id).selectedOptions||[]).map(o=>o.value);
-const clearAllSelects = ()=> document.querySelectorAll('#panel select').forEach(s=>Array.from(s.options).forEach(o=>o.selected=false));
-const nf=v=> v===0?'0':new Intl.NumberFormat(undefined,{maximumFractionDigits:2,notation:(Math.abs(v)>=10000?'compact':'standard')}).format(v);
+function enforceAllOption(e){
+  const sel=e.target;
+  if(!sel.multiple) return;
+  const all = Array.from(sel.options).find(o=>o.value==='__ALL__');
+  const chosen = Array.from(sel.selectedOptions).map(o=>o.value);
+  if(chosen.length===0){ all.selected=true; }
+  else if(chosen.includes('__ALL__') && chosen.length>1){
+    Array.from(sel.options).forEach(o=>o.selected=false);
+    all.selected=true;
+  }else if(!chosen.includes('__ALL__') && all.selected){
+    all.selected=false;
+  }
+}
+document.querySelectorAll('#panel select[multiple]').forEach(s=>s.addEventListener('change',enforceAllOption));
+
+const getMulti = id => {
+  const vals = Array.from($(id).selectedOptions||[]).map(o=>o.value);
+  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
+};
+const clearAllSelects = ()=>{
+  document.querySelectorAll('#panel select').forEach(s=>{
+    if(s.multiple){
+      Array.from(s.options).forEach(o=>o.selected=false);
+      const all = Array.from(s.options).find(o=>o.value==='__ALL__');
+      if(all) all.selected=true;
+    }else{
+      s.selectedIndex=0;
+    }
+  });
+};
+const nf=(v)=>{
+  if(v===0) return '0';
+  const abs=Math.abs(v);
+  const digits = abs<1 ? 4 : abs<10 ? 3 : 2;
+  return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v);
+};
 
 /* Palettes */
 const ramps={
@@ -213,6 +274,20 @@ const ramps={
   'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
 let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'];
+
+/* Which numeric field to aggregate?
+   - Prefer a field that matches the selected count type if present in props.
+   - Otherwise fall back to 'sum_val'.
+*/
+const fieldCandidatesByCT = {
+  weight: ['weight','sum_val'],
+  new_weight: ['new_weight','sum_val'],
+  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
+  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
+  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
+};
+let metricField = 'sum_val'; // discovered at runtime
+
 function updateLegend(){
   const el=$('legend');
   const spSel=getMulti('speciesFilter');
@@ -274,7 +349,7 @@ function tileRangeForBounds(b,z){
 }
 const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
 
-/* PMTiles & tile decode cache */
+/* PMTiles */
 const pmCache = new Map();
 const absoluteUrl = rel => new URL(rel, new URL('.', location.href)).toString();
 async function getPM(archive){
@@ -305,6 +380,7 @@ window.fetch = async (input, init) => {
 
 /* State */
 let vtLayer=null, currentPMFile='', layerName='', header=null;
+let aggByHex = new Map(); // h3_index -> {sum, count}
 
 /* Detect layer name */
 async function detectLayerName(pmFile){
@@ -338,7 +414,7 @@ async function detectLayerName(pmFile){
   return 'hexgrid';
 }
 
-/* Adaptive breaks (Jenks with guardrails so colors spread) */
+/* Adaptive breaks + aggregation */
 const JENKS_CLASSES = 5;
 const EXACT_MAX = 2000;
 const SAMPLE_TARGET = 1200;
@@ -360,101 +436,124 @@ function prettyBreaks(min, max){
   if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
   return linspace(min, max, JENKS_CLASSES+1);
 }
-async function collectVals(pmFile, layerName, predicate){
+
+/* figure out which numeric field to use for the selected count type */
+function discoverMetricField(sampleProps, ct){
+  const cands = fieldCandidatesByCT[ct] || ['sum_val'];
+  for(const k of cands){ if(k in sampleProps && Number.isFinite(Number(sampleProps[k]))) return k; }
+  // last resort
+  if('sum_val' in sampleProps) return 'sum_val';
+  // find any numeric field
+  for(const k of Object.keys(sampleProps)){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
+  return 'sum_val';
+}
+
+/* Aggregate + gather values for breaks (visible tiles only) */
+async function aggregateAndCollect(pmFile, layerName, predicate, ct){
+  aggByHex.clear();
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
   const zView = clamp(Math.floor(map.getZoom()), hdr.minZoom, hdr.maxZoom);
   const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+
   const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
   let stride=1;
   if(tilesX*tilesY>MAX_TILES_STATS){
     const factor=Math.ceil(Math.sqrt((tilesX*tilesY)/MAX_TILES_STATS));
     stride=Math.max(1,factor);
   }
-  const values=[]; const jobs=[];
-  outer:
+
+  let discovered=false;
+  const promises=[];
   for(let x=minX; x<=maxX; x+=stride){
     for(let y=minY; y<=maxY; y+=stride){
-      jobs.push(pm.getZxy(zView,wrapX(x,zView),y).then(resp=>{
+      promises.push(pm.getZxy(zView,wrapX(x,zView),y).then(resp=>{
         if(!resp || !resp.data) return;
         const vt=new VectorTile(new Pbf(resp.data));
         const lyr=vt.layers[layerName]; if(!lyr) return;
         for(let i=0;i<lyr.length;i++){
           const p=lyr.feature(i).properties||{};
+          if(!discovered){ metricField = discoverMetricField(p, ct); discovered=true; }
           if(!predicate(p)) continue;
-          const v=p.sum_val;
-          if(typeof v==='number' && Number.isFinite(v)) values.push(v);
+          const key = p.h3_index ?? p.h3 ?? p.id ?? null;
+          if(!key) continue;
+          const val = Number(p[metricField]);
+          const cnt = Number(p.count);
+          const entry = aggByHex.get(key) || {sum:0,count:0};
+          if(Number.isFinite(val)) entry.sum += val;
+          if(Number.isFinite(cnt)) entry.count += cnt; else entry.count += 1; // fallback
+          aggByHex.set(key, entry);
         }
       }).catch(()=>{}));
-      if(values.length>SAMPLE_TARGET*1.5) break outer;
     }
   }
-  await Promise.all(jobs);
-  return values;
-}
-async function computeBreaks(pmFile, layerName, predicate){
-  showSpinner('Computing breaks…');
-  let vals = await collectVals(pmFile, layerName, predicate);
-  const n=vals.length;
-  if(!n){ hideSpinner(); return [0,1,2,3,4,5]; }
-  if(n<8){ const min=Math.min(...vals), max=Math.max(...vals); hideSpinner(); return prettyBreaks(min,max); }
+  await Promise.all(promises);
 
+  // collect sums for breaks
+  return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+}
+
+async function computeBreaksFromAggregates(values){
+  const n=values.length;
+  if(!n) return [0,1,2,3,4,5];
+  if(n<8){ const min=Math.min(...values), max=Math.max(...values); return prettyBreaks(min,max); }
   let edges;
   try{
-    if(n<=EXACT_MAX) edges = ss.jenks(vals, JENKS_CLASSES);
-    else edges = ss.jenks(reservoirSample(vals, SAMPLE_TARGET), JENKS_CLASSES);
-
-    // guardrail: if Jenks collapses (few unique boundaries) -> use quantiles
+    const arr = (n<=EXACT_MAX)? values : reservoirSample(values, SAMPLE_TARGET);
+    edges = ss.jenks(arr, JENKS_CLASSES);
     const unique = Array.from(new Set(edges.map(x=>+x.toFixed(10))));
-    const min=Math.min(...vals), max=Math.max(...vals);
+    const min=Math.min(...values), max=Math.max(...values);
     if(unique.length < JENKS_CLASSES+1 || !isFinite(min) || !isFinite(max) || min===max){
-      const sorted = vals.sort((a,b)=>a-b);
+      const sorted = values.slice().sort((a,b)=>a-b);
       edges = ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
     }else{
       if(edges[0] > min) edges[0]=min;
       if(edges[edges.length-1] < max) edges.push(max);
       if(edges.length < JENKS_CLASSES+1){
-        const sorted = vals.sort((a,b)=>a-b);
+        const sorted = values.slice().sort((a,b)=>a-b);
         edges = ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
       }
     }
   }catch{
-    const sorted = vals.sort((a,b)=>a-b);
+    const sorted = values.slice().sort((a,b)=>a-b);
     edges = ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
   }
-  hideSpinner();
   return edges;
 }
 
 /* Ramp selector */
 const currentRamp=()=>{ const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi']; };
 
-/* Styling */
-function makeStyle(predicate){
+/* Styling now uses the AGGREGATED value for that hex */
+function makeStyle(){
   return (feature) => {
     const props = feature?.properties ?? feature?.props ?? {};
-    if (!predicate(props) || typeof props.sum_val!=='number' || !Number.isFinite(props.sum_val)) {
-      return {hidden:true};
-    }
-    const v = props.sum_val;
+    const key = props.h3_index ?? props.h3 ?? props.id;
+    const agg = key ? aggByHex.get(key) : undefined;
+    const v = agg ? agg.sum : undefined;
+    if (!Number.isFinite(v)) return {hidden:true};
     let idx=0;
     for(let i=0;i<jenksBreaks.length-1;i++){
       if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) { idx=i; break; }
     }
     const color = activeRamp[Math.min(idx,activeRamp.length-1)];
-    return {color, weight:0.4, fill:true, fillColor:color, fillOpacity:0.65, interactive:true};
+    return {color, weight:0.5, fill:true, fillColor:color, fillOpacity:0.65, interactive:true};
   };
 }
 
-/* Tooltips */
+/* Tooltips show the aggregated sum & count */
 function bindHoverPopups(layer){
   layer.on('mouseover', e=>{
     const p = e.layer?.properties ?? e.layer?.feature?.properties ?? {};
+    const key = p.h3_index ?? p.h3 ?? p.id;
+    const agg = key ? aggByHex.get(key) : undefined;
+    const sum = agg ? agg.sum : undefined;
+    const cnt = agg ? agg.count : undefined;
     L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(`
-      <div style="min-width:220px">
-        <div class="kv"><b>Species</b><span>${p.species ?? '-'}</span></div>
-        <div class="kv"><b>Sum</b><span>${nf(p.sum_val ?? 0)}</span></div>
-        <div class="kv"><b>Count</b><span>${p.count ?? '-'}</span></div>
+      <div style="min-width:240px">
+        <div class="kv"><b>Species</b><span>${p.species ?? '(mixed)'}</span></div>
+        <div class="kv"><b>Sum (${metricField})</b><span>${Number.isFinite(sum)?nf(sum):'-'}</span></div>
+        <div class="kv"><b>Count</b><span>${Number.isFinite(cnt)?nf(cnt):'-'}</span></div>
         <hr/>
         <div class="kv"><b>Stage</b><span>${p.development_stage ?? '-'}</span></div>
         <div class="kv"><b>Sex</b><span>${p.sex ?? '-'}</span></div>
@@ -462,7 +561,7 @@ function bindHoverPopups(layer){
         <div class="kv"><b>Year</b><span>${p.year ?? '-'}</span></div>
         <div class="kv"><b>Month</b><span>${p.month ?? '-'}</span></div>
         <hr/>
-        <small class="muted">h3: ${p.h3_index ?? '-'}</small>
+        <small class="muted">h3: ${key ?? '-'}</small>
       </div>`).openOn(map);
   });
   layer.on('mouseout',()=>map.closePopup());
@@ -470,14 +569,17 @@ function bindHoverPopups(layer){
 
 /* Build / Rebuild */
 async function buildLayer(){
-  showSpinner('Loading tiles…');
+  showSpinner('Loading & aggregating…');
   const res=$('resolution').value, ct=$('counttype').value;
   const pmFile = fileFor(res, ct);
   currentPMFile=pmFile;
 
   layerName = await detectLayerName(pmFile);
   const predicate = makePredicate();
-  jenksBreaks = await computeBreaks(pmFile, layerName, predicate);
+
+  // aggregate & compute breaks on aggregated sums
+  const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
+  jenksBreaks = await computeBreaksFromAggregates(values);
   activeRamp = currentRamp();
   updateLegend();
 
@@ -485,10 +587,12 @@ async function buildLayer(){
   vtLayer = vectorTileLayer(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
     minZoom: 0,
     maxZoom: 22,
-    style: makeStyle(predicate),
+    style: makeStyle(),
+    // Filter: keep features only if their hex has a non-empty aggregate (so we don't draw zeros)
     filter: (feature) => {
       const p = feature?.properties ?? feature?.props ?? {};
-      return !!predicate(p);
+      const key = p.h3_index ?? p.h3 ?? p.id;
+      return key && aggByHex.has(key);
     }
   });
   bindHoverPopups(vtLayer);
@@ -500,8 +604,12 @@ async function buildLayer(){
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 const recomputeOnMove = debounce(async ()=>{
   if(!currentPMFile || !layerName) return;
+  showSpinner('Updating…');
   const predicate = makePredicate();
-  jenksBreaks = await computeBreaks(currentPMFile, layerName, predicate);
+  const ct = $('counttype').value;
+
+  const values = await aggregateAndCollect(currentPMFile, layerName, predicate, ct);
+  jenksBreaks = await computeBreaksFromAggregates(values);
   activeRamp = currentRamp();
   updateLegend();
 
@@ -509,14 +617,16 @@ const recomputeOnMove = debounce(async ()=>{
   vtLayer = vectorTileLayer(`pmtiles://${currentPMFile}/{z}/{x}/{y}.pbf`,{
     minZoom: 0,
     maxZoom: 22,
-    style: makeStyle(predicate),
+    style: makeStyle(),
     filter: (feature) => {
       const p = feature?.properties ?? feature?.props ?? {};
-      return !!predicate(p);
+      const key = p.h3_index ?? p.h3 ?? p.id;
+      return key && aggByHex.has(key);
     }
   });
   bindHoverPopups(vtLayer);
   vtLayer.addTo(map);
+  hideSpinner();
 },250);
 
 /* Permalink */
@@ -553,7 +663,6 @@ map.on('moveend',()=>recomputeOnMove());
 map.on('zoomend',()=>recomputeOnMove());
 
 /* Init */
-let currentPMFile='';
 (function init(){ readStateFromHash(); buildLayer(); })();
 </script>
 </body>
