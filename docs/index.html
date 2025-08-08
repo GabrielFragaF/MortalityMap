@@ -5,22 +5,16 @@
 <title>Sea Turtle Mortality Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet (local, CSP-safe) -->
+<link rel="stylesheet" href="./vendor/leaflet.css"/>
+<script src="./vendor/leaflet.js"></script>
 
-<!-- PMTiles (UMD; CSP-safe) -->
-<script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
-
-<!-- VectorGrid (UMD; CSP-safe) -->
-<script src="https://unpkg.com/@mapbox/leaflet-vector-grid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
-
-<!-- VectorTile + Pbf for decoding -->
-<script src="https://unpkg.com/pbf@3.2.1/dist/pbf.js"></script>
-<script src="https://unpkg.com/@mapbox/vector-tile@1.3.1/dist/vector-tile.js"></script>
-
-<!-- Simple statistics (Jenks, quantiles) -->
-<script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
+<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local) -->
+<script src="./vendor/pmtiles.js"></script>
+<script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
+<script src="./vendor/pbf.js"></script>
+<script src="./vendor/vector-tile.js"></script>
+<script src="./vendor/simple-statistics.min.js"></script>
 
 <style>
 :root{--bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;--ring:#93c5fd;--shadow:0 10px 30px rgba(2,6,23,.25)}
@@ -318,7 +312,7 @@ function makePredicate(){
   );
 }
 
-/* ===== PMTiles fetch shim (pmtiles://...) + PM cache ===== */
+/* ===== pmtiles:// fetch shim + PM cache (local, CSP-safe) ===== */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
 async function getPM(archive){
@@ -345,7 +339,7 @@ window.fetch = async (input, init) => {
   return origFetch(input, init);
 };
 
-/* ===== Helpers for tile ranges ===== */
+/* ===== Helpers ===== */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
 function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
@@ -353,13 +347,11 @@ function tileRangeForBounds(b,z){
   const nw=b.getNorthWest(), se=b.getSouthEast();
   let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
   let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[minY,maxY]=[maxY,minY];
+  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
   const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
   return {minX,maxX,minY,maxY};
 }
 const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
-
-/* ===== File resolver ===== */
 function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles`; }
 
 /* ===== State ===== */
@@ -367,7 +359,7 @@ let vtLayer=null, currentPMFile='', layerName='', header=null;
 let aggByHex = new Map();              // h3_index -> {sum, count}
 let metricField = 'sum_val';           // runtime discovery
 
-/* ===== Detect the layer name in the PMTiles ===== */
+/* ===== Detect layer name safely ===== */
 async function detectLayerName(pmFile){
   try{
     const pm = await getPM(pmFile);
@@ -395,12 +387,12 @@ async function detectLayerName(pmFile){
   return 'hexgrid';
 }
 
-/* ===== Aggregation + breaks (performance-tuned) ===== */
+/* ===== Aggregation + breaks (tuned) ===== */
 const JENKS_CLASSES = 5;
 const EXACT_MAX = 2000;
-const SAMPLE_TARGET = 1200;
-const MAX_TILES_STATS = 120;     // lower = faster
-const MAX_HEXES_STATS  = 2500;   // early stop once we aggregated enough hexes
+const SAMPLE_TARGET = 1000;
+const MAX_TILES_STATS = 90;     // tighter cap
+const MAX_HEXES_STATS  = 1800;  // early stop sooner
 
 function reservoirSample(values, k){
   const out=[];
@@ -434,13 +426,12 @@ function discoverMetricField(sampleProps, ct){
   for(const k of Object.keys(sampleProps)){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
   return 'sum_val';
 }
-
 async function aggregateAndCollect(pmFile, layerName, predicate, ct){
   aggByHex.clear();
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
 
-  // Use a modest zoom for stats to limit tile count (decoupled from render zoom)
+  // Cap stats zoom to reduce tile count dramatically
   const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
   const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
 
@@ -473,13 +464,12 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
           aggByHex.set(key, entry);
         }
       }).catch(()=>{}));
-      if(aggByHex.size > MAX_HEXES_STATS) break outer;   // early stop: enough samples
+      if(aggByHex.size > MAX_HEXES_STATS) break outer;   // early stop
     }
   }
   await Promise.all(jobs);
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
 }
-
 async function computeBreaksFromAggregates(values){
   const n=values.length;
   if(!n) return [0,1,2,3,4,5];
@@ -508,7 +498,7 @@ async function computeBreaksFromAggregates(values){
   return edges;
 }
 
-/* ===== Styling & popups (use aggregated per-hex values) ===== */
+/* ===== Styling & popups (aggregated values) ===== */
 function makeStyle(){
   return (props) => {
     const key = props.h3_index || props.h3 || props.id;
@@ -550,8 +540,8 @@ function bindHoverPopups(layer){
 }
 
 /* ===== Build / Rebuild ===== */
-function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles`; }
-let predicate=null;
+let vtLayer=null, predicate=null;
+let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'];
 
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
@@ -569,7 +559,7 @@ async function buildLayer(){
 
   if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
   vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-    rendererFactory: L.canvas.tile, // fastest
+    rendererFactory: L.canvas.tile,
     vectorTileLayerStyles: { [layerName]: makeStyle() },
     interactive:true,
     getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
@@ -579,7 +569,7 @@ async function buildLayer(){
   hideSpinner();
 }
 
-/* ===== Only recompute on Apply / layer changes (faster UX) ===== */
+/* ===== Only recompute on Apply / layer changes ===== */
 $('applyBtn').addEventListener('click',()=>buildLayer());
 $('resolution').addEventListener('change',()=>buildLayer());
 $('counttype').addEventListener('change',()=>buildLayer());
