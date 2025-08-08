@@ -9,248 +9,800 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- PMTiles -->
+<!-- PMTiles (PMTiles reader) -->
 <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
 
-<!-- VectorGrid -->
+<!-- VectorGrid (renders MVT) -->
 <script src="https://unpkg.com/@mapbox/leaflet-vector-grid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
 
-<!-- Simple statistics for Jenks breaks -->
+<!-- MVT decoding (for computing Jenks on visible tiles) -->
+<script src="https://unpkg.com/pbf@3.2.1/dist/pbf.js"></script>
+<script src="https://unpkg.com/@mapbox/vector-tile@1.3.1/dist/vector-tile.js"></script>
+
+<!-- Simple statistics (Jenks) -->
 <script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
 
 <style>
-:root {
-  --bg: #0b1220;
-  --panel-bg: #ffffff;
-  --accent: #0ea5e9;
-  --text: #111827;
-  --muted: #6b7280;
-  --shadow: 0 4px 20px rgba(0,0,0,.25);
+:root{
+  --bg:#0b1220;
+  --panel:#ffffff;
+  --panel-weak:#f8fafc;
+  --text:#0f172a;
+  --muted:#64748b;
+  --accent:#0ea5e9;
+  --ring:#93c5fd;
+  --shadow:0 10px 30px rgba(2,6,23,.25);
 }
-html, body { height:100%; margin:0; background:var(--bg); }
-#map { position:absolute; inset:0; }
 
-/* Filter Panel */
-#panel {
-  position:absolute; top:14px; left:14px; z-index:1000;
-  background:var(--panel-bg); border-radius:12px; box-shadow:var(--shadow);
-  width:320px; max-height:90vh; overflow:auto;
-  font-family: system-ui, sans-serif; font-size:14px;
-  transition: all 0.3s ease;
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+#map{position:absolute;inset:0}
+
+/* Panel */
+#panel{
+  position:absolute;top:14px;left:14px;z-index:1000;
+  width:360px;max-height:90vh;overflow:auto;
+  background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0
 }
-#panel.collapsed { height:36px; overflow:hidden; }
-#panel h1 { font-size:16px; font-weight:700; margin:0; color:var(--text); }
-.topbar {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px; border-bottom:1px solid #ddd;
+#panel.collapsed{height:46px;overflow:hidden}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)
 }
-.topbar button {
-  background:#f3f4f6; border:1px solid #ddd; border-radius:6px;
-  padding:4px 8px; cursor:pointer;
+.topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
+.iconbtn{
+  background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;
+  border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600
 }
-.row { padding:8px 12px; }
-label { display:block; font-weight:600; margin-bottom:4px; }
-select { width:100%; padding:6px; border-radius:6px; border:1px solid #ddd; }
+.iconbtn:hover{filter:brightness(0.98)}
+.section{padding:10px 14px}
+.row{margin-bottom:10px}
+label{display:block;font-weight:700;margin:6px 0 6px 0;font-size:13px;color:#0f172a}
+select, .chip-input{
+  width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;
+  background:white;outline:none
+}
+select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+hr{border:none;border-top:1px solid #e2e8f0;margin:8px 0}
+
+/* Collapsible group */
+details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+details+details{margin-top:10px}
+summary{
+  list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;
+  background:#f8fafc;border-radius:12px
+}
+summary::-webkit-details-marker{display:none}
+details .content{padding:10px 12px}
+
+/* Controls footer */
+.controls-footer{
+  display:flex;gap:10px;justify-content:space-between;margin-top:6px
+}
+#resetBtn, #applyBtn{
+  flex:1;background:#0ea5e9;border:none;color:white;
+  border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer
+}
+#resetBtn{background:#e11d48}
+#resetBtn:hover{filter:brightness(1.05)}
+#applyBtn:hover{filter:brightness(1.05)}
 
 /* Legend */
-#legend {
-  position:absolute; bottom:18px; left:14px; z-index:1000;
-  background:var(--panel-bg); border-radius:10px; padding:10px; box-shadow:var(--shadow);
-  font-family:inherit; font-size:13px; border:1px solid #ddd;
+#legend{
+  position:absolute;bottom:18px;left:14px;z-index:1000;
+  background:var(--panel);border-radius:12px;box-shadow:var(--shadow);
+  border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:220px
 }
-.swatch {
-  display:inline-block; width:22px; height:12px; margin-right:6px;
-  border-radius:3px; border:1px solid #999; vertical-align:middle;
-}
+.leghdr{font-weight:800;margin-bottom:8px}
+.legend-row{display:flex;align-items:center;margin:4px 0}
+.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
 
-/* Spinner + toast */
-#spinner {
-  position:absolute; top:14px; right:14px; z-index:1000; display:none;
-  background:var(--panel-bg); padding:8px 10px; border-radius:10px; box-shadow:var(--shadow);
-  border:1px solid #ddd; font-size:13px;
+/* Spinner & toast */
+#spinner{
+  position:absolute;top:14px;right:14px;z-index:1000;display:none;
+  background:var(--panel);border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px
 }
-#toast {
-  position:absolute; top:60px; right:14px; z-index:1000; display:none;
-  background:#fee2e2; color:#991b1b; padding:8px 10px; border-radius:10px; border:1px solid #fecaca;
-  font-size:13px;
+#toast{
+  position:absolute;top:60px;right:14px;z-index:1000;display:none;
+  background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:320px
 }
+/* Popup tweak */
+.leaflet-popup-content{margin:8px 12px}
+.kv{display:flex;justify-content:space-between;gap:10px}
+.kv b{color:#0f172a}
+small.muted{color:#64748b}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
+<!-- Panel -->
 <div id="panel">
   <div class="topbar">
-    <h1>Mortality Map</h1>
-    <div>
-      <button id="collapseBtn">–</button>
-      <button id="permalink">🔗</button>
+    <h1>Sea Turtle Mortality</h1>
+    <div style="display:flex; gap:8px;">
+      <button id="permalink" class="iconbtn" title="Copy link to this view">🔗 Share</button>
+      <button id="collapseBtn" class="iconbtn" title="Collapse panel">–</button>
     </div>
   </div>
-  <div class="row">
-    <label for="resolution">Resolution</label>
-    <select id="resolution">
-      <option value="r3">r3</option>
-      <option value="r4">r4</option>
-      <option value="r5">r5</option>
-      <option value="r6" selected>r6</option>
-    </select>
-  </div>
-  <div class="row">
-    <label for="counttype">Count Type</label>
-    <select id="counttype">
-      <option value="weight">Mortality position</option>
-      <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
-      <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
-      <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
-    </select>
-  </div>
-  <div class="row">
-    <label>Species</label>
-    <select id="speciesFilter" multiple size="5">
-      <option value="Caretta caretta">Caretta caretta</option>
-      <option value="Chelonia mydas">Chelonia mydas</option>
-      <option value="Dermochelys coriacea">Dermochelys coriacea</option>
-      <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
-      <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
-    </select>
-  </div>
-  <div class="row">
-    <label>Stage</label>
-    <select id="stageFilter" multiple size="4">
-      <option value="Adulto">Adulto</option>
-      <option value="Juvenil">Juvenil</option>
-      <option value="Filhote">Filhote</option>
-      <option value="Indeterminado">Indeterminado</option>
-    </select>
-  </div>
-  <!-- other filters here in same pattern -->
-  <div class="row">
-    <button id="resetBtn">Reset</button>
+
+  <div class="section">
+    <div class="row">
+      <label for="resolution">Resolution (H3)</label>
+      <select id="resolution">
+        <option value="r3">r3</option>
+        <option value="r4">r4</option>
+        <option value="r5">r5</option>
+        <option value="r6" selected>r6</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="counttype">Count Type</label>
+      <select id="counttype">
+        <option value="weight">Mortality position (weight)</option>
+        <option value="new_weight">Mortality position (new_weight)</option>
+        <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+        <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+        <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
+      </select>
+    </div>
+
+    <details open>
+      <summary>Species & Stage</summary>
+      <div class="content">
+        <div class="row">
+          <label for="speciesFilter">Species (multi-select)</label>
+          <select id="speciesFilter" multiple size="5">
+            <option value="Caretta caretta">Caretta caretta</option>
+            <option value="Chelonia mydas">Chelonia mydas</option>
+            <option value="Dermochelys coriacea">Dermochelys coriacea</option>
+            <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
+            <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="stageFilter">Development stage</label>
+          <select id="stageFilter" multiple size="6">
+            <option value="Adulto">Adulto</option>
+            <option value="Juvenil">Juvenil</option>
+            <option value="Filhote">Filhote</option>
+            <option value="Indeterminado">Indeterminado</option>
+            <!-- English variants (if present in data) -->
+            <option value="Adult">Adult</option>
+            <option value="Juvenile">Juvenile</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="sexFilter">Sex</label>
+          <select id="sexFilter" multiple size="6">
+            <option value="Fêmea">Fêmea</option>
+            <option value="Macho">Macho</option>
+            <option value="Indefinido">Indefinido</option>
+            <!-- English variants (if present) -->
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Human interactions</summary>
+      <div class="content">
+        <div class="row">
+          <label for="FishingFilter">Fishing</label>
+          <select id="FishingFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="Marine_DebrisFilter">Marine Debris</label>
+          <select id="Marine_DebrisFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="AgressionFilter">Aggression</label>
+          <select id="AgressionFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="Boat_collisionFilter">Boat collision</label>
+          <select id="Boat_collisionFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="DredgingFilter">Dredging</label>
+          <select id="DredgingFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="OilFilter">Oil</label>
+          <select id="OilFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="PetrolFilter">Petrol</label>
+          <select id="PetrolFilter" multiple size="4">
+            <option value="Yes">Yes</option><option value="No">No</option>
+            <option value="Sim">Sim</option><option value="Não">Não</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Environment & time</summary>
+      <div class="content">
+        <div class="row">
+          <label for="decompFilter">Decomposition code</label>
+          <select id="decompFilter" multiple size="10">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            <option value="1.0">1.0</option><option value="2.0">2.0</option><option value="3.0">3.0</option><option value="4.0">4.0</option><option value="5.0">5.0</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="seasonFilter">Season</label>
+          <select id="seasonFilter" multiple size="8">
+            <option value="Autumn">Autumn</option><option value="Spring">Spring</option><option value="Summer">Summer</option><option value="Winter">Winter</option>
+            <option value="Outono">Outono</option><option value="Primavera">Primavera</option><option value="Verão">Verão</option><option value="Inverno">Inverno</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="yearFilter">Year</label>
+          <select id="yearFilter" multiple size="10">
+            <!-- 2010–2025 plus .0 variants common in some exports -->
+            <option>2010</option><option>2011</option><option>2012</option><option>2013</option><option>2014</option>
+            <option>2015</option><option>2016</option><option>2017</option><option>2018</option><option>2019</option>
+            <option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option>
+            <option>2015.0</option><option>2016.0</option><option>2017.0</option><option>2018.0</option><option>2019.0</option>
+            <option>2020.0</option><option>2021.0</option><option>2022.0</option><option>2023.0</option><option>2024.0</option><option>2025.0</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="monthFilter">Month</label>
+          <select id="monthFilter" multiple size="12">
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <div class="controls-footer">
+      <button id="resetBtn" title="Clear filters">Reset</button>
+      <button id="applyBtn" title="Apply filters">Apply</button>
+    </div>
   </div>
 </div>
 
+<!-- Legend -->
 <div id="legend"></div>
+
+<!-- UX helpers -->
 <div id="spinner">Loading…</div>
 <div id="toast"></div>
 
 <script>
-// map init
-const map = L.map('map', { zoomSnap: 0.25 }).setView([-24, -45], 5);
+// ---------------------------------------------------------
+// Map setup
+// ---------------------------------------------------------
+const map = L.map('map', { zoomSnap: 0.25, worldCopyJump:true }).setView([-24, -45], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// pmtiles protocol
+// ---------------------------------------------------------
+// PMTiles protocol hook for VectorGrid "pmtiles://<file>/{z}/{x}/{y}.pbf"
+// ---------------------------------------------------------
+const pmtilesCache = new Map(); // filename -> PMTiles instance
 const protocol = new pmtiles.Protocol();
 const origFetch = window.fetch.bind(window);
 window.fetch = (input, init) => {
+  // Intercept pmtiles:// requests used by VectorGrid
   if (typeof input === 'string' && input.startsWith('pmtiles://')) {
     const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-    if (!m) return Promise.reject('Bad pmtiles URL');
+    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
     const archive = m[1], z = +m[2], x = +m[3], y = +m[4];
-    const p = new pmtiles.PMTiles(archive);
-    return p.getZxy(z, x, y).then(tile =>
-      tile && tile.data ? new Response(tile.data) : new Response(null, {status:204})
-    );
+    let p = pmtilesCache.get(archive);
+    if (!p){ p = new pmtiles.PMTiles(archive); pmtilesCache.set(archive, p); }
+    return p.getZxy(z, x, y).then(tile => {
+      return tile && tile.data ? new Response(tile.data) : new Response(null, { status: 204 });
+    });
   }
   return origFetch(input, init);
 };
 
-// color ramps
+// ---------------------------------------------------------
+// UI helpers
+// ---------------------------------------------------------
+const $ = id => document.getElementById(id);
+const spinner = $('spinner');
+const toast = $('toast');
+
+function showSpinner(msg='Loading…'){ spinner.textContent = msg; spinner.style.display='block'; }
+function hideSpinner(){ spinner.style.display='none'; }
+function showToast(msg, ms=3500){
+  toast.textContent = msg;
+  toast.style.display='block';
+  setTimeout(()=> toast.style.display='none', ms);
+}
+
+function getMulti(id){
+  const el = $(id);
+  return Array.from(el.selectedOptions || []).map(o=>o.value);
+}
+function clearAllSelects(){
+  document.querySelectorAll('#panel select').forEach(s=>{ Array.from(s.options).forEach(o=> o.selected=false); });
+}
+
+$('collapseBtn').addEventListener('click', ()=> $('panel').classList.toggle('collapsed'));
+
+// ---------------------------------------------------------
+// Species ramps and legend
+// ---------------------------------------------------------
 const ramps = {
-  'Caretta caretta': ['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
-  'Chelonia mydas': ['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
-  'Dermochelys coriacea': ['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
-  'Eretmochelys imbricata': ['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
-  'Lepidochelys olivacea': ['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
-  'multi': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
+  'Caretta caretta': ['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'], // dark orange
+  'Chelonia mydas': ['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'], // dark green
+  'Dermochelys coriacea': ['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'], // dark blue
+  'Eretmochelys imbricata': ['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'], // purple
+  'Lepidochelys olivacea': ['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'], // light green
+  'multi': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'] // red
 };
 
-let currentLayer=null, layerName=null, breaks=[0,1,2,3,4,5];
-
-function getSelected(id){
-  const node=document.getElementById(id);
-  return Array.from(node.selectedOptions).map(o=>o.value);
+function nf(v){
+  if (v === 0) return '0';
+  const f = new Intl.NumberFormat(undefined,{maximumFractionDigits:2, notation: (Math.abs(v)>=10000?'compact':'standard')});
+  return f.format(v);
 }
 
-function updateLegend(ramp){
-  const legend=document.getElementById('legend');
-  legend.innerHTML='';
-  for (let i=0;i<breaks.length-1;i++){
-    legend.innerHTML += `<div><span class="swatch" style="background:${ramp[i]}"></span>${breaks[i]} – ${breaks[i+1]}</div>`;
+let jenksBreaks = [0,1,2,3,4,5];
+let activeRamp = ramps['multi'];
+function updateLegend(){
+  const el = $('legend');
+  const spSel = getMulti('speciesFilter');
+  const speciesName = (spSel.length===1) ? spSel[0] : (spSel.length>1 ? 'Multiple species' : 'All species');
+  el.innerHTML = `<div class="leghdr">${speciesName}</div>`;
+  for (let i=0;i<activeRamp.length;i++){
+    const a = jenksBreaks[i] ?? null, b = jenksBreaks[i+1] ?? null;
+    if (b==null) break;
+    el.insertAdjacentHTML('beforeend',
+      `<div class="legend-row"><span class="swatch" style="background:${activeRamp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
   }
 }
 
-async function detectLayerName(pmtilesFile){
-  const p = new pmtiles.PMTiles(pmtilesFile);
-  const header = await p.getHeader();
-  const m = await p.getMetadata();
-  const layers = Object.keys(m.vector_layers || {});
-  return layers[0];
+// ---------------------------------------------------------
+// State and layer handling
+// ---------------------------------------------------------
+let currentLayer = null;
+let currentPMFile = '';
+let currentLayerName = '';
+let currentHeader = null;
+
+const fileFor = (res, ct) => `hexgrid_${res}_${ct}.pmtiles`;
+
+function currentRamp(){
+  const sp = getMulti('speciesFilter');
+  if (sp.length===1 && ramps[sp[0]]) return ramps[sp[0]];
+  return ramps['multi'];
 }
 
-async function calcBreaks(features){
-  const values = features.map(f => f.properties.sum_val).filter(v=>typeof v==='number');
-  if (values.length < 5) {
-    breaks = [0,1,2,3,4,5];
-  } else {
-    breaks = ss.jenks(values, 5);
-  }
-}
+// Normalize strings for robust matching (handles accents and .0 vs int)
+const norm = v => (v==null ? '' : String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const asIntString = v => {
+  const n = parseInt(v,10);
+  return Number.isFinite(n) ? String(n) : String(v);
+};
 
-async function loadLayer(){
-  const res = document.getElementById('resolution').value;
-  const ct = document.getElementById('counttype').value;
-  const pmFile = `hexgrid_${res}_${ct}.pmtiles`;
-  layerName = await detectLayerName(pmFile);
+// Build a single filter predicate using UI selections
+function makePredicate(){
+  const sel = {
+    species: new Set(getMulti('speciesFilter').map(norm)),
+    development_stage: new Set(getMulti('stageFilter').map(norm)),
+    sex: new Set(getMulti('sexFilter').map(norm)),
+    Fishing: new Set(getMulti('FishingFilter').map(norm)),
+    Marine_Debris: new Set(getMulti('Marine_DebrisFilter').map(norm)),
+    Agression: new Set(getMulti('AgressionFilter').map(norm)),
+    Boat_collision: new Set(getMulti('Boat_collisionFilter').map(norm)),
+    Dredging: new Set(getMulti('DredgingFilter').map(norm)),
+    Oil: new Set(getMulti('OilFilter').map(norm)),
+    Petrol: new Set(getMulti('PetrolFilter').map(norm)),
+    decomposition_code: new Set(getMulti('decompFilter').map(norm)),
+    season: new Set(getMulti('seasonFilter').map(norm)),
+    year: new Set(getMulti('yearFilter').map(norm)),
+    month: new Set(getMulti('monthFilter').map(norm))
+  };
 
-  if (currentLayer) map.removeLayer(currentLayer);
-
-  const p = new pmtiles.PMTiles(pmFile);
-  const feats = [];
-  const reader = p.getTile(0,0,0); // not actual tile reading — you’d loop visible bounds here
-  // For brevity: you'd fetch visible tiles, parse features, push to feats[]
-  // Then:
-  await calcBreaks(feats);
-
-  let ramp = ramps['multi'];
-  const sp = getSelected('speciesFilter');
-  if (sp.length===1 && ramps[sp[0]]) ramp = ramps[sp[0]];
-
-  updateLegend(ramp);
-
-  currentLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`, {
-    vectorTileLayerStyles: {
-      [layerName]: props => {
-        const val = props.sum_val;
-        let idx = breaks.findIndex(b => val <= b) - 1;
-        if (idx<0) idx = breaks.length-2;
-        return {
-          fill:true, fillColor:ramp[idx], fillOpacity:0.6,
-          stroke:true, color:ramp[idx], weight:0.5
-        };
+  // predicate: true means feature passes filters
+  return (props)=>{
+    // helper: check if property matches selection (if selection not empty)
+    const test = (key, value) => {
+      const set = sel[key];
+      if (!set.size) return true; // nothing selected => pass
+      const pv = norm(value);
+      if (set.has(pv)) return true;
+      // Robustness: also match int version (e.g., "2016.0" vs "2016")
+      if (key==='year' || key==='month' || key==='decomposition_code'){
+        return set.has(asIntString(value)) || set.has(asIntString(pv));
       }
-    },
+      return false;
+    };
+
+    return (
+      test('species', props.species) &&
+      test('development_stage', props.development_stage) &&
+      test('sex', props.sex) &&
+      test('Fishing', props.Fishing) &&
+      test('Marine_Debris', props.Marine_Debris) &&
+      test('Agression', props.Agression) &&
+      test('Boat_collision', props.Boat_collision) &&
+      test('Dredging', props.Dredging) &&
+      test('Oil', props.Oil) &&
+      test('Petrol', props.Petrol) &&
+      test('decomposition_code', props.decomposition_code) &&
+      test('season', props.season) &&
+      test('year', props.year) &&
+      test('month', props.month)
+    );
+  };
+}
+
+// Detect layer name by reading a real tile
+async function detectLayerName(pmFile){
+  try{
+    let p = pmtilesCache.get(pmFile);
+    if (!p){ p = new pmtiles.PMTiles(pmFile); pmtilesCache.set(pmFile, p); }
+    const header = await p.getHeader();
+    currentHeader = header;
+
+    // Sample the tile at map center at a valid z
+    const center = map.getCenter();
+    const z = Math.max(header.minZoom, Math.min(header.maxZoom, Math.floor(map.getZoom())));
+    const tile = latLngToTile(center.lat, center.lng, z);
+    const r = await p.getZxy(z, tile.x, tile.y);
+    if (!r || !r.data) throw new Error('No tile data found to detect layer');
+
+    const vt = new VectorTile(new Pbf(r.data));
+    const names = Object.keys(vt.layers || {});
+    if (!names.length) throw new Error('No vector layers present');
+    return names[0]; // your pmtiles have a single layer per file
+  }catch(err){
+    console.error(err);
+    showToast('Could not detect layer name from PMTiles.');
+    return ''; // fallback
+  }
+}
+
+// Calculate Jenks breaks from visible tiles & filters
+async function computeJenksFromView(pmFile, layerName, predicate){
+  showSpinner('Computing breaks…');
+
+  // PMTiles reader
+  let p = pmtilesCache.get(pmFile);
+  if (!p){ p = new pmtiles.PMTiles(pmFile); pmtilesCache.set(pmFile, p); }
+  const header = currentHeader || await p.getHeader();
+
+  // Choose appropriate zoom available in archive
+  const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
+
+  // Compute visible tile range at z
+  const b = map.getBounds();
+  const tr = tileRangeForBounds(b, z);
+  const values = [];
+
+  // Iterate tiles in view
+  const jobs = [];
+  for (let x = tr.minX; x <= tr.maxX; x++){
+    for (let y = tr.minY; y <= tr.maxY; y++){
+      jobs.push(p.getZxy(z, wrapX(x,z), y).then(resp=>{
+        if (!resp || !resp.data) return;
+        const vt = new VectorTile(new Pbf(resp.data));
+        const layer = vt.layers[layerName];
+        if (!layer) return;
+        for (let i=0;i<layer.length;i++){
+          const f = layer.feature(i);
+          const props = f.properties || {};
+          if (!predicate(props)) continue;
+          const v = props.sum_val;
+          if (typeof v === 'number' && Number.isFinite(v)) values.push(v);
+        }
+      }).catch(()=>{}));
+    }
+  }
+  await Promise.all(jobs);
+
+  // Compute Jenks (5 classes)
+  let breaks;
+  if (values.length >= 5){
+    try{
+      breaks = ss.jenks(values, 5);
+      // jenks returns 5 breaks; ensure endpoints
+      const min = Math.min(...values), max = Math.max(...values);
+      if (breaks[0] > min) breaks[0] = min;
+      if (breaks[breaks.length-1] < max) breaks.push(max);
+      if (breaks.length < 6) { // force 6 endpoints for 5 bins
+        // pad evenly to 6 if needed
+        const pad = linspace(min, max, 6);
+        breaks = pad;
+      }
+    }catch(e){
+      breaks = fallbackBreaks(values);
+    }
+  }else{
+    breaks = fallbackBreaks(values);
+  }
+  hideSpinner();
+  return breaks;
+}
+
+function fallbackBreaks(values){
+  if (!values.length) return [0,1,2,3,4,5];
+  const min = Math.min(...values), max = Math.max(...values);
+  return linspace(min, max, 6);
+}
+
+function linspace(a,b,n){
+  const out = [];
+  if (n<=1){ out.push(a); return out; }
+  const step = (b-a)/(n-1);
+  for (let i=0;i<n;i++) out.push(a + i*step);
+  return out;
+}
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+// Tile math (XYZ)
+function lon2tile(lon,z){ return Math.floor((lon + 180) / 360 * Math.pow(2, z)); }
+function lat2tile(lat,z){
+  const rad = lat * Math.PI/180;
+  return Math.floor((1 - Math.log(Math.tan(rad) + 1/Math.cos(rad))/Math.PI)/2 * Math.pow(2, z));
+}
+function latLngToTile(lat,lng,z){ return { x:lon2tile(lng,z), y:lat2tile(lat,z), z }; }
+function tileRangeForBounds(bounds,z){
+  const nw = bounds.getNorthWest(), se = bounds.getSouthEast();
+  let minX = lon2tile(nw.lng, z), maxX = lon2tile(se.lng, z);
+  let minY = lat2tile(nw.lat, z), maxY = lat2tile(se.lat, z);
+  if (maxX < minX){ const t = minX; minX = maxX; maxX = t; }
+  if (maxY < minY){ const t = minY; minY = maxY; maxY = t; }
+  // clamp Y
+  const n = Math.pow(2,z);
+  minY = Math.max(0, Math.min(n-1, minY));
+  maxY = Math.max(0, Math.min(n-1, maxY));
+  return { minX, maxX, minY, maxY };
+}
+function wrapX(x,z){
+  const n = Math.pow(2,z);
+  return ((x % n) + n) % n;
+}
+
+// ---------------------------------------------------------
+// Layer creation/redraw
+// ---------------------------------------------------------
+function styleFactory(predicate){
+  return props => {
+    // Hide if filtered out or missing value
+    if (!predicate(props) || typeof props.sum_val !== 'number' || !Number.isFinite(props.sum_val)){
+      return { fill:false, stroke:false };
+    }
+    const val = props.sum_val;
+    // find bin index
+    let idx = 0;
+    for (let i=0;i<jenksBreaks.length-1;i++){
+      if (val >= jenksBreaks[i] && val <= jenksBreaks[i+1]) { idx = i; break; }
+    }
+    const color = activeRamp[Math.min(idx, activeRamp.length-1)];
+    return {
+      fill:true, fillColor:color, fillOpacity:0.65,
+      stroke:true, color:color, weight:0.5
+    };
+  };
+}
+
+function featureId(f){ return f.properties && f.properties.h3_index ? String(f.properties.h3_index) : undefined; }
+
+async function buildLayer(){
+  try{
+    showSpinner('Loading tiles…');
+
+    const res = $('resolution').value;
+    const ct  = $('counttype').value;
+    const pmFile = fileFor(res, ct);
+    currentPMFile = pmFile;
+
+    // Detect layer name robustly from an actual tile
+    currentLayerName = await detectLayerName(pmFile);
+    if (!currentLayerName) currentLayerName = 'layer0';
+
+    // Compute Jenks with current filters over visible tiles
+    const predicate = makePredicate();
+    jenksBreaks = await computeJenksFromView(pmFile, currentLayerName, predicate);
+
+    // Choose ramp by species selection (red if multiple)
+    activeRamp = currentRamp();
+    updateLegend();
+
+    // Remove old
+    if (currentLayer) { map.removeLayer(currentLayer); currentLayer = null; }
+
+    // Create VectorGrid
+    currentLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`, {
+      vectorTileLayerStyles: {
+        [currentLayerName]: styleFactory(predicate)
+      },
+      interactive: true,
+      getFeatureId: featureId,
+      maxZoom: 22
+    })
+    .on('mouseover', e=>{
+      const p = e.layer.properties || {};
+      const html = `
+        <div style="min-width:220px">
+          <div class="kv"><b>Species</b><span>${p.species ?? '-'}</span></div>
+          <div class="kv"><b>Sum</b><span>${nf(p.sum_val ?? 0)}</span></div>
+          <div class="kv"><b>Count</b><span>${p.count ?? '-'}</span></div>
+          <hr/>
+          <div class="kv"><b>Stage</b><span>${p.development_stage ?? '-'}</span></div>
+          <div class="kv"><b>Sex</b><span>${p.sex ?? '-'}</span></div>
+          <div class="kv"><b>Season</b><span>${p.season ?? '-'}</span></div>
+          <div class="kv"><b>Year</b><span>${p.year ?? '-'}</span></div>
+          <div class="kv"><b>Month</b><span>${p.month ?? '-'}</span></div>
+          <hr/>
+          <small class="muted">h3: ${p.h3_index ?? '-'}</small>
+        </div>`;
+      L.popup({autoPan:false, offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+    })
+    .on('mouseout', ()=> map.closePopup())
+    .addTo(map);
+
+    hideSpinner();
+  }catch(err){
+    console.error(err);
+    hideSpinner();
+    showToast('Error loading layer. See console for details.');
+  }
+}
+
+// Debounce helper
+function debounce(fn, ms){
+  let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), ms); };
+}
+
+// Recompute breaks & restyle on move/filters changes
+const recomputeOnMove = debounce(async ()=>{
+  if (!currentPMFile || !currentLayerName) return;
+  const predicate = makePredicate();
+  jenksBreaks = await computeJenksFromView(currentPMFile, currentLayerName, predicate);
+  activeRamp = currentRamp();
+  updateLegend();
+
+  // Rebuild layer to apply new styles
+  if (currentLayer){ map.removeLayer(currentLayer); currentLayer = null; }
+  currentLayer = L.vectorGrid.protobuf(`pmtiles://${currentPMFile}/{z}/{x}/{y}.pbf`, {
+    vectorTileLayerStyles: { [currentLayerName]: styleFactory(predicate) },
     interactive:true,
-    getFeatureId: f => f.properties.h3_index
+    getFeatureId: featureId,
+    maxZoom: 22
   })
   .on('mouseover', e=>{
-    const p=e.layer.properties;
-    const html = `<b>${p.species||''}</b><br/>Value: ${p.sum_val}`;
-    L.popup({offset:[0,-8],autoPan:false}).setLatLng(e.latlng).setContent(html).openOn(map);
+    const p = e.layer.properties || {};
+    const html = `
+      <div style="min-width:220px">
+        <div class="kv"><b>Species</b><span>${p.species ?? '-'}</span></div>
+        <div class="kv"><b>Sum</b><span>${nf(p.sum_val ?? 0)}</span></div>
+        <div class="kv"><b>Count</b><span>${p.count ?? '-'}</span></div>
+        <hr/>
+        <div class="kv"><b>Stage</b><span>${p.development_stage ?? '-'}</span></div>
+        <div class="kv"><b>Sex</b><span>${p.sex ?? '-'}</span></div>
+        <div class="kv"><b>Season</b><span>${p.season ?? '-'}</span></div>
+        <div class="kv"><b>Year</b><span>${p.year ?? '-'}</span></div>
+        <div class="kv"><b>Month</b><span>${p.month ?? '-'}</span></div>
+        <hr/>
+        <small class="muted">h3: ${p.h3_index ?? '-'}</small>
+      </div>`;
+    L.popup({autoPan:false, offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
   })
-  .on('mouseout', ()=>map.closePopup())
+  .on('mouseout', ()=> map.closePopup())
   .addTo(map);
+
+}, 250);
+
+// ---------------------------------------------------------
+// Permalink (URL hash state)
+// ---------------------------------------------------------
+function readStateFromHash(){
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.has('z') && h.has('lat') && h.has('lng')){
+    map.setView([+h.get('lat'), +h.get('lng')], +h.get('z'));
+  }
+  if (h.has('res')) $('resolution').value = h.get('res');
+  if (h.has('ct'))  $('counttype').value = h.get('ct');
+
+  const multiIds = [
+    'speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter',
+    'AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter',
+    'decompFilter','seasonFilter','yearFilter','monthFilter'
+  ];
+  for (const id of multiIds){
+    const val = h.get(id);
+    if (!val) continue;
+    const wanted = new Set(val.split('|'));
+    Array.from($(id).options).forEach(opt=> opt.selected = wanted.has(opt.value));
+  }
+}
+function writeStateToHash(){
+  const h = new URLSearchParams();
+  const c = map.getCenter();
+  h.set('z', map.getZoom().toFixed(2));
+  h.set('lat', c.lat.toFixed(6));
+  h.set('lng', c.lng.toFixed(6));
+  h.set('res', $('resolution').value);
+  h.set('ct', $('counttype').value);
+
+  const multiIds = [
+    'speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter',
+    'AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter',
+    'decompFilter','seasonFilter','yearFilter','monthFilter'
+  ];
+  for (const id of multiIds){
+    const vals = getMulti(id);
+    if (vals.length) h.set(id, vals.join('|'));
+  }
+  location.hash = h.toString();
 }
 
-document.getElementById('resolution').addEventListener('change',loadLayer);
-document.getElementById('counttype').addEventListener('change',loadLayer);
-document.getElementById('speciesFilter').addEventListener('change',loadLayer);
-document.getElementById('resetBtn').addEventListener('click',()=>{document.querySelectorAll('select').forEach(s=>s.selectedIndex=-1); loadLayer();});
-document.getElementById('collapseBtn').addEventListener('click',()=>document.getElementById('panel').classList.toggle('collapsed'));
+$('permalink').addEventListener('click', async ()=>{
+  writeStateToHash();
+  try{
+    await navigator.clipboard.writeText(location.href);
+    showToast('Link copied to clipboard!');
+  }catch{
+    showToast('Link updated in address bar.');
+  }
+});
 
-loadLayer();
+// ---------------------------------------------------------
+// Event wiring
+// ---------------------------------------------------------
+$('resolution').addEventListener('change', ()=> buildLayer());
+$('counttype').addEventListener('change', ()=> buildLayer());
+
+const filterIds = [
+  'speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter',
+  'AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter',
+  'decompFilter','seasonFilter','yearFilter','monthFilter'
+];
+
+// Apply button recomputes breaks and redraws
+$('applyBtn').addEventListener('click', ()=> recomputeOnMove());
+
+// Also recompute when a filter select changes (debounced)
+filterIds.forEach(id => $(id).addEventListener('change', ()=> recomputeOnMove()));
+
+$('resetBtn').addEventListener('click', ()=>{
+  clearAllSelects();
+  recomputeOnMove();
+});
+
+map.on('moveend', ()=> recomputeOnMove());
+map.on('zoomend', ()=> recomputeOnMove());
+
+// ---------------------------------------------------------
+// Boot
+// ---------------------------------------------------------
+(async function init(){
+  readStateFromHash();
+  await buildLayer();
+})();
 </script>
 </body>
 </html>
