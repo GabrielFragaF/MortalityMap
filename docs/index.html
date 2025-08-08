@@ -1,67 +1,584 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>PMTiles Smoke Test</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <style>html,body,#map{height:100%;margin:0}</style>
+<meta charset="utf-8" />
+<title>Sea Turtle Mortality Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+:root{--bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;--ring:#93c5fd;--shadow:0 10px 30px rgba(2,6,23,.25)}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+#map{position:absolute;inset:0}
+#panel{position:absolute;top:14px;left:14px;z-index:1000;width:360px;max-height:90vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
+#panel.collapsed{height:46px;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
+.topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
+.iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
+.iconbtn:hover{filter:brightness(0.98)}
+.section{padding:10px 14px}
+.row{margin-bottom:10px}
+label{display:block;font-weight:700;margin:6px 0;font-size:13px}
+select{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+details+details{margin-top:10px}
+summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
+summary::-webkit-details-marker{display:none}
+details .content{padding:10px 12px}
+.controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
+#resetBtn,#applyBtn{flex:1;background:#0ea5e9;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn{background:#e11d48}
+#legend{position:absolute;bottom:18px;left:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:220px}
+.leghdr{font-weight:800;margin-bottom:8px}.legend-row{display:flex;align-items:center;margin:4px 0}
+.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
+#spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
+#toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:320px}
+.leaflet-popup-content{margin:8px 12px}.kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}small.muted{color:#64748b}
+</style>
 </head>
 <body>
 <div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div id="panel">
+  <div class="topbar">
+    <h1>Sea Turtle Mortality</h1>
+    <div style="display:flex;gap:8px">
+      <button id="permalink" class="iconbtn" title="Copy link">🔗 Share</button>
+      <button id="collapseBtn" class="iconbtn" title="Collapse">–</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="row">
+      <label for="resolution">Resolution (H3)</label>
+      <select id="resolution">
+        <option value="r3">r3</option><option value="r4">r4</option>
+        <option value="r5">r5</option><option value="r6" selected>r6</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="counttype">Count Type</label>
+      <select id="counttype">
+        <option value="weight">Mortality position (weight)</option>
+        <option value="new_weight">Mortality position (new_weight)</option>
+        <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+        <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+        <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
+      </select>
+    </div>
+
+    <details open>
+      <summary>Species & Stage</summary>
+      <div class="content">
+        <div class="row">
+          <label for="speciesFilter">Species (multi-select)</label>
+          <select id="speciesFilter" multiple size="5">
+            <option value="Caretta caretta">Caretta caretta</option>
+            <option value="Chelonia mydas">Chelonia mydas</option>
+            <option value="Dermochelys coriacea">Dermochelys coriacea</option>
+            <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
+            <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="stageFilter">Development stage</label>
+          <select id="stageFilter" multiple size="6">
+            <option value="Adulto">Adulto</option><option value="Juvenil">Juvenil</option>
+            <option value="Filhote">Filhote</option><option value="Indeterminado">Indeterminado</option>
+            <option value="Adult">Adult</option><option value="Juvenile">Juvenile</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="sexFilter">Sex</label>
+          <select id="sexFilter" multiple size="6">
+            <option value="Fêmea">Fêmea</option><option value="Macho">Macho</option><option value="Indefinido">Indefinido</option>
+            <option value="Female">Female</option><option value="Male">Male</option><option value="Unknown">Unknown</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Human interactions</summary>
+      <div class="content">
+        <div class="row"><label for="FishingFilter">Fishing</label>
+          <select id="FishingFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div class="row"><label for="Marine_DebrisFilter">Marine Debris</label>
+          <select id="Marine_DebrisFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div class="row"><label for="AgressionFilter">Aggression</label>
+          <select id="AgressionFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div class="row"><label for="Boat_collisionFilter">Boat collision</label>
+          <select id="Boat_collisionFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div class="row"><label for="DredgingFilter">Dredging</label>
+          <select id="DredgingFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div class="row"><label for="OilFilter">Oil</label>
+          <select id="OilFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+        <div class="row"><label for="PetrolFilter">Petrol</label>
+          <select id="PetrolFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Environment & time</summary>
+      <div class="content">
+        <div class="row">
+          <label for="decompFilter">Decomposition code</label>
+          <select id="decompFilter" multiple size="10">
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>1.0</option><option>2.0</option><option>3.0</option><option>4.0</option><option>5.0</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="seasonFilter">Season</label>
+          <select id="seasonFilter" multiple size="8">
+            <option>Autumn</option><option>Spring</option><option>Summer</option><option>Winter</option>
+            <option>Outono</option><option>Primavera</option><option>Verão</option><option>Inverno</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="yearFilter">Year</label>
+          <select id="yearFilter" multiple size="12">
+            <option>2010</option><option>2011</option><option>2012</option><option>2013</option><option>2014</option>
+            <option>2015</option><option>2016</option><option>2017</option><option>2018</option><option>2019</option>
+            <option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option>
+            <option>2015.0</option><option>2016.0</option><option>2017.0</option><option>2018.0</option><option>2019.0</option>
+            <option>2020.0</option><option>2021.0</option><option>2022.0</option><option>2023.0</option><option>2024.0</option><option>2025.0</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="monthFilter">Month</label>
+          <select id="monthFilter" multiple size="12">
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <div class="controls-footer">
+      <button id="resetBtn">Reset</button>
+      <button id="applyBtn">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div id="legend"></div>
+<div id="spinner">Loading…</div>
+<div id="toast"></div>
+
+<!-- App logic (ESM; CSP-safe) -->
 <script type="module">
-import { PMTiles } from "https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/+esm?v=2";
-import vectorTileLayer from "https://cdn.jsdelivr.net/npm/leaflet-vector-tile-layer@0.16.1/+esm?v=2";
-import { VectorTile } from "https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@1.3.1/+esm?v=2";
-import Pbf from "https://cdn.jsdelivr.net/npm/pbf@3.2.1/+esm?v=2";
+import { PMTiles } from "https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/+esm?v=4";
+import vectorTileLayer from "https://cdn.jsdelivr.net/npm/leaflet-vector-tile-layer@0.16.1/+esm?v=4";
+import { VectorTile } from "https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@1.3.1/+esm?v=4";
+import Pbf from "https://cdn.jsdelivr.net/npm/pbf@3.2.1/+esm?v=4";
+import * as ss from "https://cdn.jsdelivr.net/npm/simple-statistics@7.8.3/+esm?v=4";
 
-const map=L.map('map').setView([-24,-45],5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+/* Map */
+const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 
-// pmtiles range-loader + fetch interceptor
-const cache=new Map();
-const abs = rel => new URL(rel, new URL('.', location.href)).toString();
-async function getPM(archive){ if(cache.has(archive)) return cache.get(archive); const pm=new PMTiles(abs(archive)); cache.set(archive,pm); return pm; }
-const origFetch=window.fetch.bind(window);
-window.fetch=async (input, init)=>{
-  if(typeof input==='string' && input.startsWith('pmtiles://')){
-    const m=input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/); if(!m) return Promise.reject(new Error('bad pmtiles url'));
-    const [_,archive,z,x,y]=m; const pm=await getPM(archive); const t=await pm.getZxy(+z,+x,+y);
-    return (t && t.data) ? new Response(t.data) : new Response(null,{status:204});
-  }
-  return origFetch(input,init);
+/* UI helpers */
+const $ = id => document.getElementById(id);
+const spinner=$('spinner'), toast=$('toast');
+const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
+const hideSpinner = () => { spinner.style.display='none'; };
+const showToast=(m,ms=3500)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
+$('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
+const getMulti = id => Array.from($(id).selectedOptions||[]).map(o=>o.value);
+const clearAllSelects = ()=> document.querySelectorAll('#panel select').forEach(s=>Array.from(s.options).forEach(o=>o.selected=false));
+const nf=v=> v===0?'0':new Intl.NumberFormat(undefined,{maximumFractionDigits:2,notation:(Math.abs(v)>=10000?'compact':'standard')}).format(v);
+
+/* Palettes */
+const ramps={
+  'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
+  'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
+  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
+  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
+  'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
+  'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
+let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'];
+function updateLegend(){
+  const el=$('legend');
+  const spSel=getMulti('speciesFilter');
+  const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
+  el.innerHTML=`<div class="leghdr">${name}</div>`;
+  for(let i=0;i<activeRamp.length;i++){
+    const a=jenksBreaks[i], b=jenksBreaks[i+1]; if(b==null) break;
+    el.insertAdjacentHTML('beforeend',`<div class="legend-row"><span class="swatch" style="background:${activeRamp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
+  }
+}
 
-// detect first layer name
-async function detectLayerName(pmFile){
-  const pm = await getPM(pmFile);
-  const md = await pm.getMetadata();
-  if(md && md.json){
-    const j = (typeof md.json==='string')?JSON.parse(md.json):md.json;
-    if(j && j.vector_layers){
-      if(Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
-      const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
+/* Filters */
+const norm=v=>(v==null?'':String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const asIntString=v=>{ const n=parseInt(v,10); return Number.isFinite(n)?String(n):String(v); };
+function makePredicate(){
+  const sel={
+    species:new Set(getMulti('speciesFilter').map(norm)),
+    development_stage:new Set(getMulti('stageFilter').map(norm)),
+    sex:new Set(getMulti('sexFilter').map(norm)),
+    Fishing:new Set(getMulti('FishingFilter').map(norm)),
+    Marine_Debris:new Set(getMulti('Marine_DebrisFilter').map(norm)),
+    Agression:new Set(getMulti('AgressionFilter').map(norm)),
+    Boat_collision:new Set(getMulti('Boat_collisionFilter').map(norm)),
+    Dredging:new Set(getMulti('DredgingFilter').map(norm)),
+    Oil:new Set(getMulti('OilFilter').map(norm)),
+    Petrol:new Set(getMulti('PetrolFilter').map(norm)),
+    decomposition_code:new Set(getMulti('decompFilter').map(norm)),
+    season:new Set(getMulti('seasonFilter').map(norm)),
+    year:new Set(getMulti('yearFilter').map(norm)),
+    month:new Set(getMulti('monthFilter').map(norm))
+  };
+  const test=(k,v)=>{ const set=sel[k]; if(!set.size) return true; const pv=norm(v);
+    if(set.has(pv)) return true;
+    if(k==='year'||k==='month'||k==='decomposition_code'){ return set.has(asIntString(v))||set.has(asIntString(pv)); }
+    return false;
+  };
+  return p=>(
+    test('species',p.species)&&test('development_stage',p.development_stage)&&test('sex',p.sex)&&
+    test('Fishing',p.Fishing)&&test('Marine_Debris',p.Marine_Debris)&&test('Agression',p.Agression)&&
+    test('Boat_collision',p.Boat_collision)&&test('Dredging',p.Dredging)&&test('Oil',p.Oil)&&
+    test('Petrol',p.Petrol)&&test('decomposition_code',p.decomposition_code)&&
+    test('season',p.season)&&test('year',p.year)&&test('month',p.month)
+  );
+}
+
+/* File resolver + math helpers */
+const fileFor=(res,ct)=>`hexgrid_${res}_${ct}.pmtiles`;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const linspace=(a,b,n)=>{const out=[];if(n<=1){out.push(a);return out;}const step=(b-a)/(n-1);for(let i=0;i<n;i++)out.push(a+i*step);return out;};
+function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+function tileRangeForBounds(b,z){
+  const nw=b.getNorthWest(), se=b.getSouthEast();
+  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[minY,maxY]=[maxY,minY];
+  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+  return {minX,maxX,minY,maxY};
+}
+const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+
+/* PMTiles & tile decode cache */
+const pmCache = new Map();
+const tileCache = new Map(); // key: `${pmFile}|${z}/${x}/${y}` -> {vals[]}
+const absoluteUrl = rel => new URL(rel, new URL('.', location.href)).toString();
+async function getPM(archive){
+  if(pmCache.has(archive)) return pmCache.get(archive);
+  const pm = new PMTiles(absoluteUrl(archive));
+  pmCache.set(archive, pm);
+  return pm;
+}
+
+/* Intercept pmtiles://… for the vector tile layer */
+const origFetch = window.fetch.bind(window);
+window.fetch = async (input, init) => {
+  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
+    const [_, archive, z, x, y] = m;
+    try{
+      const pm = await getPM(archive);
+      const t  = await pm.getZxy(+z,+x,+y);
+      return (t && t.data) ? new Response(t.data) : new Response(null,{status:204});
+    }catch(e){
+      console.error('Tile fetch failed for', archive, z, x, y, e);
+      return new Response(null,{status:204});
     }
   }
-  // fallback: peek one tile
-  const hdr = await pm.getHeader();
-  const z=Math.max(hdr.minZoom, Math.min(hdr.maxZoom, 6));
-  const t = await pm.getZxy(z, 32, 32);
-  if(t && t.data){ const vt=new VectorTile(new Pbf(t.data)); const names=Object.keys(vt.layers||{}); if(names.length) return names[0]; }
+  return origFetch(input, init);
+};
+
+/* State */
+let vtLayer=null, currentPMFile='', layerName='', header=null;
+
+/* Detect layer name */
+async function detectLayerName(pmFile){
+  try{
+    const pm = await getPM(pmFile);
+    header = await pm.getHeader();
+    const md = await pm.getMetadata();
+    if (md && md.json){
+      const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
+      if (j && j.vector_layers){
+        if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+        const keys = Object.keys(j.vector_layers);
+        if (keys.length) return keys[0];
+      }
+    }
+    const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
+    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+    for(let x=minX;x<=maxX;x++){
+      for(let y=minY;y<=maxY;y++){
+        const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
+        if(!r || !r.data) continue;
+        const vt = new VectorTile(new Pbf(r.data));
+        const names = Object.keys(vt.layers||{});
+        if(names.length) return names[0];
+      }
+    }
+  }catch(e){
+    console.warn('Layer detect failed:', e);
+  }
+  console.warn('Falling back to "hexgrid"');
   return 'hexgrid';
 }
 
-// CHANGE HERE to any of your files to test
-const pmFile='hexgrid_r6_weight.pmtiles';
-const layerName = await detectLayerName(pmFile);
+/* === Adaptive, fast breaks === */
+const JENKS_CLASSES = 5;
+const EXACT_MAX = 2000;     // if <= this, run exact Jenks
+const SAMPLE_TARGET = 1200; // if > EXACT_MAX, sample down to this
+const MAX_TILES_STATS = 250;
 
-// render
-const vt = vectorTileLayer(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-  style:()=>({color:'#3388ff',weight:0.5,fill:true,fillColor:'#3388ff',fillOpacity:0.4}),
-  filter:()=>true
+function reservoirSample(values, k){
+  const out=[];
+  for(let i=0;i<values.length;i++){
+    if(i<k) out[i]=values[i];
+    else{
+      const j = Math.floor(Math.random()*(i+1));
+      if(j<k) out[j]=values[i];
+    }
+  }
+  return out;
+}
+
+async function collectValuesFromView(pmFile, layerName, predicate){
+  const pm = await getPM(pmFile);
+  const hdr = header || await pm.getHeader();
+  const zView = clamp(Math.floor(map.getZoom()), hdr.minZoom, hdr.maxZoom);
+  const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+
+  // stride to keep tile count manageable at low zooms
+  const tilesX = maxX-minX+1, tilesY = maxY-minY+1;
+  let stride = 1;
+  if (tilesX*tilesY > MAX_TILES_STATS) {
+    const factor = Math.ceil(Math.sqrt((tilesX*tilesY)/MAX_TILES_STATS));
+    stride = Math.max(1, factor);
+  }
+
+  const values=[];
+  const jobs=[];
+  outer:
+  for(let x=minX; x<=maxX; x+=stride){
+    for(let y=minY; y<=maxY; y+=stride){
+      jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+        if(!resp || !resp.data) return;
+        const vt = new VectorTile(new Pbf(resp.data));
+        const layer = vt.layers[layerName]; if(!layer) return;
+        for(let i=0;i<layer.length;i++){
+          const f = layer.feature(i);
+          const p = f.properties||{};
+          if(!predicate(p)) continue;
+          const v = p.sum_val;
+          if(typeof v==='number' && Number.isFinite(v)){
+            values.push(v);
+          }
+        }
+      }).catch(()=>{}));
+      // soft short-circuit: if we already have well above EXACT_MAX and > SAMPLE_TARGET*1.5, stop queuing more tiles
+      if (values.length > SAMPLE_TARGET*1.5) break outer;
+    }
+  }
+  await Promise.all(jobs);
+  return values;
+}
+
+function prettyBreaks(min, max){
+  if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
+  if (min===max) { // expand a hair for flat data
+    const eps = min===0 ? 1 : Math.abs(min)*0.1;
+    min = min - eps; max = max + eps;
+  }
+  return linspace(min, max, JENKS_CLASSES+1);
+}
+
+async function computeAdaptiveBreaks(pmFile, layerName, predicate){
+  showSpinner('Computing breaks…');
+  let vals = await collectValuesFromView(pmFile, layerName, predicate);
+  const n = vals.length;
+
+  if (!n) { hideSpinner(); return [0,1,2,3,4,5]; }
+  if (n < 8) { // too few points for Jenks to be meaningful → pretty linear breaks
+    const min=Math.min(...vals), max=Math.max(...vals);
+    hideSpinner();
+    return prettyBreaks(min,max);
+  }
+
+  let edges;
+  try{
+    if (n <= EXACT_MAX) {
+      // exact
+      edges = ss.jenks(vals, JENKS_CLASSES);
+    } else {
+      // sample
+      vals = reservoirSample(vals, SAMPLE_TARGET);
+      edges = ss.jenks(vals, JENKS_CLASSES);
+    }
+    // ensure 6 numbers and cover min/max
+    const min=Math.min(...vals), max=Math.max(...vals);
+    if (edges[0] > min) edges[0] = min;
+    if (edges[edges.length-1] < max) edges.push(max);
+    if (edges.length < JENKS_CLASSES+1) {
+      edges = prettyBreaks(min,max);
+    }
+  }catch{
+    const min=Math.min(...vals), max=Math.max(...vals);
+    edges = prettyBreaks(min,max);
+  }
+  hideSpinner();
+  return edges;
+}
+
+/* Ramp selector */
+const currentRamp=()=>{ const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi']; };
+
+/* Styling for vector tiles */
+function makeStyle(predicate){
+  return (feature) => {
+    const props = feature?.properties ?? feature?.props ?? {};
+    if (!predicate(props) || typeof props.sum_val!=='number' || !Number.isFinite(props.sum_val)) {
+      return {hidden:true};
+    }
+    const v = props.sum_val;
+    let idx=0;
+    for(let i=0;i<jenksBreaks.length-1;i++){
+      if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) { idx=i; break; }
+    }
+    const color = activeRamp[Math.min(idx,activeRamp.length-1)];
+    return {color, weight:0.5, fill:true, fillColor:color, fillOpacity:0.65, interactive:true};
+  };
+}
+
+/* Tooltips */
+function bindHoverPopups(layer){
+  layer.on('mouseover', e=>{
+    const p = e.layer?.properties ?? e.layer?.feature?.properties ?? {};
+    L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(`
+      <div style="min-width:220px">
+        <div class="kv"><b>Species</b><span>${p.species ?? '-'}</span></div>
+        <div class="kv"><b>Sum</b><span>${nf(p.sum_val ?? 0)}</span></div>
+        <div class="kv"><b>Count</b><span>${p.count ?? '-'}</span></div>
+        <hr/>
+        <div class="kv"><b>Stage</b><span>${p.development_stage ?? '-'}</span></div>
+        <div class="kv"><b>Sex</b><span>${p.sex ?? '-'}</span></div>
+        <div class="kv"><b>Season</b><span>${p.season ?? '-'}</span></div>
+        <div class="kv"><b>Year</b><span>${p.year ?? '-'}</span></div>
+        <div class="kv"><b>Month</b><span>${p.month ?? '-'}</span></div>
+        <hr/>
+        <small class="muted">h3: ${p.h3_index ?? '-'}</small>
+      </div>`).openOn(map);
+  });
+  layer.on('mouseout',()=>map.closePopup());
+}
+
+/* Build / Rebuild */
+let lastPredicateSig='';
+function predicateSignature(){
+  // quick-and-dirty state signature so we can invalidate caches if needed later
+  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
+  return ids.map(id => getMulti(id).join('|')).join('||');
+}
+
+async function buildLayer(){
+  showSpinner('Loading tiles…');
+  const res=$('resolution').value, ct=$('counttype').value;
+  const pmFile = fileFor(res, ct);
+  currentPMFile=pmFile;
+
+  layerName = await detectLayerName(pmFile);
+  const predicate = makePredicate();
+  lastPredicateSig = predicateSignature();
+
+  jenksBreaks = await computeAdaptiveBreaks(pmFile, layerName, predicate);
+  activeRamp = currentRamp();
+  updateLegend();
+
+  if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+  vtLayer = vectorTileLayer(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+    minZoom: 0,
+    maxZoom: 22,
+    style: makeStyle(predicate),
+    filter: (feature) => {
+      const p = feature?.properties ?? feature?.props ?? {};
+      return !!predicate(p);
+    }
+  });
+  bindHoverPopups(vtLayer);
+  vtLayer.addTo(map);
+  hideSpinner();
+}
+
+/* Debounced recompute on move/zoom or filter apply */
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+const recomputeOnMove = debounce(async ()=>{
+  if(!currentPMFile || !layerName) return;
+  const predicate = makePredicate();
+
+  jenksBreaks = await computeAdaptiveBreaks(currentPMFile, layerName, predicate);
+  activeRamp = currentRamp();
+  updateLegend();
+
+  if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+  vtLayer = vectorTileLayer(`pmtiles://${currentPMFile}/{z}/{x}/{y}.pbf`,{
+    minZoom: 0,
+    maxZoom: 22,
+    style: makeStyle(predicate),
+    filter: (feature) => {
+      const p = feature?.properties ?? feature?.props ?? {};
+      return !!predicate(p);
+    }
+  });
+  bindHoverPopups(vtLayer);
+  vtLayer.addTo(map);
+},250);
+
+/* Permalink */
+function readStateFromHash(){
+  const h=new URLSearchParams(location.hash.slice(1));
+  if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
+  if(h.has('res')) $('resolution').value=h.get('res');
+  if(h.has('ct')) $('counttype').value=h.get('ct');
+  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
+  for(const id of ids){ const val=h.get(id); if(!val) continue; const wanted=new Set(val.split('|')); Array.from($(id).options).forEach(o=>o.selected=wanted.has(o.value)); }
+}
+function writeStateToHash(){
+  const h=new URLSearchParams(), c=map.getCenter();
+  h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
+  h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
+  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
+  for(const id of ids){ const vals=getMulti(id); if(vals.length) h.set(id, vals.join('|')); }
+  location.hash=h.toString();
+}
+$('permalink').addEventListener('click',async()=>{
+  writeStateToHash();
+  try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!'); }
+  catch{ showToast('Link updated in address bar.'); }
 });
-vt.addTo(map);
+
+/* Wiring */
+$('resolution').addEventListener('change',()=>buildLayer());
+$('counttype').addEventListener('change',()=>buildLayer());
+['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter']
+  .forEach(id=>$(id).addEventListener('change',()=>recomputeOnMove()));
+$('applyBtn').addEventListener('click',()=>recomputeOnMove());
+$('resetBtn').addEventListener('click',()=>{clearAllSelects(); tileCache.clear(); recomputeOnMove();});
+map.on('moveend',()=>recomputeOnMove());
+map.on('zoomend',()=>recomputeOnMove());
+
+/* Init */
+(function init(){ readStateFromHash(); buildLayer(); })();
 </script>
 </body>
 </html>
