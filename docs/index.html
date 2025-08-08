@@ -43,6 +43,7 @@ details .content{padding:10px 12px}
 <body>
 <div id="map"></div>
 
+<!-- Filter Panel -->
 <div id="panel">
   <div class="topbar">
     <h1>Sea Turtle Mortality</h1>
@@ -56,14 +57,16 @@ details .content{padding:10px 12px}
     <div class="row">
       <label for="resolution">Resolution (H3)</label>
       <select id="resolution">
-        <option value="r3">r3</option><option value="r4">r4</option>
-        <option value="r5">r5</option><option value="r6" selected>r6</option>
+        <option value="r3" selected>r3</option>
+        <option value="r4">r4</option>
+        <option value="r5">r5</option>
+        <option value="r6">r6</option>
       </select>
     </div>
     <div class="row">
       <label for="counttype">Count Type</label>
       <select id="counttype">
-        <option value="weight">Mortality position (weight)</option>
+        <option value="weight" selected>Mortality position (weight)</option>
         <option value="new_weight">Mortality position (new_weight)</option>
         <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
         <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
@@ -179,11 +182,11 @@ details .content{padding:10px 12px}
 
 <!-- App logic (ESM; CSP-safe) -->
 <script type="module">
-import { PMTiles } from "https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/+esm?v=4";
-import vectorTileLayer from "https://cdn.jsdelivr.net/npm/leaflet-vector-tile-layer@0.16.1/+esm?v=4";
-import { VectorTile } from "https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@1.3.1/+esm?v=4";
-import Pbf from "https://cdn.jsdelivr.net/npm/pbf@3.2.1/+esm?v=4";
-import * as ss from "https://cdn.jsdelivr.net/npm/simple-statistics@7.8.3/+esm?v=4";
+import { PMTiles } from "https://cdn.jsdelivr.net/npm/pmtiles@4.3.0/+esm?v=5";
+import vectorTileLayer from "https://cdn.jsdelivr.net/npm/leaflet-vector-tile-layer@0.16.1/+esm?v=5";
+import { VectorTile } from "https://cdn.jsdelivr.net/npm/@mapbox/vector-tile@1.3.1/+esm?v=5";
+import Pbf from "https://cdn.jsdelivr.net/npm/pbf@3.2.1/+esm?v=5";
+import * as ss from "https://cdn.jsdelivr.net/npm/simple-statistics@7.8.3/+esm?v=5";
 
 /* Map */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
@@ -255,7 +258,7 @@ function makePredicate(){
   );
 }
 
-/* File resolver + math helpers */
+/* File + math helpers */
 const fileFor=(res,ct)=>`hexgrid_${res}_${ct}.pmtiles`;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const linspace=(a,b,n)=>{const out=[];if(n<=1){out.push(a);return out;}const step=(b-a)/(n-1);for(let i=0;i<n;i++)out.push(a+i*step);return out;};
@@ -273,7 +276,6 @@ const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
 
 /* PMTiles & tile decode cache */
 const pmCache = new Map();
-const tileCache = new Map(); // key: `${pmFile}|${z}/${x}/${y}` -> {vals[]}
 const absoluteUrl = rel => new URL(rel, new URL('.', location.href)).toString();
 async function getPM(archive){
   if(pmCache.has(archive)) return pmCache.get(archive);
@@ -336,10 +338,10 @@ async function detectLayerName(pmFile){
   return 'hexgrid';
 }
 
-/* === Adaptive, fast breaks === */
+/* Adaptive breaks (Jenks with guardrails so colors spread) */
 const JENKS_CLASSES = 5;
-const EXACT_MAX = 2000;     // if <= this, run exact Jenks
-const SAMPLE_TARGET = 1200; // if > EXACT_MAX, sample down to this
+const EXACT_MAX = 2000;
+const SAMPLE_TARGET = 1200;
 const MAX_TILES_STATS = 250;
 
 function reservoirSample(values, k){
@@ -353,89 +355,72 @@ function reservoirSample(values, k){
   }
   return out;
 }
-
-async function collectValuesFromView(pmFile, layerName, predicate){
+function prettyBreaks(min, max){
+  if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
+  if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
+  return linspace(min, max, JENKS_CLASSES+1);
+}
+async function collectVals(pmFile, layerName, predicate){
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
   const zView = clamp(Math.floor(map.getZoom()), hdr.minZoom, hdr.maxZoom);
   const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
-
-  // stride to keep tile count manageable at low zooms
-  const tilesX = maxX-minX+1, tilesY = maxY-minY+1;
-  let stride = 1;
-  if (tilesX*tilesY > MAX_TILES_STATS) {
-    const factor = Math.ceil(Math.sqrt((tilesX*tilesY)/MAX_TILES_STATS));
-    stride = Math.max(1, factor);
+  const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
+  let stride=1;
+  if(tilesX*tilesY>MAX_TILES_STATS){
+    const factor=Math.ceil(Math.sqrt((tilesX*tilesY)/MAX_TILES_STATS));
+    stride=Math.max(1,factor);
   }
-
-  const values=[];
-  const jobs=[];
+  const values=[]; const jobs=[];
   outer:
   for(let x=minX; x<=maxX; x+=stride){
     for(let y=minY; y<=maxY; y+=stride){
-      jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+      jobs.push(pm.getZxy(zView,wrapX(x,zView),y).then(resp=>{
         if(!resp || !resp.data) return;
-        const vt = new VectorTile(new Pbf(resp.data));
-        const layer = vt.layers[layerName]; if(!layer) return;
-        for(let i=0;i<layer.length;i++){
-          const f = layer.feature(i);
-          const p = f.properties||{};
+        const vt=new VectorTile(new Pbf(resp.data));
+        const lyr=vt.layers[layerName]; if(!lyr) return;
+        for(let i=0;i<lyr.length;i++){
+          const p=lyr.feature(i).properties||{};
           if(!predicate(p)) continue;
-          const v = p.sum_val;
-          if(typeof v==='number' && Number.isFinite(v)){
-            values.push(v);
-          }
+          const v=p.sum_val;
+          if(typeof v==='number' && Number.isFinite(v)) values.push(v);
         }
       }).catch(()=>{}));
-      // soft short-circuit: if we already have well above EXACT_MAX and > SAMPLE_TARGET*1.5, stop queuing more tiles
-      if (values.length > SAMPLE_TARGET*1.5) break outer;
+      if(values.length>SAMPLE_TARGET*1.5) break outer;
     }
   }
   await Promise.all(jobs);
   return values;
 }
-
-function prettyBreaks(min, max){
-  if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
-  if (min===max) { // expand a hair for flat data
-    const eps = min===0 ? 1 : Math.abs(min)*0.1;
-    min = min - eps; max = max + eps;
-  }
-  return linspace(min, max, JENKS_CLASSES+1);
-}
-
-async function computeAdaptiveBreaks(pmFile, layerName, predicate){
+async function computeBreaks(pmFile, layerName, predicate){
   showSpinner('Computing breaks…');
-  let vals = await collectValuesFromView(pmFile, layerName, predicate);
-  const n = vals.length;
-
-  if (!n) { hideSpinner(); return [0,1,2,3,4,5]; }
-  if (n < 8) { // too few points for Jenks to be meaningful → pretty linear breaks
-    const min=Math.min(...vals), max=Math.max(...vals);
-    hideSpinner();
-    return prettyBreaks(min,max);
-  }
+  let vals = await collectVals(pmFile, layerName, predicate);
+  const n=vals.length;
+  if(!n){ hideSpinner(); return [0,1,2,3,4,5]; }
+  if(n<8){ const min=Math.min(...vals), max=Math.max(...vals); hideSpinner(); return prettyBreaks(min,max); }
 
   let edges;
   try{
-    if (n <= EXACT_MAX) {
-      // exact
-      edges = ss.jenks(vals, JENKS_CLASSES);
-    } else {
-      // sample
-      vals = reservoirSample(vals, SAMPLE_TARGET);
-      edges = ss.jenks(vals, JENKS_CLASSES);
-    }
-    // ensure 6 numbers and cover min/max
+    if(n<=EXACT_MAX) edges = ss.jenks(vals, JENKS_CLASSES);
+    else edges = ss.jenks(reservoirSample(vals, SAMPLE_TARGET), JENKS_CLASSES);
+
+    // guardrail: if Jenks collapses (few unique boundaries) -> use quantiles
+    const unique = Array.from(new Set(edges.map(x=>+x.toFixed(10))));
     const min=Math.min(...vals), max=Math.max(...vals);
-    if (edges[0] > min) edges[0] = min;
-    if (edges[edges.length-1] < max) edges.push(max);
-    if (edges.length < JENKS_CLASSES+1) {
-      edges = prettyBreaks(min,max);
+    if(unique.length < JENKS_CLASSES+1 || !isFinite(min) || !isFinite(max) || min===max){
+      const sorted = vals.sort((a,b)=>a-b);
+      edges = ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+    }else{
+      if(edges[0] > min) edges[0]=min;
+      if(edges[edges.length-1] < max) edges.push(max);
+      if(edges.length < JENKS_CLASSES+1){
+        const sorted = vals.sort((a,b)=>a-b);
+        edges = ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+      }
     }
   }catch{
-    const min=Math.min(...vals), max=Math.max(...vals);
-    edges = prettyBreaks(min,max);
+    const sorted = vals.sort((a,b)=>a-b);
+    edges = ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
   }
   hideSpinner();
   return edges;
@@ -444,7 +429,7 @@ async function computeAdaptiveBreaks(pmFile, layerName, predicate){
 /* Ramp selector */
 const currentRamp=()=>{ const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi']; };
 
-/* Styling for vector tiles */
+/* Styling */
 function makeStyle(predicate){
   return (feature) => {
     const props = feature?.properties ?? feature?.props ?? {};
@@ -457,7 +442,7 @@ function makeStyle(predicate){
       if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) { idx=i; break; }
     }
     const color = activeRamp[Math.min(idx,activeRamp.length-1)];
-    return {color, weight:0.5, fill:true, fillColor:color, fillOpacity:0.65, interactive:true};
+    return {color, weight:0.4, fill:true, fillColor:color, fillOpacity:0.65, interactive:true};
   };
 }
 
@@ -484,13 +469,6 @@ function bindHoverPopups(layer){
 }
 
 /* Build / Rebuild */
-let lastPredicateSig='';
-function predicateSignature(){
-  // quick-and-dirty state signature so we can invalidate caches if needed later
-  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
-  return ids.map(id => getMulti(id).join('|')).join('||');
-}
-
 async function buildLayer(){
   showSpinner('Loading tiles…');
   const res=$('resolution').value, ct=$('counttype').value;
@@ -499,9 +477,7 @@ async function buildLayer(){
 
   layerName = await detectLayerName(pmFile);
   const predicate = makePredicate();
-  lastPredicateSig = predicateSignature();
-
-  jenksBreaks = await computeAdaptiveBreaks(pmFile, layerName, predicate);
+  jenksBreaks = await computeBreaks(pmFile, layerName, predicate);
   activeRamp = currentRamp();
   updateLegend();
 
@@ -525,8 +501,7 @@ function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 const recomputeOnMove = debounce(async ()=>{
   if(!currentPMFile || !layerName) return;
   const predicate = makePredicate();
-
-  jenksBreaks = await computeAdaptiveBreaks(currentPMFile, layerName, predicate);
+  jenksBreaks = await computeBreaks(currentPMFile, layerName, predicate);
   activeRamp = currentRamp();
   updateLegend();
 
@@ -573,11 +548,12 @@ $('counttype').addEventListener('change',()=>buildLayer());
 ['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter']
   .forEach(id=>$(id).addEventListener('change',()=>recomputeOnMove()));
 $('applyBtn').addEventListener('click',()=>recomputeOnMove());
-$('resetBtn').addEventListener('click',()=>{clearAllSelects(); tileCache.clear(); recomputeOnMove();});
+$('resetBtn').addEventListener('click',()=>{clearAllSelects();recomputeOnMove();});
 map.on('moveend',()=>recomputeOnMove());
 map.on('zoomend',()=>recomputeOnMove());
 
 /* Init */
+let currentPMFile='';
 (function init(){ readStateFromHash(); buildLayer(); })();
 </script>
 </body>
