@@ -180,15 +180,15 @@ details .content{padding:10px 12px}
 <div id="spinner">Loading…</div>
 <div id="toast"></div>
 
-<!-- App logic (module): ESM for VectorGrid/PBF/VectorTile; PMTiles from UMD -->
+<!-- App logic (module) -->
 <script type="module">
 import { vectorGrid } from "https://esm.sh/@mapbox/leaflet-vector-grid@1.3.0?external=leaflet";
 import { VectorTile } from "https://esm.sh/@mapbox/vector-tile@1.3.1";
 import Pbf from "https://esm.sh/pbf@3.2.1";
 import * as ss from "https://esm.sh/simple-statistics@7.8.3";
 
-// PMTiles UMD global
-const { PMTiles, MemorySource } = window.pmtiles;
+// PMTiles (from UMD global)
+const { PMTiles } = window.pmtiles;
 
 // --- Map ---
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
@@ -275,23 +275,19 @@ function tileRangeForBounds(b,z){
 }
 function wrapX(x,z){const n=Math.pow(2,z);return((x%n)+n)%n;}
 
-// --- PMTiles in-memory loader (absolute URL + logging) ---
-const { PMTiles:PMT, MemorySource } = window.pmtiles;
-const memPM = new Map();
-async function getPM(archive) {
-  if (memPM.has(archive)) return memPM.get(archive);
-  const BASE = new URL('.', location.href);
-  const url  = new URL(archive, BASE).toString();
-  console.log('Fetching PMTiles archive:', url);
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`Failed to load ${url} (HTTP ${resp.status})`);
-  const buf = new Uint8Array(await resp.arrayBuffer());
-  const pm = new PMT(new MemorySource(buf));
-  memPM.set(archive, pm);
+// --- PMTiles cache (range requests; no MemorySource) ---
+const pmCache = new Map(); // archive -> PMTiles instance
+function absoluteUrl(rel){ const BASE=new URL('.',location.href); return new URL(rel,BASE).toString(); }
+async function getPM(archive){
+  if(pmCache.has(archive)) return pmCache.get(archive);
+  const url = absoluteUrl(archive);
+  console.log('Fetching PMTiles archive via range:', url);
+  const pm = new PMTiles(url);  // <- v3 API; creates a FetchSource under the hood
+  pmCache.set(archive, pm);
   return pm;
 }
 
-// Intercept pmtiles://... for VectorGrid and serve from in-memory PMTiles
+// Intercept pmtiles://... for VectorGrid and serve from PMTiles.getZxy()
 const origFetch = window.fetch.bind(window);
 window.fetch = async (input, init) => {
   if (typeof input === 'string' && input.startsWith('pmtiles://')) {
@@ -300,7 +296,7 @@ window.fetch = async (input, init) => {
     const archive = m[1], z=+m[2], x=+m[3], y=+m[4];
     try{
       const pm = await getPM(archive);
-      const t  = await pm.getZxy(z,x,y);
+      const t  = await pm.getZxy(z,x,y); // bytes for one tile
       return (t && t.data) ? new Response(t.data) : new Response(null,{status:204});
     }catch(e){
       console.error('Tile fetch failed for', archive, z, x, y, e);
@@ -317,12 +313,17 @@ async function detectLayerName(pmFile){
   try{
     const pm = await getPM(pmFile);
     currentHeader = await pm.getHeader();
-    const md = await pm.getMetadata();
+    const md = await pm.getMetadata(); // user metadata JSON
     if (md && md.json){
       const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
-      if (j && j.vector_layers && j.vector_layers.length) return j.vector_layers[0].id;
+      if (j && j.vector_layers) {
+        // vector_layers could be array of {id} or object keyed; handle both
+        if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+        const keys = Object.keys(j.vector_layers);
+        if (keys.length) return keys[0];
+      }
     }
-    // fallback: scan a few tiles in view
+    // fallback: scan a couple tiles in view
     const z = clamp(Math.floor(map.getZoom()), currentHeader.minZoom, currentHeader.maxZoom);
     const tr = tileRangeForBounds(map.getBounds(), z);
     for(let x=tr.minX;x<=tr.maxX;x++){
@@ -444,7 +445,7 @@ async function buildLayer(){
   hideSpinner();
 }
 
-// Debounce & redraw
+// Debounce & redraw when view or filters change
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 const recomputeOnMove = debounce(async ()=>{
   if(!currentPMFile||!currentLayerName) return;
