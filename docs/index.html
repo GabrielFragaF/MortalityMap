@@ -1,241 +1,240 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Sea-turtle mortality map</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8"/>
+<title>Sea Turtle Mortality Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
 <script src="https://unpkg.com/@mapbox/leaflet-vector-grid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
 
 <style>
-:root{
+:root {
   --bg:#0b1220; --panel:#ffffff; --accent:#0ea5e9;
   --text:#111827; --muted:#6b7280; --shadow:0 8px 24px rgba(0,0,0,.18);
 }
-html, body { height:100%; margin:0; padding:0; background:var(--bg); }
-#map { position:absolute; inset:0; z-index:0; }
+html, body { margin:0; padding:0; height:100%; background:var(--bg); }
+#map { position:absolute; inset:0; }
+
+/* Panel styling */
 #panel {
-  position:absolute; top:14px; left:14px; z-index:1001;
+  position:absolute; top:14px; left:14px; z-index:1000;
   background:var(--panel); padding:14px; border-radius:12px;
-  font-family: system-ui, sans-serif;
-  font-size:14px; box-shadow:var(--shadow); width:300px; max-height:85vh; overflow:auto;
-  border:1px solid #e5e7eb;
+  font-family:system-ui,sans-serif; font-size:14px;
+  box-shadow:var(--shadow); width:320px; max-height:90vh; overflow:auto;
+  transition: width 0.3s ease, max-height 0.3s ease;
 }
-details { border:1px solid #e5e7eb; border-radius:10px; padding:6px 8px; margin:8px 0; }
-summary { cursor:pointer; font-weight:600; color:var(--text); }
-select { width:100%; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; }
-.filter-multiselect { min-height:38px; }
-.btn { width:100%; padding:10px; border-radius:10px; border:none; cursor:pointer; font-weight:700; margin-top:10px; }
-.btn-primary { background:var(--accent); color:white; }
-.btn-ghost { background:#f3f4f6; }
+#panel.collapsed { width:36px; padding:6px; overflow:hidden; }
+#panel h1 { font-size:16px; margin:0 0 10px 0; font-weight:700; color:var(--text); }
+.topbar { display:flex; justify-content:space-between; align-items:center; }
+.topbar button { border:none; background:#f3f4f6; border-radius:6px; padding:4px 8px; cursor:pointer; }
+
+details { margin:8px 0; border:1px solid #e5e7eb; border-radius:8px; padding:4px 6px; }
+summary { font-weight:600; cursor:pointer; }
+select { width:100%; border:1px solid #e5e7eb; border-radius:6px; padding:4px; }
+
+/* Legend */
 #legend {
-  position:absolute; bottom:18px; right:14px; /* moved to bottom-right */
-  z-index:1001; background:var(--panel); padding:10px; border-radius:10px; box-shadow:var(--shadow);
-  font-size:13px; border:1px solid #e5e7eb; color:var(--text);
+  position:absolute; bottom:18px; left:14px; z-index:1000;
+  background:var(--panel); padding:10px; border-radius:10px;
+  box-shadow:var(--shadow); font-size:13px; border:1px solid #e5e7eb;
 }
 .swatch { display:inline-block; width:22px; height:12px; margin-right:6px; border-radius:3px; border:1px solid #9ca3af; }
+
+/* Spinner + toast */
+#spinner {
+  position:absolute; top:14px; right:14px; z-index:1000;
+  background:var(--panel); padding:8px 10px; border-radius:10px;
+  border:1px solid #e5e7eb; display:none;
+}
 #toast {
-  position:absolute; top:14px; right:14px; z-index:2000;
-  display:none; background:#fee2e2; color:#991b1b; padding:8px 10px; border-radius:10px;
-  border:1px solid #fecaca; box-shadow:var(--shadow); font-size:13px;
+  position:absolute; top:60px; right:14px; z-index:1000; display:none;
+  background:#fee2e2; color:#991b1b; padding:8px 10px; border-radius:10px;
+  border:1px solid #fecaca;
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="panel">
-  <h1>Mortality map</h1>
-  <div>
-    <label for="resolution">Resolution</label>
-    <select id="resolution">
-      <option value="r3">r3</option>
-      <option value="r4" selected>r4</option>
-      <option value="r5">r5</option>
-      <option value="r6">r6</option>
-    </select>
+  <div class="topbar">
+    <h1>Mortality Map</h1>
+    <button id="collapseBtn">☰</button>
   </div>
-  <div>
-    <label for="counttype">Count Type</label>
-    <select id="counttype">
-      <option value="weight">Mortality position</option>
-      <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
-      <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
-      <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
-    </select>
-  </div>
-  <div id="dynamicFilters"></div>
-  <button id="loadBtn" class="btn btn-primary">Reload</button>
-  <button id="resetBtn" class="btn btn-ghost">Reset</button>
+
+  <label>Resolution</label>
+  <select id="resolution">
+    <option value="r3">r3</option>
+    <option value="r4">r4</option>
+    <option value="r5">r5</option>
+    <option value="r6" selected>r6</option>
+  </select>
+
+  <label>Count Type</label>
+  <select id="counttype">
+    <option value="weight">Weight</option>
+    <option value="new_mortality_est_bf_mean">Mortality (mean)</option>
+    <option value="new_mortality_est_bf_low">Mortality (low)</option>
+    <option value="new_mortality_est_bf_high">Mortality (high)</option>
+  </select>
+
+  <details open><summary>Species</summary><select id="speciesFilter" multiple size="6"></select></details>
+  <details><summary>Stage</summary><select id="stageFilter" multiple></select></details>
+  <details><summary>Sex</summary><select id="sexFilter" multiple></select></details>
+  <details><summary>Fishing</summary><select id="FishingFilter" multiple></select></details>
+  <details><summary>Marine Debris</summary><select id="Marine_DebrisFilter" multiple></select></details>
+  <details><summary>Agression</summary><select id="AgressionFilter" multiple></select></details>
+  <details><summary>Boat Collision</summary><select id="Boat_collisionFilter" multiple></select></details>
+  <details><summary>Dredging</summary><select id="DredgingFilter" multiple></select></details>
+  <details><summary>Oil</summary><select id="OilFilter" multiple></select></details>
+  <details><summary>Petrol</summary><select id="PetrolFilter" multiple></select></details>
+  <details><summary>Decomposition</summary><select id="decompFilter" multiple></select></details>
+  <details><summary>Season</summary><select id="seasonFilter" multiple></select></details>
+  <details><summary>Year</summary><select id="yearFilter" multiple></select></details>
+  <details><summary>Month</summary><select id="monthFilter" multiple></select></details>
+
+  <button id="reloadBtn">Reload</button>
+  <button id="resetBtn">Reset</button>
 </div>
 <div id="legend"></div>
+<div id="spinner">Loading…</div>
 <div id="toast"></div>
 
 <script>
+// Map init
 const map = L.map('map').setView([-24, -45], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution:'&copy; OpenStreetMap contributors', maxZoom: 18
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
 
-// PMTiles fetch hook
+// PMTiles fetcher
+const protocol = new pmtiles.Protocol();
 const origFetch = window.fetch.bind(window);
-window.fetch = (input, init) => {
-  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+window.fetch = (input,init)=>{
+  if (typeof input==='string' && input.startsWith('pmtiles://')){
     const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-    if (!m) return Promise.reject(new Error('Bad pmtiles URL: ' + input));
     const p = new pmtiles.PMTiles(m[1]);
-    return p.getZxy(+m[2], +m[3], +m[4]).then(tile => {
-      if (!tile || !tile.data) return new Response(null, {status:204});
-      return new Response(tile.data, {status:200});
+    return p.getZxy(+m[2],+m[3],+m[4]).then(tile=>{
+      if(!tile||!tile.data) return new Response(null,{status:204});
+      return new Response(tile.data,{status:200});
     });
   }
-  return origFetch(input, init);
+  return origFetch(input,init);
 };
 
+// Color ramps
 const ramps = {
-  all: ['#edf8fb','#b2e2e2','#66c2a4','#238b45','#00441b']
+  'Caretta caretta':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'],
+  'Chelonia mydas':['#e5f5e0','#a1d99b','#31a354','#006d2c','#00441b'],
+  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#2171b5','#08306b'],
+  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#6a51a3','#3f007d'],
+  'Lepidochelys olivacea':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
+  'all':['#fee0d2','#fc9272','#fb6a4a','#de2d26','#a50f15']
 };
 
-let currentLayer = null;
-let currentLayerName = null;
-let fieldNames = [];
-
-function buildUrl(){
-  const res = document.getElementById('resolution').value;
-  const counttype = document.getElementById('counttype').value;
-  return `hexgrid_${res}_${counttype}.pmtiles`;
+// UI helpers
+const el=id=>document.getElementById(id);
+function clearFilters(){
+  document.querySelectorAll('select').forEach(s=>{ [...s.options].forEach(o=>o.selected=false) });
 }
 
-function updateLegend(ramp){
-  const legend = document.getElementById('legend');
-  legend.innerHTML = '<b>Hex value</b><br>';
-  const breaks = [0,10,50,200,500];
-  for (let i=0;i<breaks.length;i++){
-    const sw = `<span class="swatch" style="background:${ramp[i]||'#fff'}"></span>`;
-    const label = (i<breaks.length-1) ? `${breaks[i]}–${breaks[i+1]}` : `${breaks[i]}+`;
-    legend.insertAdjacentHTML('beforeend', `${sw}${label}<br/>`);
-  }
-}
-
-function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(()=> t.style.display='none', 4000);
-}
-
-function getSelected(fname){
-  const el = document.getElementById(`filter-${fname}`);
-  return el ? Array.from(el.selectedOptions).map(o=>o.value) : [];
-}
-
-function passFilters(props){
-  for (const fname of fieldNames){
-    const sel = getSelected(fname);
-    if (sel.length > 0){
-      const v = (props[fname] ?? '').toString();
-      if (!sel.includes(v)) return false;
+// Dynamic filter population
+async function populateFilters(pmtilesFile){
+  const url=`pmtiles://${pmtilesFile}/0/0/0.pbf`;
+  const resp=await fetch(url);
+  const buf=await resp.arrayBuffer();
+  const vt = new VectorTile(new Pbf(buf));
+  const layer = vt.layers[Object.keys(vt.layers)[0]];
+  const attrs = {};
+  for(let i=0;i<layer.length;i++){
+    const feat=layer.feature(i).properties;
+    for(const k in feat){
+      if(!attrs[k]) attrs[k]=new Set();
+      attrs[k].add(String(feat[k]));
     }
+  }
+  Object.entries(attrs).forEach(([k,v])=>{
+    if(el(k+'Filter')){
+      const sel=el(k+'Filter');
+      sel.innerHTML='';
+      [...v].sort().forEach(val=>{
+        sel.insertAdjacentHTML('beforeend',`<option value="${val}">${val}</option>`);
+      });
+    }
+  });
+}
+
+// Filtering logic
+function passFilters(p){
+  const ids=['species','development_stage','sex','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','season','year','month'];
+  for(const id of ids){
+    const sel=Array.from(el(id+'Filter').selectedOptions).map(o=>o.value);
+    if(sel.length && !sel.includes(String(p[id]))) return false;
   }
   return true;
 }
 
-function featureStyle(properties, ramp){
-  const value = properties.sum_val || 0;
-  let color = ramp[0];
-  if (value > 500) color = ramp[4];
-  else if (value > 200) color = ramp[3];
-  else if (value > 50) color = ramp[2];
-  else if (value > 10) color = ramp[1];
-  return { fill: true, fillColor: color, fillOpacity: 0.6, stroke: true, color: color, weight: 0.7 };
+// Style based on Jenks
+function styleFunction(properties,ramp,breaks){
+  const v=+properties.sum_val;
+  let color=ramp[0];
+  if(v>=breaks[4]) color=ramp[4];
+  else if(v>=breaks[3]) color=ramp[3];
+  else if(v>=breaks[2]) color=ramp[2];
+  else if(v>=breaks[1]) color=ramp[1];
+  return {fill:true,fillColor:color,fillOpacity:0.6,stroke:true,color:color,weight:0.5};
 }
 
-async function loadMetadata(pmtilesFile){
-  const p = new pmtiles.PMTiles(pmtilesFile);
-  const meta = await p.getMetadata();
-  if (!meta.vector_layers || meta.vector_layers.length === 0){
-    toast('No vector layers found in PMTiles');
-    return;
-  }
-  currentLayerName = meta.vector_layers[0].id;
-  console.log('Layer names found:', meta.vector_layers.map(l=>l.id));
-  fieldNames = Object.keys(meta.vector_layers[0].fields || {});
-  buildFilterUI();
-  await populateFilterValues(pmtilesFile);
-}
-
-function buildFilterUI(){
-  const container = document.getElementById('dynamicFilters');
-  container.innerHTML = '';
-  for (const fname of fieldNames){
-    const details = document.createElement('details');
-    details.innerHTML = `<summary>${fname}</summary><select id="filter-${fname}" multiple class="filter-multiselect"></select>`;
-    container.appendChild(details);
+// Legend
+function updateLegend(ramp,breaks){
+  const leg=el('legend'); leg.innerHTML='';
+  for(let i=0;i<breaks.length;i++){
+    leg.innerHTML+=`<div><span class="swatch" style="background:${ramp[i]}"></span>${i?breaks[i]:'0'}${breaks[i+1]?'–'+breaks[i+1]:'+'}</div>`;
   }
 }
 
-async function populateFilterValues(pmtilesFile){
-  const p = new pmtiles.PMTiles(pmtilesFile);
-  const vals = {};
-  for (const fname of fieldNames) vals[fname] = new Set();
-  // Sample tiles at z=5 for unique values
-  for (let x=0;x<2;x++){
-    for (let y=0;y<2;y++){
-      const tile = await p.getZxy(5,x,y);
-      if (!tile.data) continue;
-      const layerData = L.vectorGrid.protobuf;
-    }
+// Load layer
+let currentLayer;
+async function loadLayer(){
+  const pmtilesFile=`hexgrid_${el('resolution').value}_${el('counttype').value}.pmtiles`;
+  if(currentLayer){ map.removeLayer(currentLayer); }
+  await populateFilters(pmtilesFile);
+  const features=[];
+  const url=`pmtiles://${pmtilesFile}/{z}/{x}/{y}.pbf`;
+  const rampSel=(()=>{
+    const sp=Array.from(el('speciesFilter').selectedOptions).map(o=>o.value);
+    return sp.length===1 && ramps[sp[0]]?ramps[sp[0]]:ramps['all'];
+  })();
+  // We need to get breaks dynamically: naive load from z=5 tile
+  const resp=await fetch(`pmtiles://${pmtilesFile}/5/17/10.pbf`);
+  const buf=await resp.arrayBuffer();
+  const vt=new VectorTile(new Pbf(buf));
+  const lyr=vt.layers[Object.keys(vt.layers)[0]];
+  for(let i=0;i<lyr.length;i++){
+    const pr=lyr.feature(i).properties;
+    if(passFilters(pr)) features.push(+pr.sum_val);
   }
-  // For now: leave options empty — can add unique extraction later
+  const breaks=ss.jenks(features,5);
+  updateLegend(rampSel,breaks);
+  currentLayer=L.vectorGrid.protobuf(url,{
+    vectorTileLayerStyles:{[Object.keys(vt.layers)[0]]:(p)=>passFilters(p)?styleFunction(p,rampSel,breaks):{fill:false,stroke:false}},
+    interactive:true
+  }).on('mouseover',e=>{
+    const p=e.layer.properties;
+    L.popup().setLatLng(e.latlng).setContent(`<b>Species:</b> ${p.species}<br><b>Value:</b> ${p.sum_val}`).openOn(map);
+  }).addTo(map);
 }
 
-function loadLayer(){
-  const pmtilesFile = buildUrl();
-  const ramp = ramps.all;
-  updateLegend(ramp);
+// Events
+el('reloadBtn').onclick=loadLayer;
+el('resetBtn').onclick=()=>{clearFilters();loadLayer();};
+el('collapseBtn').onclick=()=>el('panel').classList.toggle('collapsed');
 
-  if (currentLayer) currentLayer.remove();
-
-  const urlTemplate = `pmtiles://${pmtilesFile}/{z}/{x}/{y}.pbf`;
-  currentLayer = L.vectorGrid.protobuf(urlTemplate, {
-    maxNativeZoom: 14,
-    maxZoom: 18,
-    vectorTileLayerStyles: {
-      [currentLayerName]: (properties) => {
-        return passFilters(properties) ? featureStyle(properties, ramp) : {fill:false, stroke:false};
-      }
-    },
-    interactive: true
-  })
-  .on('click', e => {
-    const p = e.layer.properties || {};
-    const html = Object.entries(p).map(([k,v]) => `<div><b>${k}:</b> ${v}</div>`).join('');
-    L.popup().setLatLng(e.latlng).setContent(html).openOn(map);
-  })
-  .addTo(map);
-}
-
-document.getElementById('loadBtn').addEventListener('click', async () => {
-  const file = buildUrl();
-  await loadMetadata(file);
-  loadLayer();
-});
-document.getElementById('resetBtn').addEventListener('click', () => {
-  fieldNames.forEach(fname=>{
-    const el = document.getElementById(`filter-${fname}`);
-    if (el) Array.from(el.options).forEach(o=>o.selected=false);
-  });
-  loadLayer();
-});
-
-// Initial load
-(async ()=>{
-  const file = buildUrl();
-  await loadMetadata(file);
-  loadLayer();
-})();
+loadLayer();
 </script>
+
+<script src="https://unpkg.com/pbf@3.2.1/dist/pbf.js"></script>
+<script src="https://unpkg.com/@mapbox/vector-tile@1.3.1/dist/vector-tile.js"></script>
 </body>
 </html>
