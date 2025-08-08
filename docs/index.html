@@ -5,22 +5,9 @@
 <title>Sea Turtle Mortality Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- Leaflet -->
+<!-- Leaflet (UMD is fine; CSP blocks only eval, not regular scripts) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- PMTiles -->
-<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
-
-<!-- VectorGrid -->
-<script src="https://unpkg.com/@mapbox/leaflet-vector-grid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
-
-<!-- MVT decode (for computing Jenks from visible tiles) -->
-<script src="https://unpkg.com/pbf@3.2.1/dist/pbf.js"></script>
-<script src="https://unpkg.com/@mapbox/vector-tile@1.3.1/dist/vector-tile.js"></script>
-
-<!-- Simple statistics for Jenks -->
-<script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
 
 <style>
 :root{
@@ -139,54 +126,26 @@ small.muted{color:#64748b}
     <details>
       <summary>Human interactions</summary>
       <div class="content">
-        <div class="row">
-          <label for="FishingFilter">Fishing</label>
-          <select id="FishingFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="FishingFilter">Fishing</label>
+          <select id="FishingFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
-        <div class="row">
-          <label for="Marine_DebrisFilter">Marine Debris</label>
-          <select id="Marine_DebrisFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="Marine_DebrisFilter">Marine Debris</label>
+          <select id="Marine_DebrisFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
-        <div class="row">
-          <label for="AgressionFilter">Aggression</label>
-          <select id="AgressionFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="AgressionFilter">Aggression</label>
+          <select id="AgressionFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
-        <div class="row">
-          <label for="Boat_collisionFilter">Boat collision</label>
-          <select id="Boat_collisionFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="Boat_collisionFilter">Boat collision</label>
+          <select id="Boat_collisionFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
-        <div class="row">
-          <label for="DredgingFilter">Dredging</label>
-          <select id="DredgingFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="DredgingFilter">Dredging</label>
+          <select id="DredgingFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
-        <div class="row">
-          <label for="OilFilter">Oil</label>
-          <select id="OilFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="OilFilter">Oil</label>
+          <select id="OilFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
-        <div class="row">
-          <label for="PetrolFilter">Petrol</label>
-          <select id="PetrolFilter" multiple size="4">
-            <option value="Yes">Yes</option><option value="No">No</option>
-            <option value="Sim">Sim</option><option value="Não">Não</option>
-          </select>
+        <div class="row"><label for="PetrolFilter">Petrol</label>
+          <select id="PetrolFilter" multiple size="4"><option>Yes</option><option>No</option><option>Sim</option><option>Não</option></select>
         </div>
       </div>
     </details>
@@ -242,35 +201,40 @@ small.muted{color:#64748b}
 <div id="spinner">Loading…</div>
 <div id="toast"></div>
 
-<script>
-// ---------- Map ----------
+<!-- Everything below runs as an ES module (CSP-safe, no eval) -->
+<script type="module">
+import { PMTiles } from "https://esm.sh/pmtiles@3.0.6";
+import { vectorGrid as VectorGrid } from "https://esm.sh/@mapbox/leaflet-vector-grid@1.3.0?external=leaflet";
+import { VectorTile } from "https://esm.sh/@mapbox/vector-tile@1.3.1";
+import Pbf from "https://esm.sh/pbf@3.2.1";
+import * as ss from "https://esm.sh/simple-statistics@7.8.3";
+
 const map = L.map('map', { zoomSnap: 0.25, worldCopyJump:true }).setView([-24, -45], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
 
-// ---------- PMTiles fetch shim for VectorGrid ----------
-const pmtilesCache = new Map();
-const origFetch = window.fetch.bind(window);
-window.fetch = (input, init) => {
-  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
-    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
-    const archive = m[1], z = +m[2], x = +m[3], y = +m[4];
-    let p = pmtilesCache.get(archive);
-    if (!p){ p = new pmtiles.PMTiles(archive); pmtilesCache.set(archive, p); }
-    return p.getZxy(z, x, y).then(tile =>
-      tile && tile.data ? new Response(tile.data) : new Response(null,{status:204})
-    );
-  }
-  return origFetch(input, init);
-};
-
-// ---------- Helpers ----------
 const $ = id => document.getElementById(id);
 const spinner = $('spinner'), toast = $('toast');
 function showSpinner(msg='Loading…'){ spinner.textContent = msg; spinner.style.display='block'; }
 function hideSpinner(){ spinner.style.display='none'; }
 function showToast(msg, ms=3500){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none', ms); }
 $('collapseBtn').addEventListener('click', ()=> $('panel').classList.toggle('collapsed'));
+
+const pmtilesCache = new Map();
+const origFetch = window.fetch.bind(window);
+// CSP-safe fetch shim for pmtiles://
+window.fetch = (input, init) => {
+  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
+    const archive = m[1], z = +m[2], x = +m[3], y = +m[4];
+    let p = pmtilesCache.get(archive);
+    if (!p){ p = new PMTiles(archive); pmtilesCache.set(archive, p); }
+    return p.getZxy(z, x, y).then(tile =>
+      tile && tile.data ? new Response(tile.data) : new Response(null,{status:204})
+    );
+  }
+  return origFetch(input, init);
+};
 
 function getMulti(id){ const el=$(id); return Array.from(el.selectedOptions||[]).map(o=>o.value); }
 function clearAllSelects(){ document.querySelectorAll('#panel select').forEach(s=>Array.from(s.options).forEach(o=>o.selected=false)); }
@@ -346,7 +310,6 @@ const fileFor = (res, ct) => `hexgrid_${res}_${ct}.pmtiles`;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lon2tile(lon,z){ return Math.floor((lon + 180) / 360 * Math.pow(2, z)); }
 function lat2tile(lat,z){ const r=lat*Math.PI/180; return Math.floor((1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2 * Math.pow(2, z)); }
-function latLngToTile(lat,lng,z){ return {x:lon2tile(lng,z), y:lat2tile(lat,z), z}; }
 function tileRangeForBounds(bounds,z){
   const nw=bounds.getNorthWest(), se=bounds.getSouthEast();
   let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
@@ -364,24 +327,11 @@ function currentRamp(){
   return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi'];
 }
 
-// Robust layer-name detection from PMTiles metadata; falls back to scanning a few tiles
 async function detectLayerName(pmFile){
-  let p = pmtilesCache.get(pmFile); if (!p){ p = new pmtiles.PMTiles(pmFile); pmtilesCache.set(pmFile, p); }
+  let p = pmtilesCache.get(pmFile); if (!p){ p = new PMTiles(pmFile); pmtilesCache.set(pmFile, p); }
   const header = await p.getHeader(); currentHeader = header;
-  try{
-    const meta = await p.getMetadata();
-    const raw = meta.json || meta['json'];
-    if (raw){
-      const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;
-      if (parsed && parsed.vector_layers && parsed.vector_layers.length){
-        const id = parsed.vector_layers[0].id;
-        console.debug('Layer id (metadata):', id);
-        return id;
-      }
-    }
-  }catch(e){ console.warn('Metadata parse failed, will scan tiles.'); }
 
-  // Scan a few tiles near current view to find any layer name
+  // Try reading a tile near current view; fallback scan
   const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
   const tr = tileRangeForBounds(map.getBounds(), z);
   for(let x=tr.minX; x<=tr.maxX; x++){
@@ -391,12 +341,20 @@ async function detectLayerName(pmFile){
         if(!t || !t.data) continue;
         const vt = new VectorTile(new Pbf(t.data));
         const names = Object.keys(vt.layers||{});
-        if(names.length){ console.debug('Layer id (scan):', names[0]); return names[0]; }
+        if(names.length){ return names[0]; }
       }catch{}
     }
   }
-  console.warn('Falling back to "hexgrid"');
-  return 'hexgrid'; // last resort guess
+  // Try (0,0) as last resort
+  try{
+    const t = await p.getZxy(z, 0, 0);
+    if (t && t.data){
+      const vt = new VectorTile(new Pbf(t.data));
+      const names = Object.keys(vt.layers||{});
+      if(names.length) return names[0];
+    }
+  }catch{}
+  return 'hexgrid'; // final fallback
 }
 
 function fallbackBreaks(values){ if(!values.length) return [0,1,2,3,4,5]; const min=Math.min(...values), max=Math.max(...values); return linspace(min,max,6); }
@@ -404,7 +362,7 @@ function linspace(a,b,n){ const out=[]; if(n<=1){out.push(a);return out;} const 
 
 async function computeJenksFromView(pmFile, layerName, predicate){
   showSpinner('Computing breaks…');
-  let p = pmtilesCache.get(pmFile); if (!p){ p = new pmtiles.PMTiles(pmFile); pmtilesCache.set(pmFile, p); }
+  let p = pmtilesCache.get(pmFile); if (!p){ p = new PMTiles(pmFile); pmtilesCache.set(pmFile, p); }
   const header = currentHeader || await p.getHeader();
   const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
   const b = map.getBounds(), tr = tileRangeForBounds(b, z);
@@ -466,15 +424,15 @@ async function buildLayer(){
 
     const predicate = makePredicate();
     jenksBreaks = await computeJenksFromView(pmFile, currentLayerName, predicate);
-    activeRamp = currentRamp();
+    activeRamp = (getMulti('speciesFilter').length===1 && ramps[getMulti('speciesFilter')[0]]) ? ramps[getMulti('speciesFilter')[0]] : ramps['multi'];
     updateLegend();
 
     if (currentLayer) { map.removeLayer(currentLayer); currentLayer=null; }
-    currentLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`, {
+    currentLayer = VectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`, {
       vectorTileLayerStyles: { [currentLayerName]: styleFactory(predicate) },
       interactive:true,
       getFeatureId: featureId,
-      rendererFactory: L.canvas.tile, // faster
+      rendererFactory: L.canvas.tile,
       maxZoom: 22
     })
     .on('mouseover', e=>{
@@ -508,18 +466,16 @@ async function buildLayer(){
   }
 }
 
-// Debounce helper
 function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
 
-// Recompute breaks & redraw on move or filter changes
 const recomputeOnMove = debounce(async ()=>{
   if (!currentPMFile || !currentLayerName) return;
   const predicate = makePredicate();
   jenksBreaks = await computeJenksFromView(currentPMFile, currentLayerName, predicate);
-  activeRamp = currentRamp();
+  activeRamp = (getMulti('speciesFilter').length===1 && ramps[getMulti('speciesFilter')[0]]) ? ramps[getMulti('speciesFilter')[0]] : ramps['multi'];
   updateLegend();
   if (currentLayer){ map.removeLayer(currentLayer); currentLayer=null; }
-  currentLayer = L.vectorGrid.protobuf(`pmtiles://${currentPMFile}/{z}/{x}/{y}.pbf`, {
+  currentLayer = VectorGrid.protobuf(`pmtiles://${currentPMFile}/{z}/{x}/{y}.pbf`, {
     vectorTileLayerStyles: { [currentLayerName]: styleFactory(predicate) },
     interactive:true,
     getFeatureId: featureId,
@@ -556,8 +512,8 @@ function readStateFromHash(){
   if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
   if(h.has('res')) $('resolution').value=h.get('res');
   if(h.has('ct')) $('counttype').value=h.get('ct');
-  const multiIds=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
-  for(const id of multiIds){
+  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
+  for(const id of ids){
     const val=h.get(id); if(!val) continue;
     const wanted=new Set(val.split('|'));
     Array.from($(id).options).forEach(opt=> opt.selected=wanted.has(opt.value));
@@ -567,8 +523,8 @@ function writeStateToHash(){
   const h=new URLSearchParams(); const c=map.getCenter();
   h.set('z', map.getZoom().toFixed(2)); h.set('lat', c.lat.toFixed(6)); h.set('lng', c.lng.toFixed(6));
   h.set('res', $('resolution').value); h.set('ct', $('counttype').value);
-  const multiIds=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
-  for(const id of multiIds){ const vals=getMulti(id); if(vals.length) h.set(id, vals.join('|')); }
+  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
+  for(const id of ids){ const vals=getMulti(id); if(vals.length) h.set(id, vals.join('|')); }
   location.hash = h.toString();
 }
 $('permalink').addEventListener('click', async ()=>{
@@ -577,7 +533,6 @@ $('permalink').addEventListener('click', async ()=>{
   catch{ showToast('Link updated in address bar.'); }
 });
 
-// Wiring
 $('resolution').addEventListener('change', ()=> buildLayer());
 $('counttype').addEventListener('change', ()=> buildLayer());
 ['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter']
@@ -588,10 +543,7 @@ map.on('moveend', ()=> recomputeOnMove());
 map.on('zoomend', ()=> recomputeOnMove());
 
 // Init
-(async function init(){
-  readStateFromHash();
-  await buildLayer();
-})();
+(function init(){ readStateFromHash(); buildLayer(); })();
 </script>
 </body>
 </html>
