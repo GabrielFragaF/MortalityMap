@@ -228,8 +228,12 @@ const $ = id => document.getElementById(id);
 const spinner=$('spinner'), toast=$('toast');
 const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
 const hideSpinner = () => { spinner.style.display='none'; };
-const showToast=(m,ms=3500)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
+const showToast=(m,ms=5000)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
 $('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
+
+/* Always hide spinner even if some unexpected error bubbles up */
+window.addEventListener('error',()=>hideSpinner());
+window.addEventListener('unhandledrejection',()=>hideSpinner());
 
 function enforceAllOption(e){
   const sel=e.target; if(!sel.multiple) return;
@@ -318,7 +322,7 @@ const pmCache = new Map();
 async function getPM(archive){
   const u = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(u)) return pmCache.get(u);
-  const inst = new pmtiles.PMTiles(u);
+  const inst = new pmtiles.PMTiles(u); // v4: string is OK (creates FetchSource)
   pmCache.set(u, inst);
   return inst;
 }
@@ -330,7 +334,8 @@ window.fetch = async (input, init) => {
     try{
       const pm = await getPM(archive);
       const t  = await pm.getZxy(+z,+x,+y);
-      return (t && t.data) ? new Response(t.data) : new Response(null,{status:204});
+      if(!t || !t.data){ return new Response(null,{status:204}); }
+      return new Response(t.data);
     }catch(e){
       console.error('Tile fetch failed for', archive, z, x, y, e);
       return new Response(null,{status:204});
@@ -347,7 +352,7 @@ function tileRangeForBounds(b,z){
   const nw=b.getNorthWest(), se=b.getSouthEast();
   let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
   let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[minY,maxY]=[minY,maxY];
   const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
   return {minX,maxX,minY,maxY};
 }
@@ -372,6 +377,7 @@ async function detectLayerName(pmFile){
         const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
       }
     }
+    // fallback: inspect a visible tile
     const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
     const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
     for(let x=minX;x<=maxX;x++){
@@ -391,8 +397,8 @@ async function detectLayerName(pmFile){
 const JENKS_CLASSES = 5;
 const EXACT_MAX = 2000;
 const SAMPLE_TARGET = 1000;
-const MAX_TILES_STATS = 90;     // tighter cap
-const MAX_HEXES_STATS  = 1800;  // early stop sooner
+const MAX_TILES_STATS = 90;     // limit tiles decoded for stats
+const MAX_HEXES_STATS  = 1800;  // early stop once we aggregated enough hexes
 
 function reservoirSample(values, k){
   const out=[];
@@ -463,7 +469,7 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
           if(Number.isFinite(cnt)) entry.count += cnt; else entry.count += 1;
           aggByHex.set(key, entry);
         }
-      }).catch(()=>{}));
+      }).catch(e=>console.warn('tile decode skipped',e)));
       if(aggByHex.size > MAX_HEXES_STATS) break outer;   // early stop
     }
   }
@@ -509,8 +515,7 @@ function makeStyle(){
     for(let i=0;i<jenksBreaks.length-1;i++){
       if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) { idx=i; break; }
     }
-    const ramp = activeRamp;
-    const color = ramp[Math.min(idx,ramp.length-1)];
+    const color = activeRamp[Math.min(idx,activeRamp.length-1)];
     return {fill:true, fillColor:color, fillOpacity:0.65, color, weight:0.5};
   };
 }
@@ -540,33 +545,41 @@ function bindHoverPopups(layer){
 }
 
 /* ===== Build / Rebuild ===== */
-let vtLayer=null, predicate=null;
-let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'];
+let predicate=null; // (only here; vtLayer/jenks/activeRamp already declared above)
 
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
-  const res=$('resolution').value, ct=$('counttype').value;
-  const pmFile = fileFor(res, ct);
-  currentPMFile=pmFile;
+  try{
+    const res=$('resolution').value, ct=$('counttype').value;
+    const pmFile = fileFor(res, ct);
+    currentPMFile=pmFile;
 
-  layerName = await detectLayerName(pmFile);
-  predicate = makePredicate();
+    layerName = await detectLayerName(pmFile);
+    predicate = makePredicate();
 
-  const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
-  jenksBreaks = await computeBreaksFromAggregates(values);
-  activeRamp = currentRamp();
-  updateLegend();
+    const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
+    if(!values.length){
+      showToast('No features matched the current view/filters. Try zooming out or changing filters.');
+    }
+    jenksBreaks = await computeBreaksFromAggregates(values);
+    activeRamp = currentRamp();
+    updateLegend();
 
-  if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
-  vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-    rendererFactory: L.canvas.tile,
-    vectorTileLayerStyles: { [layerName]: makeStyle() },
-    interactive:true,
-    getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
-  });
-  bindHoverPopups(vtLayer);
-  vtLayer.addTo(map);
-  hideSpinner();
+    if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+      rendererFactory: L.canvas.tile,
+      vectorTileLayerStyles: { [layerName]: makeStyle() },
+      interactive:true,
+      getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+    });
+    bindHoverPopups(vtLayer);
+    vtLayer.addTo(map);
+  }catch(err){
+    console.error('buildLayer error', err);
+    showToast('Failed to load layer. Check console for details.');
+  }finally{
+    hideSpinner();
+  }
 }
 
 /* ===== Only recompute on Apply / layer changes ===== */
