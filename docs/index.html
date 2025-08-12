@@ -5,192 +5,112 @@
 <title>Sea Turtle Mortality Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- Stop favicon 404 -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
+<!-- Favicon (prevents 404) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E'">
 
 <!-- Leaflet (local, CSP-safe) -->
-<link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
-<script src="./vendor/leaflet.js?v=20250812"></script>
+<link rel="stylesheet" href="./vendor/leaflet.css"/>
+<script src="./vendor/leaflet.js"></script>
 
 <!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local, CSP-safe) -->
-<script src="./vendor/pmtiles.js?v=20250812"></script>
-<script src="./vendor/Leaflet.VectorGrid.bundled.js?v=20250812"></script>
-<script src="./vendor/pbf.js?v=20250812"></script>
-<script src="./vendor/vector-tile.js?v=20250812"></script>
-<script src="./vendor/simple-statistics.min.js?v=20250812"></script>
+<script src="./vendor/pmtiles.js"></script>
+<script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
+<script src="./vendor/pbf.js"></script>
+<script src="./vendor/vector-tile.js"></script>
+<script src="./vendor/simple-statistics.min.js"></script>
 
 <style>
 :root{
   --bg:#0b1220;
-  --panel:rgba(255,255,255,0.95);
-  --panel-weak:rgba(248,250,252,0.9);
+  --panel:#fff;
+  --panel-weak:#f8fafc;
   --text:#0f172a;
   --muted:#64748b;
   --ring:#3b82f6;
-  --success:#10b981;
-  --danger:#ef4444;
-  --warning:#f59e0b;
-  --shadow:0 20px 50px rgba(2,6,23,.15);
-  --blur:blur(12px);
+  --shadow:0 12px 30px rgba(2,6,23,.18);
 }
-
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,sans-serif}
 #map{position:absolute;inset:0}
 
-/* Panel */
+/* Panel (unchanged layout; small a11y polish) */
 #panel{
-  position:absolute; top:16px; left:16px; z-index:1000;
-  width:380px; max-height:calc(100vh - 32px); overflow:auto;
-  background:var(--panel); backdrop-filter:var(--blur);
-  border-radius:20px; box-shadow:var(--shadow);
-  border:1px solid rgba(255,255,255,0.2); transition:all .3s;
+  position:absolute;top:14px;left:14px;z-index:1000;width:360px;
+  max-height:90vh;overflow:auto;background:var(--panel);
+  border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0
 }
-#panel.collapsed, #panel.mobile-collapsed{height:56px; overflow:hidden}
+#panel.collapsed{height:46px;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
+.topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
+.btn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
+.btn:hover{filter:brightness(0.98)}
+.section{padding:10px 14px}
+.row{margin-bottom:10px}
+label{display:block;font-weight:700;margin:6px 0;font-size:13px}
+select{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+select:focus,.btn:focus,input[type="checkbox"]:focus{outline:2px solid rgba(59,130,246,.35);outline-offset:2px}
+details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+details+details{margin-top:10px}
+summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
+summary::-webkit-details-marker{display:none}
+details .content{padding:10px 12px}
+.controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
+#resetBtn,#applyBtn{flex:1;background:#0ea5e9;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn{background:#e11d48}
+.help{font-size:12px;color:var(--muted);margin-top:4px}
 
-/* Topbar */
-.topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 20px; border-bottom:1px solid rgba(226,232,240,0.3);
-  background:var(--panel-weak); backdrop-filter:var(--blur);
-  border-radius:20px 20px 0 0; position:sticky; top:0; z-index:10;
-}
-.topbar h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.3px;
-  background:linear-gradient(135deg,#0ea5e9,#3b82f6);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text}
+/* Checkbox groups (simple; keep existing look) */
+.checkbox-group{border:1px solid #e2e8f0;border-radius:10px;padding:8px}
+.checkbox-row{display:flex;align-items:center;gap:8px;padding:6px 4px}
+.checkbox-row.all{border-bottom:1px solid #eef2f7;margin-bottom:6px;padding-bottom:8px}
+.checkbox-row input[type="checkbox"]{transform:scale(1.1)}
 
-/* Buttons */
-.btn{background:rgba(241,245,249,.9); border:1px solid rgba(226,232,240,.5);
-  color:#0f172a; border-radius:12px; padding:8px 14px; cursor:pointer;
-  font-weight:600; font-size:13px; transition:.2s; backdrop-filter:var(--blur)}
-.btn:hover{background:rgba(226,232,240,.9); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.1)}
-.btn:active{transform:translateY(0)}
-.btn.primary{background:linear-gradient(135deg,var(--success),#059669); color:#fff; border-color:transparent}
-.btn.danger{background:linear-gradient(135deg,var(--danger),#dc2626); color:#fff; border-color:transparent}
+/* Legend bottom-right */
+#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px}
+.leghdr{font-weight:800;margin-bottom:8px;display:flex;justify-content:space-between}
+.legend-row{display:flex;align-items:center;margin:4px 0;cursor:pointer;border-radius:6px;padding:4px 6px}
+.legend-row:hover{background:#f1f5f9}
+.legend-row.isolated{background:#fff7ed;border:1px solid #fed7aa}
+.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
+.histogram{display:flex;align-items:flex-end;gap:2px;height:24px;margin:8px 0}
+.hist-bar{flex:1;min-width:3px;background:linear-gradient(to top,rgba(59,130,246,.6),rgba(59,130,246,.85));border-radius:2px}
 
-/* Sections */
-.section{padding:16px 20px}
-.section.sticky{position:sticky; top:76px; background:var(--panel-weak);
-  backdrop-filter:var(--blur); border-bottom:1px solid rgba(226,232,240,.3);
-  margin:0 -20px 16px; padding:12px 20px; font-weight:700; font-size:14px;
-  letter-spacing:.5px; text-transform:uppercase; color:var(--muted)}
-.row{margin-bottom:16px}
-.row:last-child{margin-bottom:0}
-
-/* Field headings (A11y fix: avoid <label> without for=) */
-.field-label{display:block; font-weight:600; margin:0 0 8px; font-size:14px; color:var(--text)}
-
-/* Selects */
-select{width:100%; padding:12px 16px; border:1px solid rgba(226,232,240,.6);
-  border-radius:12px; background:rgba(255,255,255,.9); backdrop-filter:var(--blur);
-  transition:.2s; font-size:14px}
-select:focus{border-color:var(--ring); box-shadow:0 0 0 3px rgba(59,130,246,.1); outline:none}
-
-/* Checkbox groups */
-.checkbox-group{border:1px solid rgba(226,232,240,.4); border-radius:16px;
-  background:rgba(255,255,255,.8); backdrop-filter:var(--blur); padding:12px; transition:.2s}
-.checkbox-group:hover{border-color:rgba(59,130,246,.3)}
-.checkbox-row{display:flex; align-items:center; padding:8px 4px; border-radius:8px; transition:.2s}
-.checkbox-row:hover{background:rgba(59,130,246,.05)}
-.checkbox-row.all{font-weight:700; border-bottom:1px solid rgba(226,232,240,.3); padding-bottom:12px; margin-bottom:8px}
-.checkbox-row label{display:flex; align-items:center; gap:12px; cursor:pointer; width:100%}
-.checkbox-row input[type="checkbox"]{transform:scale(1.15); accent-color:var(--ring)}
-
-/* Range sliders */
-.range-container{margin:12px 0}
-.range-group{display:flex; flex-direction:column; gap:8px}
-.range-slider{width:100%; height:6px; border-radius:3px;
-  background:linear-gradient(to right,rgba(226,232,240,.8),rgba(59,130,246,.2));
-  outline:none; -webkit-appearance:none; transition:.2s}
-.range-slider::-webkit-slider-thumb{appearance:none; width:20px; height:20px; border-radius:50%;
-  background:linear-gradient(135deg,var(--ring),#1d4ed8); cursor:pointer; box-shadow:0 2px 8px rgba(59,130,246,.3); transition:.2s}
-.range-slider::-moz-range-thumb{width:20px; height:20px; border-radius:50%;
-  background:linear-gradient(135deg,var(--ring),#1d4ed8); cursor:pointer; border:none; box-shadow:0 2px 8px rgba(59,130,246,.3)}
-.range-labels{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:8px}
-.range-reset{color:var(--ring); cursor:pointer; text-decoration:none; font-weight:500; transition:.2s}
-.range-reset:hover{color:#1d4ed8}
-
-/* Controls */
-.control-row{display:flex; align-items:center; justify-content:space-between; margin:12px 0; padding:8px; border-radius:12px; background:rgba(248,250,252,.5)}
-.control-row label{margin:0; font-size:14px; font-weight:500}
-.control-row input[type="checkbox"]{transform:scale(1.2); accent-color:var(--ring)}
-.slider-container{display:flex; align-items:center; gap:12px; flex:1; margin-left:16px}
-.slider-container input[type="range"]{flex:1}
-.slider-value{min-width:50px; text-align:right; font-size:13px; color:var(--muted); font-weight:500}
-
-/* Legend */
-#legend{position:absolute; bottom:20px; right:16px; z-index:1000; background:var(--panel); backdrop-filter:var(--blur);
-  border-radius:16px; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,.2); padding:16px; font-size:13px; min-width:280px; max-width:320px; transition:.3s}
-.leghdr{font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; font-size:15px}
-.leghdr span:last-child{font-size:11px; color:var(--muted); font-weight:400}
-.legend-row{display:flex; align-items:center; margin:6px 0; cursor:pointer; padding:6px 8px; border-radius:8px; transition:.2s}
-.legend-row:hover{background:rgba(59,130,246,.08); transform:translateX(2px)}
-.legend-row.isolated{background:rgba(251,191,36,.15); border:1px solid rgba(251,191,36,.4); font-weight:600}
-.swatch{width:28px; height:14px; border-radius:4px; border:1px solid rgba(148,163,184,.6); margin-right:12px; transition:.2s}
-.legend-row:hover .swatch{transform:scale(1.05); box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.histogram{display:flex; align-items:end; height:24px; gap:2px; margin:12px 0 8px; padding:0 4px}
-.hist-bar{background:linear-gradient(to top,rgba(59,130,246,.6),rgba(59,130,246,.8)); border-radius:2px 2px 0 0; min-width:3px; flex:1; transition:.2s; cursor:pointer}
-.hist-bar:hover{background:linear-gradient(to top,var(--ring),#1d4ed8); transform:scaleY(1.1)}
-
-/* Spinner & toast */
-#spinner{position:absolute; top:16px; right:16px; z-index:1000; display:none; background:var(--panel); backdrop-filter:var(--blur);
-  border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 16px; box-shadow:var(--shadow); font-size:14px; font-weight:500}
-#toast{position:absolute; top:80px; right:16px; z-index:1000; display:none; border-radius:12px; padding:12px 16px; box-shadow:var(--shadow);
-  font-size:14px; font-weight:500; max-width:360px; backdrop-filter:var(--blur); animation:slideIn .3s ease}
-#toast.error{background:rgba(254,226,226,.95); color:#991b1b; border:1px solid rgba(252,165,165,.6)}
-#toast.warning{background:rgba(254,243,199,.95); color:#92400e; border:1px solid rgba(251,191,36,.6)}
-#toast.info{background:rgba(219,234,254,.95); color:#1e40af; border:1px solid rgba(147,197,253,.6)}
-#toast.success{background:rgba(209,250,229,.95); color:#065f46; border:1px solid rgba(52,211,153,.6)}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-.leaflet-popup-content{margin:12px 16px; font-size:13px; min-width:300px}
-.kv{display:flex; justify-content:space-between; gap:16px; margin:6px 0; padding:4px 0}
-.kv:not(:last-child){border-bottom:1px solid rgba(226,232,240,.3)}
-.kv b{color:#0f172a; font-size:13px; font-weight:600}
-.kv span{text-align:right; font-size:13px; font-weight:500}
-small.muted{color:#64748b; font-size:11px}
-
-/* Mobile */
-@media (max-width:768px){
-  #panel{width:calc(100vw - 32px); max-height:75vh; left:16px; right:16px}
-  #legend{position:fixed; bottom:16px; left:16px; right:16px; min-width:0; max-width:none}
-  .section{padding:12px 16px}
-  .section.sticky{padding:10px 16px; margin:0 -16px 12px}
-}
-
-/* Minor */
-#panel{scroll-behavior:smooth}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
-.loading{animation:pulse 1.5s ease-in-out infinite}
+/* Spinner + toast */
+#spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
+#toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:360px}
+#toast.info{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
+#toast.warn{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.leaflet-popup-content{margin:8px 12px}.kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}small.muted{color:#64748b}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
-<!-- Filter Panel -->
-<div id="panel">
+<!-- Panel -->
+<div id="panel" aria-label="Filters panel">
   <div class="topbar">
     <h1>Sea Turtle Mortality</h1>
-    <div style="display:flex;gap:10px">
-      <button id="permalink" class="btn" title="Copy shareable link">🔗 Share</button>
-      <button id="collapseBtn" class="btn" title="Collapse panel">–</button>
+    <div style="display:flex;gap:8px">
+      <button id="permalink" class="btn" title="Copy shareable link" aria-label="Copy shareable link">🔗 Share</button>
+      <button id="collapseBtn" class="btn" title="Collapse panel" aria-label="Collapse panel">–</button>
     </div>
   </div>
 
   <div class="section">
     <div class="row">
-      <div class="field-label">Grid cell size (H3)</div>
-      <select id="resolution">
-        <option value="r3" selected>Grid cell size ≈ 60 km edge</option>
-        <option value="r4">≈ 22.6 km</option>
-        <option value="r5">≈ 8.6 km</option>
-        <option value="r6">≈ 3.2 km</option>
+      <label for="resolution">Resolution (H3)</label>
+      <select id="resolution" name="resolution">
+        <option value="r3" selected>r3</option>
+        <option value="r4">r4</option>
+        <option value="r5">r5</option>
+        <option value="r6">r6</option>
       </select>
-      <div style="font-size:12px;color:var(--muted);margin-top:4px">Start at r3 for speed; switch to r6 for detail.</div>
+      <div class="help">Start at r3 for speed; switch to r6 for detail.</div>
     </div>
 
     <div class="row">
-      <div class="field-label">Count Type</div>
-      <select id="counttype">
+      <label for="counttype">Count Type</label>
+      <select id="counttype" name="counttype">
         <option value="weight" selected>Mortality position (weight)</option>
         <option value="new_weight">Mortality position (new_weight)</option>
         <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
@@ -200,163 +120,138 @@ small.muted{color:#64748b; font-size:11px}
     </div>
   </div>
 
-  <div class="section sticky">Species & Biology</div>
+  <!-- Species & Biology -->
   <div class="section">
     <div class="row">
-      <div class="field-label">Species</div>
-      <div class="checkbox-group" id="speciesGroup">
-        <div class="checkbox-row all"><label><input type="checkbox" id="species_all" data-value="(All)" checked>(All)</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="species_caretta" data-value="Caretta caretta">Caretta caretta</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="species_chelonia" data-value="Chelonia mydas">Chelonia mydas</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="species_dermochelys" data-value="Dermochelys coriacea">Dermochelys coriacea</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="species_eretmochelys" data-value="Eretmochelys imbricata">Eretmochelys imbricata</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="species_lepidochelys" data-value="Lepidochelys olivacea">Lepidochelys olivacea</label></div>
+      <label>Species</label>
+      <div class="checkbox-group" id="speciesGroup" role="group" aria-label="Species">
+        <div class="checkbox-row all">
+          <input type="checkbox" id="species_all" aria-checked="true" checked>
+          <label for="species_all">(All)</label>
+        </div>
+        <div class="checkbox-row"><input type="checkbox" id="species_caretta"><label for="species_caretta">Caretta caretta</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="species_chelonia"><label for="species_chelonia">Chelonia mydas</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="species_dermochelys"><label for="species_dermochelys">Dermochelys coriacea</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="species_eretmochelys"><label for="species_eretmochelys">Eretmochelys imbricata</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="species_lepidochelys"><label for="species_lepidochelys">Lepidochelys olivacea</label></div>
       </div>
     </div>
 
     <div class="row">
-      <div class="field-label">Development Stage</div>
-      <div class="checkbox-group" id="stageGroup">
-        <div class="checkbox-row all"><label><input type="checkbox" id="stage_all" data-value="(All)" checked>(All)</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="stage_adult" data-value="Adult">Adult</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="stage_juvenile" data-value="Juvenile">Juvenile</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="stage_hatchling" data-value="Hatchling">Hatchling</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="stage_unknown" data-value="Unknown">Unknown</label></div>
+      <label>Development Stage</label>
+      <div class="checkbox-group" id="stageGroup" role="group" aria-label="Development Stage">
+        <div class="checkbox-row all"><input type="checkbox" id="stage_all" checked><label for="stage_all">(All)</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="stage_adult"><label for="stage_adult">Adult</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="stage_juvenile"><label for="stage_juvenile">Juvenile</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="stage_hatchling"><label for="stage_hatchling">Hatchling</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="stage_unknown"><label for="stage_unknown">Unknown</label></div>
       </div>
     </div>
 
     <div class="row">
-      <div class="field-label">Sex</div>
-      <div class="checkbox-group" id="sexGroup">
-        <div class="checkbox-row all"><label><input type="checkbox" id="sex_all" data-value="(All)" checked>(All)</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="sex_female" data-value="Female">Female</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="sex_male" data-value="Male">Male</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="sex_unknown" data-value="Unknown">Unknown</label></div>
+      <label>Sex</label>
+      <div class="checkbox-group" id="sexGroup" role="group" aria-label="Sex">
+        <div class="checkbox-row all"><input type="checkbox" id="sex_all" checked><label for="sex_all">(All)</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="sex_female"><label for="sex_female">Female</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="sex_male"><label for="sex_male">Male</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="sex_unknown"><label for="sex_unknown">Unknown</label></div>
       </div>
     </div>
   </div>
 
-  <div class="section sticky">Human Interactions</div>
+  <!-- Human Interactions -->
   <div class="section">
     <details>
-      <summary>Fishing & Marine Activities</summary>
+      <summary>Human interactions</summary>
       <div class="content">
         <div class="row">
-          <div class="field-label">Fishing</div>
-          <div class="checkbox-group" id="fishingGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="fishing_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="fishing_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="fishing_no" data-value="No">No</label></div>
+          <label>Fishing</label>
+          <div class="checkbox-group" id="fishingGroup" role="group" aria-label="Fishing">
+            <div class="checkbox-row all"><input type="checkbox" id="fishing_all" checked><label for="fishing_all">(All)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="fishing_yes"><label for="fishing_yes">Yes</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="fishing_no"><label for="fishing_no">No</label></div>
           </div>
         </div>
-
         <div class="row">
-          <div class="field-label">Marine Debris</div>
-          <div class="checkbox-group" id="marineDebrisGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="debris_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="debris_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="debris_no" data-value="No">No</label></div>
+          <label>Marine Debris</label>
+          <div class="checkbox-group" id="marineDebrisGroup" role="group" aria-label="Marine Debris">
+            <div class="checkbox-row all"><input type="checkbox" id="debris_all" checked><label for="debris_all">(All)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="debris_yes"><label for="debris_yes">Yes</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="debris_no"><label for="deris_no">No</label></div>
           </div>
         </div>
-
         <div class="row">
-          <div class="field-label">Boat Collision</div>
-          <div class="checkbox-group" id="boatGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="boat_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="boat_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="boat_no" data-value="No">No</label></div>
+          <label>Boat collision</label>
+          <div class="checkbox-group" id="boatGroup" role="group" aria-label="Boat collision">
+            <div class="checkbox-row all"><input type="checkbox" id="boat_all" checked><label for="boat_all">(All)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="boat_yes"><label for="boat_yes">Yes</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="boat_no"><label for="boat_no">No</label></div>
           </div>
         </div>
-
         <div class="row">
-          <div class="field-label">Dredging</div>
-          <div class="checkbox-group" id="dredgingGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="dredging_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="dredging_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="dredging_no" data-value="No">No</label></div>
+          <label>Dredging</label>
+          <div class="checkbox-group" id="dredgingGroup" role="group" aria-label="Dredging">
+            <div class="checkbox-row all"><input type="checkbox" id="dredging_all" checked><label for="dredging_all">(All)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="dredging_yes"><label for="dredging_yes">Yes</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="dredging_no"><label for="dredging_no">No</label></div>
           </div>
         </div>
-      </div>
-    </details>
-
-    <details>
-      <summary>Physical Harm & Pollution</summary>
-      <div class="content">
         <div class="row">
-          <div class="field-label">Aggression</div>
-          <div class="checkbox-group" id="aggressionGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="aggression_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="aggression_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="aggression_no" data-value="No">No</label></div>
+          <label>Oil</label>
+          <div class="checkbox-group" id="oilGroup" role="group" aria-label="Oil">
+            <div class="checkbox-row all"><input type="checkbox" id="oil_all" checked><label for="oil_all">(All)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="oil_yes"><label for="oil_yes">Yes</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="oil_no"><label for="oil_no">No</label></div>
           </div>
         </div>
-
         <div class="row">
-          <div class="field-label">Oil</div>
-          <div class="checkbox-group" id="oilGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="oil_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="oil_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="oil_no" data-value="No">No</label></div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field-label">Petrol</div>
-          <div class="checkbox-group" id="petrolGroup">
-            <div class="checkbox-row all"><label><input type="checkbox" id="petrol_all" data-value="(All)" checked>(All)</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="petrol_yes" data-value="Yes">Yes</label></div>
-            <div class="checkbox-row"><label><input type="checkbox" id="petrol_no" data-value="No">No</label></div>
+          <label>Petrol</label>
+          <div class="checkbox-group" id="petrolGroup" role="group" aria-label="Petrol">
+            <div class="checkbox-row all"><input type="checkbox" id="petrol_all" checked><label for="petrol_all">(All)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="petrol_yes"><label for="petrol_yes">Yes</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="petrol_no"><label for="petrol_no">No</label></div>
           </div>
         </div>
       </div>
     </details>
   </div>
 
-  <div class="section sticky">Environment & Time</div>
+  <!-- Environment & time -->
   <div class="section">
     <div class="row">
-      <div class="field-label">Season</div>
-      <div class="checkbox-group" id="seasonGroup">
-        <div class="checkbox-row all"><label><input type="checkbox" id="season_all" data-value="(All)" checked>(All)</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="season_autumn" data-value="Autumn">Autumn</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="season_spring" data-value="Spring">Spring</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="season_summer" data-value="Summer">Summer</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="season_winter" data-value="Winter">Winter</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="season_unknown" data-value="Unknown">Unknown</label></div>
+      <label for="decompFilter">Decomposition code</label>
+      <select id="decompFilter" name="decompFilter" multiple size="6">
+        <option value="__ALL__" selected>(All)</option>
+        <option>1</option><option>2</option><option>3</option>
+        <option>4</option><option>5</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Season</label>
+      <div class="checkbox-group" id="seasonGroup" role="group" aria-label="Season">
+        <div class="checkbox-row all"><input type="checkbox" id="season_all" checked><label for="season_all">(All)</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="season_autumn"><label for="season_autumn">Autumn</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="season_spring"><label for="season_spring">Spring</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="season_summer"><label for="season_summer">Summer</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="season_winter"><label for="season_winter">Winter</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="season_unknown"><label for="season_unknown">Unknown</label></div>
       </div>
     </div>
 
     <div class="row">
-      <div class="field-label">Decomposition code</div>
-      <div class="checkbox-group" id="decompGroup">
-        <div class="checkbox-row all"><label><input type="checkbox" id="decomp_all" data-value="(All)" checked>(All)</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="decomp_1" data-value="1">1</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="decomp_2" data-value="2">2</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="decomp_3" data-value="3">3</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="decomp_4" data-value="4">4</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="decomp_5" data-value="5">5</label></div>
-        <div class="checkbox-row"><label><input type="checkbox" id="decomp_unknown" data-value="Unknown">Unknown</label></div>
-      </div>
+      <label for="yearFilter">Year</label>
+      <select id="yearFilter" name="yearFilter" multiple size="10">
+        <option value="__ALL__" selected>(All)</option>
+        <option>2015</option><option>2016</option><option>2017</option>
+        <option>2018</option><option>2019</option><option>2020</option>
+        <option>2021</option><option>2022</option><option>2023</option><option>2024</option>
+      </select>
     </div>
 
     <div class="row">
-      <div class="field-label">Year Range</div>
-      <div class="range-container">
-        <div class="range-group">
-          <input type="range" id="yearRangeMin" class="range-slider" min="2015" max="2024" value="2015">
-          <input type="range" id="yearRangeMax" class="range-slider" min="2015" max="2024" value="2024">
-        </div>
-        <div class="range-labels">
-          <span id="yearMinLabel">2015</span>
-          <span class="range-reset" onclick="resetYearRange()">Reset range</span>
-          <span id="yearMaxLabel">2024</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <label for="monthFilter" class="field-label">Month</label>
-      <select id="monthFilter" multiple size="4">
+      <label for="monthFilter">Month</label>
+      <select id="monthFilter" name="monthFilter" multiple size="6">
         <option value="__ALL__" selected>(All)</option>
         <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
         <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
@@ -364,46 +259,36 @@ small.muted{color:#64748b; font-size:11px}
     </div>
   </div>
 
-  <div class="section sticky">Display Settings</div>
   <div class="section">
-    <div class="control-row">
-      <input type="checkbox" id="highlightTop10">
-      <label for="highlightTop10">Highlight top 10%</label>
-    </div>
-    
-    <div class="control-row">
-      <label for="opacitySlider">Opacity</label>
-      <div class="slider-container">
-        <input type="range" id="opacitySlider" min="30" max="90" value="65">
-        <span class="slider-value" id="opacityValue">0.65</span>
-      </div>
-    </div>
-
     <div class="controls-footer">
-      <button id="resetBtn" class="btn danger">Reset All</button>
-      <button id="applyBtn" class="btn primary">Apply Filters</button>
+      <button id="resetBtn" class="btn" aria-label="Reset all filters">Reset</button>
+      <button id="applyBtn" class="btn" aria-label="Apply filters" style="background:#0ea5e9;color:#fff">Apply</button>
     </div>
   </div>
 </div>
 
-<div id="legend"></div>
+<div id="legend" aria-live="polite"></div>
 <div id="spinner">Loading…</div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="assertive"></div>
 
 <script>
-/* ===== Decoder shim (UMD/browserified) ===== */
+/* ========= Decoder shim (works with UMD/browserified builds) ========= */
 (function ensureDecoders(){
   var VT = (window.VectorTile)
         || (window.vectorTile && window.vectorTile.VectorTile)
         || (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile)
         || null;
+
   var PBF = (window.Pbf)
          || (window.pbf && window.pbf.Pbf)
          || null;
+
   if (!window.VectorTile && VT) window.VectorTile = VT;
   if (!window.Pbf && PBF) window.Pbf = PBF;
+
   window.__VT__ = VT || window.VectorTile || null;
   window.__PBF__ = PBF || window.Pbf || null;
+
   if (!window.__VT__ || !window.__PBF__) {
     console.warn('Decoder globals missing:',
       (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
@@ -411,102 +296,67 @@ small.muted{color:#64748b; font-size:11px}
   }
 })();
 
-/* ===== Map ===== */
+/* ========= Map ========= */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 
-/* ===== UI helpers ===== */
+/* ========= UI helpers ========= */
 const $ = id => document.getElementById(id);
 const spinner=$('spinner'), toast=$('toast');
-const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; spinner.classList.add('loading'); };
-const hideSpinner = () => { spinner.style.display='none'; spinner.classList.remove('loading'); };
-const showToast = (m, ms=4500, type='error') => { toast.textContent = m; toast.className = type; toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', ms); };
-let mobileCollapsed = false;
-map.on('click', () => { if (window.innerWidth <= 768 && !mobileCollapsed) { $('panel').classList.add('mobile-collapsed'); mobileCollapsed = true; }});
-$('collapseBtn').addEventListener('click', () => { const p=$('panel'); p.classList.toggle('collapsed'); $('collapseBtn').textContent = p.classList.contains('collapsed') ? '+' : '–'; });
-window.addEventListener('error', hideSpinner); window.addEventListener('unhandledrejection', hideSpinner);
+const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
+const hideSpinner = () => { spinner.style.display='none'; };
+const showToast=(m,ms=5000,type='error')=>{
+  toast.textContent=m; toast.className = type==='info'?'info':(type==='warn'?'warn':''); toast.style.display='block';
+  setTimeout(()=>toast.style.display='none',ms);
+};
+$('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
+window.addEventListener('error',()=>hideSpinner());
+window.addEventListener('unhandledrejection',()=>hideSpinner());
 
-/* ===== Checkbox groups (A11y-safe) ===== */
-// (Changed: inputs carry data-value; labels wrap inputs)
+/* ========= Checkbox groups (keep All logic) ========= */
 function setupCheckboxGroup(groupId){
-  const group = $(groupId); if (!group) return;
-  const inputs = Array.from(group.querySelectorAll('input[type="checkbox"]'));
-  const allCB = inputs.find(cb => cb.id.endsWith('_all'));
-  const others = inputs.filter(cb => cb !== allCB);
-  if (allCB){
-    allCB.addEventListener('change', e => { if (e.target.checked) others.forEach(cb => cb.checked = false); });
-  }
-  others.forEach(cb => {
-    cb.addEventListener('change', () => {
-      if (cb.checked && allCB) allCB.checked = false;
-      if (others.every(x => !x.checked) && allCB) allCB.checked = true;
+  const g=$(groupId); if(!g) return;
+  const all = g.querySelector('.all input');
+  const rest = Array.from(g.querySelectorAll(':scope input:not(.all input)'));
+  all.addEventListener('change', e=>{
+    if(e.target.checked){ rest.forEach(cb=>cb.checked=false); }
+  });
+  rest.forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      if(e.target.checked) all.checked=false;
+      if(rest.every(r=>!r.checked)) all.checked=true;
     });
   });
 }
+['speciesGroup','stageGroup','sexGroup','fishingGroup','marineDebrisGroup','boatGroup','dredgingGroup','oilGroup','petrolGroup','seasonGroup'].forEach(setupCheckboxGroup);
+
 function getCheckboxValues(groupId){
-  const group = $(groupId); if (!group) return [];
-  const inputs = Array.from(group.querySelectorAll('input[type="checkbox"]'));
-  const allCB = inputs.find(cb => cb.id.endsWith('_all'));
-  if (allCB && allCB.checked) return []; // (All)
-  return inputs.filter(cb => cb !== allCB && cb.checked)
-               .map(cb => cb.getAttribute('data-value') || (cb.labels && cb.labels[0] ? cb.labels[0].textContent.trim() : ''))
-               .filter(Boolean);
+  const g=$(groupId); if(!g) return [];
+  if(g.querySelector('.all input')?.checked) return [];
+  return Array.from(g.querySelectorAll(':scope input:not(.all input):checked'))
+    .map(cb=>cb.labels?.[0]?.textContent?.trim())
+    .filter(Boolean);
 }
-['speciesGroup','stageGroup','sexGroup','fishingGroup','marineDebrisGroup',
- 'aggressionGroup','boatGroup','dredgingGroup','oilGroup','petrolGroup',
- 'seasonGroup','decompGroup'].forEach(setupCheckboxGroup);
 
-/* ===== Month multi-select ===== */
+/* ========= Multi-select (year/month, decomp) ========= */
 function enforceAllOption(e){
-  const sel = e.target; if (!sel.multiple) return;
-  const all = Array.from(sel.options).find(o => o.value === '__ALL__');
-  const chosen = Array.from(sel.selectedOptions).map(o => o.value);
-  if (chosen.length === 0) { all.selected = true; }
-  else if (chosen.includes('__ALL__') && chosen.length > 1) {
-    Array.from(sel.options).forEach(o => o.selected = false); all.selected = true;
-  } else if (!chosen.includes('__ALL__') && all.selected) { all.selected = false; }
+  const sel=e.target; if(!sel.multiple) return;
+  const all = Array.from(sel.options).find(o=>o.value==='__ALL__');
+  const chosen = Array.from(sel.selectedOptions).map(o=>o.value);
+  if(chosen.length===0){ all.selected=true; }
+  else if(chosen.includes('__ALL__') && chosen.length>1){
+    Array.from(sel.options).forEach(o=>o.selected=false); all.selected=true;
+  }else if(!chosen.includes('__ALL__') && all.selected){ all.selected=false; }
 }
-document.querySelectorAll('#panel select[multiple]').forEach(s => s.addEventListener('change', enforceAllOption));
-const getMulti = id => { const vals = Array.from($(id).selectedOptions || []).map(o => o.value); return (vals.length === 0 || vals.includes('__ALL__')) ? [] : vals; };
+document.querySelectorAll('#panel select[multiple]').forEach(s=>s.addEventListener('change',enforceAllOption));
+const getMulti = id => {
+  const vals = Array.from($(id).selectedOptions||[]).map(o=>o.value);
+  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
+};
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
-/* ===== Year range ===== */
-function updateYearLabels(){
-  let a = +$('yearRangeMin').value, b = +$('yearRangeMax').value;
-  if (a > b){ const t=a; a=b; b=t; $('yearRangeMin').value=a; $('yearRangeMax').value=b; }
-  $('yearMinLabel').textContent = String(a);
-  $('yearMaxLabel').textContent = String(b);
-}
-$('yearRangeMin').addEventListener('input', updateYearLabels);
-$('yearRangeMax').addEventListener('input', updateYearLabels);
-function resetYearRange(){ $('yearRangeMin').value='2015'; $('yearRangeMax').value='2024'; updateYearLabels(); }
-
-/* ===== Opacity ===== */
-$('opacitySlider').addEventListener('input', e => { $('opacityValue').textContent = (e.target.value/100).toFixed(2); });
-
-/* ===== Debounce ===== */
-function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
-const debouncedRebuild = debounce(buildLayer, 300);
-
-/* ===== Clear all ===== */
-function clearAllFilters(){
-  document.querySelectorAll('.checkbox-group').forEach(g=>{
-    const inputs = Array.from(g.querySelectorAll('input[type="checkbox"]'));
-    inputs.forEach(cb=>cb.checked=false);
-    const all = inputs.find(cb=>cb.id.endsWith('_all')); if (all) all.checked=true;
-  });
-  document.querySelectorAll('#panel select').forEach(s=>{
-    if (s.multiple){ Array.from(s.options).forEach(o=>o.selected=false); const all = Array.from(s.options).find(o=>o.value==='__ALL__'); if (all) all.selected=true; }
-    else { s.selectedIndex=0; }
-  });
-  resetYearRange(); $('opacitySlider').value=65; $('opacityValue').textContent='0.65';
-  $('highlightTop10').checked=false; isolatedBin=-1;
-}
-
-/* ===== Formatting ===== */
-const nf = (v) => { if (v===0) return '0'; const abs=Math.abs(v); const d=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:d}).format(v); };
-
-/* ===== Ramps & state ===== */
-const ramps = {
+/* ========= Colors ========= */
+const ramps={
   'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
   'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
   'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
@@ -514,526 +364,692 @@ const ramps = {
   'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
   'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
+let activeRamp=ramps['multi'];
 let isolatedBin=-1;
-const currentRamp=()=>{ const sp=getCheckboxValues('speciesGroup'); return (sp.length===1 && ramps[sp[0]])?ramps[sp[0]]:ramps['multi']; };
 
-/* ===== Legend & binning ===== */
+/* ========= Legend ========= */
 function computeBinIndex(breaks, v){
-  const EPS=1e-9;
-  if (!Array.isArray(breaks) || breaks.length<2 || !Number.isFinite(v)) return -1;
-  const last=breaks.length-1;
-  if (v<=breaks[0]) return 0;
-  if (v>=breaks[last]) return last-1;
-  for (let i=1;i<breaks.length;i++){ if (v<breaks[i] || Math.abs(v-breaks[i])<=EPS) return i-1; }
-  return last-1;
+  if(!Array.isArray(breaks) || breaks.length<2 || !Number.isFinite(v)) return -1;
+  const n=breaks.length-1;
+  if(v<=breaks[0]) return 0;
+  if(v>=breaks[n]) return n-1;
+  for(let i=1;i<breaks.length;i++){
+    if(v <= breaks[i]) return i-1;
+  }
+  return n-1;
 }
 function updateLegend(localBreaks, localRamp, cellValues=[]){
-  const el=$('legend'); const ramp=(Array.isArray(localRamp)&&localRamp.length)?localRamp.slice():ramps['multi'].slice();
+  const el=$('legend');
+  const ramp=(Array.isArray(localRamp)&&localRamp.length)?localRamp.slice():ramps['multi'];
   const brks=(Array.isArray(localBreaks)&&localBreaks.length>1)?localBreaks.slice():[0,1,2,3,4,5];
+
   const spSel=getCheckboxValues('speciesGroup');
   const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
   el.innerHTML=`<div class="leghdr"><span>${name}</span><span>${nf(cellValues.length)} cells</span></div>`;
+
   const n=Math.min(ramp.length, brks.length-1);
-  if (n<=0){ el.insertAdjacentHTML('beforeend', `<div class="legend-row"><span>No data in view</span></div>`); return; }
-  const histogram=new Array(n).fill(0);
-  cellValues.filter(Number.isFinite).forEach(v=>{ const b=computeBinIndex(brks,v); if (b>=0 && b<histogram.length) histogram[b]++; });
-  const maxCount=Math.max(...histogram,1);
-  el.insertAdjacentHTML('beforeend', `<div class="histogram">${histogram.map((c,i)=>`<div class="hist-bar" style="height:${Math.max(2,Math.round((c/maxCount)*20))}px" title="Bin ${i+1}: ${nf(c)} cells"></div>`).join('')}</div>`);
-  for (let i=0;i<n;i++){
-    const a=brks[i], b=brks[i+1]; const iso=(isolatedBin===i)?'isolated':'';
-    el.insertAdjacentHTML('beforeend', `<div class="legend-row ${iso}" data-bin="${i}" title="${nf(a)} – ${nf(b)} (${nf(histogram[i])} cells)"><span class="swatch" style="background:${ramp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
+  if(n<=0){ el.insertAdjacentHTML('beforeend','<div>No data in view</div>'); return; }
+
+  // mini histogram
+  const hist=new Array(n).fill(0);
+  const vals = cellValues.filter(Number.isFinite);
+  vals.forEach(v=>{
+    const b=computeBinIndex(brks,v);
+    if(b>=0&&b<hist.length) hist[b]++; 
+  });
+  const maxH=Math.max(...hist,1);
+  el.insertAdjacentHTML('beforeend',
+    `<div class="histogram">${hist.map(c=>`<div class="hist-bar" style="height:${Math.max(2,Math.round(c/maxH*20))}px" title="${nf(c)} cells"></div>`).join('')}</div>`
+  );
+
+  for(let i=0;i<n;i++){
+    const a=brks[i], b=brks[i+1], iso=(isolatedBin===i)?' isolated':'';
+    el.insertAdjacentHTML('beforeend',
+      `<div class="legend-row${iso}" data-bin="${i}" title="${nf(a)} – ${nf(b)}">
+         <span class="swatch" style="background:${ramp[i]}"></span><span>${nf(a)} – ${nf(b)}</span>
+       </div>`
+    );
   }
-  el.querySelectorAll('.legend-row[data-bin]').forEach(r=>r.addEventListener('click',e=>{ const i=+e.currentTarget.dataset.bin; isolatedBin=(isolatedBin===i)?-1:i; debouncedRebuild(); }));
+  el.querySelectorAll('.legend-row[data-bin]').forEach(row=>{
+    row.addEventListener('click', e=>{
+      const bin=parseInt(e.currentTarget.dataset.bin,10);
+      isolatedBin=(isolatedBin===bin)?-1:bin;
+      buildLayer(); // rebuild with isolation
+    });
+  });
 }
 
-/* ===== Canonicalization ===== */
+/* ========= Canonicalization ========= */
 const canon = {
-  season: v => { const s=(v??'').toString().toLowerCase().trim(); if(!s) return 'Unknown';
+  season: v => {
+    const s=(v??'').toString().toLowerCase().trim();
+    if(!s) return 'Unknown';
     if(['outono','autumn','fall'].includes(s)) return 'Autumn';
     if(['primavera','spring'].includes(s)) return 'Spring';
     if(['verao','verão','summer'].includes(s)) return 'Summer';
     if(['inverno','winter'].includes(s)) return 'Winter';
     return 'Unknown';
   },
-  sex: v => { const s=(v??'').toString().toLowerCase().trim();
+  sex: v => {
+    const s=(v??'').toString().toLowerCase().trim();
     if(['fêmea','femea','female','f'].includes(s)) return 'Female';
     if(['macho','male','m'].includes(s)) return 'Male';
     return 'Unknown';
   },
-  stage: v => { const s=(v??'').toString().toLowerCase().trim();
+  stage: v => {
+    const s=(v??'').toString().toLowerCase().trim();
     if(['adulto','adult'].includes(s)) return 'Adult';
     if(['juvenil','juvenile'].includes(s)) return 'Juvenile';
     if(['filhote','hatchling'].includes(s)) return 'Hatchling';
     return 'Unknown';
   },
-  year: v => { if(v==null) return ''; const n=parseInt(String(v).replace(/\.0+$/,''),10);
-    return (Number.isFinite(n)&&n>=2015&&n<=2024)?String(n):''; }
+  year: v => {
+    if(v==null) return '';
+    const n=parseInt(String(v).replace(/\.0+$/,''),10);
+    return Number.isFinite(n)?String(n):'';
+  }
 };
-function canonYesNo(v){
-  const s=(v??'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  if(['yes','sim','y'].includes(s)) return 'Yes';
-  if(['no','nao','não','n'].includes(s)) return 'No';
-  return s ? s[0].toUpperCase()+s.slice(1) : '';
-}
-const canonDecomp = v => { if (v==null || v==='') return 'Unknown'; const n=parseInt(String(v).replace(/\.0+$/,''),10); return (Number.isFinite(n)&&n>=1&&n<=5)?String(n):'Unknown'; };
-const asIntString = v => { const n=parseInt(v,10); return Number.isFinite(n)?String(n):String(v); };
+const asIntString=v=>{ const n=parseInt(v,10); return Number.isFinite(n)?String(n):String(v); };
 
-/* ===== Capability probe ===== */
-let detectedCapabilities = { hasYear:false,hasMonth:false,hasSex:false,hasStage:false,hasSeason:false,hasSpecies:false,hasDecomp:false,metricFields:new Set() };
-async function probeCapabilities(pmFile, layerName){
-  const c={...detectedCapabilities, metricFields:new Set()};
+/* ========= pmtiles:// fetch shim ========= */
+const origFetch = window.fetch.bind(window);
+const pmCache = new Map();
+async function getPM(archive){
+  const u=new URL(archive, new URL('.', location.href)).toString();
+  if(pmCache.has(u)) return pmCache.get(u);
+  const inst=new pmtiles.PMTiles(u);
+  pmCache.set(u,inst);
+  return inst;
+}
+window.fetch = async (input, init) => {
+  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
+    const [_, archive, z, x, y] = m;
+    try{
+      const pm = await getPM(archive);
+      const t  = await pm.getZxy(+z,+x,+y);
+      if(!t || !t.data){ return new Response(null,{status:204}); }
+      return new Response(t.data);
+    }catch(e){
+      console.warn('Tile fetch failed for', archive, z, x, y, e);
+      return new Response(null,{status:204});
+    }
+  }
+  return origFetch(input, init);
+};
+
+/* ========= Helpers ========= */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+function tileRangeForBounds(b,z){
+  const nw=b.getNorthWest(), se=b.getSouthEast();
+  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+  return {minX,maxX,minY,maxY};
+}
+const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+function fileFor(res, ct){ const v='20250812'; return `hexgrid_${res}_${ct}.pmtiles?v=${v}`; }
+
+/* ========= State ========= */
+let vtLayer=null, layerName='', header=null;
+const aggByHex=new Map();
+let metricField='sum_val';
+const stats = (window.ss || window.simpleStatistics || null);
+
+/* ========= Safe layer name ========= */
+async function detectLayerName(pmFile){
   try{
-    if(!window.__VT__||!window.__PBF__) return c;
-    const pm=await getPM(pmFile); const hdr=header||await pm.getHeader();
-    const z=Math.max(6,hdr.minZoom); const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(),z);
-    let probed=0;
-    outer: for(let x=minX;x<=maxX && probed<3;x++){
-      for(let y=minY;y<=maxY && probed<3;y++){
-        try{
-          const resp=await pm.getZxy(z, wrapX(x,z), y); if(!resp?.data) continue;
-          const vt=new window.__VT__(new window.__PBF__(resp.data)); const lyr=vt.layers[layerName]; if(!lyr||lyr.length===0) continue;
-          for(let i=0;i<Math.min(3,lyr.length);i++){
-            const p=lyr.feature(i).properties||{};
-            if (p.year!=null) c.hasYear=true; if (p.month!=null) c.hasMonth=true;
-            if (p.sex!=null||p.Sex!=null) c.hasSex=true; if (p.development_stage!=null||p.stage!=null) c.hasStage=true;
-            if (p.season!=null) c.hasSeason=true; if (p.species!=null) c.hasSpecies=true; if (p.decomposition_code!=null) c.hasDecomp=true;
-            ['sum_val','weight','new_weight','new_mortality_est_bf_mean','new_mortality_est_bf_low','new_mortality_est_bf_high'].forEach(k=>{ if(Number.isFinite(Number(p[k]))) c.metricFields.add(k); });
-          }
-          probed++;
-        }catch{continue;}
+    const pm = await getPM(pmFile);
+    header = await pm.getHeader();
+    const md = await pm.getMetadata();
+    if(md && md.json){
+      const j=(typeof md.json==='string')?JSON.parse(md.json):md.json;
+      if(j && j.vector_layers){
+        if(Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+        const keys=Object.keys(j.vector_layers); if(keys.length) return keys[0];
       }
     }
-  }catch(e){ console.warn('Capability probe failed:',e); }
-  return c;
+    if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available for probing');
+    const z=clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
+    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+    for(let x=minX;x<=maxX;x++){
+      for(let y=minY;y<=maxY;y++){
+        const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
+        if(!r || !r.data) continue;
+        const vt=new window.__VT__(new window.__PBF__(r.data));
+        const names=Object.keys(vt.layers||{}); if(names.length) return names[0];
+      }
+    }
+  }catch(e){ console.warn('Layer detect failed:', e); }
+  console.warn('Falling back to "hexgrid"'); return 'hexgrid';
 }
 
-/* ===== Predicate ===== */
-function makePredicate(caps = detectedCapabilities){
-  const sel = {
+/* ========= Metric detection (strict) ========= */
+const metricCandidatesByCT = {
+  weight: ['sum_val','weight'],
+  new_weight: ['sum_val','new_weight'],
+  new_mortality_est_bf_mean: ['sum_val','new_mortality_est_bf_mean'],
+  new_mortality_est_bf_low: ['sum_val','new_mortality_est_bf_low'],
+  new_mortality_est_bf_high: ['sum_val','new_mortality_est_bf_high']
+};
+function chooseMetricFieldAcrossFeatures(observedPropsArr, ct){
+  // require multiple finite hits before committing; else fallback sum_val
+  const priority = metricCandidatesByCT[ct] || ['sum_val'];
+  for(const k of priority){
+    let hits=0;
+    for(const p of observedPropsArr){
+      const v = Number(p[k]);
+      if(Number.isFinite(v)){ hits++; if(hits>=3) return k; }
+    }
+  }
+  // fallback: sum_val if seen finite at least once
+  let sumHits=0;
+  for(const p of observedPropsArr){ if(Number.isFinite(Number(p.sum_val))) sumHits++; if(sumHits>=1) return 'sum_val'; }
+  console.warn('[metric] Falling back to sum_val');
+  return 'sum_val';
+}
+
+/* ========= Hex key (unified) ========= */
+function hexKey(p){
+  return p.h3_index ?? p.h3 ?? p.hex_id ?? p.index ?? p.id ?? null;
+}
+
+/* ========= Category helpers (flexible props) ========= */
+function lowerPropMap(obj){
+  const out={}; for(const k in obj){ out[k.toLowerCase()]=obj[k]; } return out;
+}
+function increment(mapObj, key, by){
+  if(!key) return; const k=String(key); mapObj[k]=(mapObj[k]||0)+(Number(by)||0);
+}
+function pctParts(countMap){
+  if(!countMap) return {parts:[], unknownCount:0, totalLabelled:0};
+  const unknown = Number(countMap.Unknown || countMap.unknown || 0);
+  const entries = Object.entries(countMap).filter(([k])=>k!=='Unknown'&&k!=='unknown');
+  const totalLabelled = entries.reduce((s,[,v])=>s+(Number(v)||0),0);
+  const pct = v => totalLabelled ? 100*(Number(v)||0)/totalLabelled : 0;
+  return { parts: entries.map(([k,v])=>[k, pct(v)]), unknownCount: unknown, totalLabelled };
+}
+
+/* ========= Aggregation + sampling with stride-retry ========= */
+const MAX_TILES_STATS=90;
+const MAX_HEXES_STATS=1800;
+
+async function aggregateAndCollect(pmFile, layerName, predicate, ct){
+  aggByHex.clear();
+  const sums=[]; // returnable array, always
+  try{
+    if(!window.__VT__ || !window.__PBF__){
+      showToast('Decoders not loaded (vector-tile/pbf).',4000,'warn');
+      return sums;
+    }
+    const pm = await getPM(pmFile);
+    const hdr = header || await pm.getHeader();
+    const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
+    const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+    const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
+    const totalTiles=tilesX*tilesY;
+    let stride=1;
+    if(totalTiles>MAX_TILES_STATS){
+      const factor=Math.ceil(Math.sqrt(totalTiles/MAX_TILES_STATS));
+      stride=Math.max(1,factor);
+    }
+
+    let observedForMetric=[];
+
+    const process = async (step)=>{
+      const jobs=[];
+      let cells=0;
+      outer:
+      for(let x=minX;x<=maxX;x+=step){
+        for(let y=minY;y<=maxY;y+=step){
+          jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+            if(!resp || !resp.data) return;
+            const vt = new window.__VT__(new window.__PBF__(resp.data));
+            const lyr = vt.layers[layerName]; if(!lyr) return;
+            for(let i=0;i<lyr.length;i++){
+              const f = lyr.feature(i);
+              const props = f.properties || {};
+              if(!predicate(props)) continue;
+
+              if(observedForMetric.length<12) observedForMetric.push(props);
+
+              const key = hexKey(props); if(!key) continue;
+
+              // init entry
+              const entry = aggByHex.get(key) || {
+                sum:0,
+                // unique IDs: prefer a per-cell uid_count; keep MAX across features; fallback rowCount
+                maxUid: null,
+                rowCount: 0,
+                sexCounts: Object.create(null),
+                stageCounts: Object.create(null),
+                seasonCounts: Object.create(null),
+                yearCounts: Object.create(null),
+                monthCounts: Object.create(null),
+                species: props.species || null
+              };
+
+              // value
+              // metricField chosen later after sampling -> we still can add once chosen
+              // so collect raw numeric candidates per feature
+              entry._vals = entry._vals || [];
+              entry._vals.push(props);
+
+              // uid_count (per cell). If present, keep MAX; else use rowCount fallback (count or 1)
+              const l = lowerPropMap(props);
+              const uidc = Number(l['uid_count'] ?? l['unique_ids'] ?? l['unique_turtle_ids'] ?? l['turtle_id_count']);
+              if(Number.isFinite(uidc)){
+                entry.maxUid = (entry.maxUid==null)?uidc:Math.max(entry.maxUid, uidc);
+              }else{
+                const rc = Number(props.count);
+                entry.rowCount += Number.isFinite(rc) ? rc : 1;
+              }
+
+              // categorical counts — prefer aggregated columns; otherwise category+count
+              // Sex
+              const sf = Number(l['sex_female']); const sm = Number(l['sex_male']); const su = Number(l['sex_unknown']);
+              if(Number.isFinite(sf)||Number.isFinite(sm)||Number.isFinite(su)){
+                if(Number.isFinite(sf)) increment(entry.sexCounts,'Female',sf);
+                if(Number.isFinite(sm)) increment(entry.sexCounts,'Male',sm);
+                if(Number.isFinite(su)) increment(entry.sexCounts,'Unknown',su);
+              }else if(l['sex']){
+                const label = canon.sex(l['sex']);
+                increment(entry.sexCounts,label, Number(props.count)||1);
+              }
+
+              // Stage
+              const sad = Number(l['stage_adult']); const sjv = Number(l['stage_juvenile']); const sha = Number(l['stage_hatchling']); const su2 = Number(l['stage_unknown']);
+              if(Number.isFinite(sad)||Number.isFinite(sjv)||Number.isFinite(sha)||Number.isFinite(su2)){
+                if(Number.isFinite(sad)) increment(entry.stageCounts,'Adult',sad);
+                if(Number.isFinite(sjv)) increment(entry.stageCounts,'Juvenile',sjv);
+                if(Number.isFinite(sha)) increment(entry.stageCounts,'Hatchling',sha);
+                if(Number.isFinite(su2)) increment(entry.stageCounts,'Unknown',su2);
+              }else if(l['development_stage']||l['stage']){
+                const label = canon.stage(l['development_stage']||l['stage']);
+                increment(entry.stageCounts,label, Number(props.count)||1);
+              }
+
+              // Season
+              const sao = Number(l['season_autumn']); const ssp = Number(l['season_spring']); const ssu = Number(l['season_summer']); const swi = Number(l['season_winter']); const sun = Number(l['season_unknown']);
+              if(Number.isFinite(sao)||Number.isFinite(ssp)||Number.isFinite(ssu)||Number.isFinite(swi)||Number.isFinite(sun)){
+                if(Number.isFinite(sao)) increment(entry.seasonCounts,'Autumn',sao);
+                if(Number.isFinite(ssp)) increment(entry.seasonCounts,'Spring',ssp);
+                if(Number.isFinite(ssu)) increment(entry.seasonCounts,'Summer',ssu);
+                if(Number.isFinite(swi)) increment(entry.seasonCounts,'Winter',swi);
+                if(Number.isFinite(sun)) increment(entry.seasonCounts,'Unknown',sun);
+              }else if(l['season']){
+                const label = canon.season(l['season']);
+                increment(entry.seasonCounts,label, Number(props.count)||1);
+              }
+
+              // Year / Month modes (weighted by count if present)
+              if(props.year!=null){
+                const y=canon.year(props.year); if(y) increment(entry.yearCounts,y, Number(props.count)||1);
+              }
+              if(props.month!=null){
+                const m=asIntString(props.month); if(m) increment(entry.monthCounts,m, Number(props.count)||1);
+              }
+
+              aggByHex.set(key,entry);
+              cells++;
+              if(cells>MAX_HEXES_STATS) break;
+            }
+          }).catch(e=>console.warn('tile decode skipped',e)));
+          if(aggByHex.size>MAX_HEXES_STATS) break outer;
+        }
+      }
+      await Promise.allSettled(jobs);
+      return cells;
+    };
+
+    // first pass with stride
+    let cells = await process(stride);
+    // if we saw nothing, retry with stride=1 (stats only)
+    if(cells===0 && stride>1){
+      console.info('Stats retry with stride=1');
+      cells = await process(1);
+    }
+
+    // Decide metricField using sampled props
+    metricField = chooseMetricFieldAcrossFeatures(
+      Array.from(aggByHex.values()).flatMap(e=>e._vals||[]).slice(0,36),
+      ct
+    );
+
+    // Finalize sums now that metricField is known
+    aggByHex.forEach((entry,key)=>{
+      let sum=0;
+      if(Array.isArray(entry._vals)){
+        for(const p of entry._vals){
+          const v=Number(p[metricField]);
+          if(Number.isFinite(v)) sum+=v;
+        }
+      }
+      entry.sum=sum;
+      delete entry._vals;
+    });
+
+    // Build return values (finite only)
+    aggByHex.forEach(v=>{ if(Number.isFinite(v.sum)) sums.push(v.sum); });
+
+  }catch(e){
+    console.warn('aggregateAndCollect failed', e);
+    return []; // always array
+  }
+  return sums;
+}
+
+/* ========= Breaks (robust) ========= */
+const JENKS_CLASSES=5;
+function manualQuantilesSorted(arr, probs){
+  const n=arr.length-1;
+  return probs.map(p=>{
+    if(p<=0) return arr[0];
+    if(p>=1) return arr[n];
+    const idx = n*p;
+    const lo = Math.floor(idx), hi=Math.ceil(idx);
+    if(lo===hi) return arr[lo];
+    const t = idx-lo;
+    return arr[lo]*(1-t)+arr[hi]*t;
+  });
+}
+function computeSafeBreaks(values){
+  if(!Array.isArray(values)) return null;
+  const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(sorted.length===0) return null;
+
+  const min=sorted[0], max=sorted[sorted.length-1];
+  if(min===max){
+    const bump = (min===0)?1:Math.max(Math.abs(min)*0.1,1e-6);
+    return [min-2*bump,min-bump,min,min+bump,min+2*bump,min+3*bump];
+  }
+
+  let edges=null;
+  try{
+    if(stats && typeof stats.jenks==='function' && sorted.length>=20){
+      edges = stats.jenks(sorted, JENKS_CLASSES);
+      const uniq = Array.from(new Set(edges.map(x=>+x.toFixed(10))));
+      if(uniq.length<JENKS_CLASSES+1){
+        const probs=[0,0.2,0.4,0.6,0.8,1];
+        edges = stats.quantileSorted ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
+      }
+    }else{
+      const probs=[0,0.2,0.4,0.6,0.8,1];
+      edges = (stats && stats.quantileSorted) ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
+    }
+  }catch{
+    const probs=[0,0.2,0.4,0.6,0.8,1];
+    edges = (stats && stats.quantileSorted) ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
+  }
+  // strictly increasing
+  for(let i=1;i<edges.length;i++){ if(!(edges[i]>edges[i-1])) edges[i]=edges[i-1]+1e-9; }
+  return edges;
+}
+
+/* ========= Style + popups ========= */
+function makeStyle(localBreaks, localRamp){
+  return (props)=>{
+    const key = hexKey(props);
+    const agg = key ? aggByHex.get(key) : undefined;
+    const v = agg ? agg.sum : undefined;
+    if(!Number.isFinite(v) && v!==0){ return {opacity:0, fillOpacity:0, interactive:false}; }
+    const idx = computeBinIndex(localBreaks, v);
+    if(isolatedBin>=0 && idx!==isolatedBin){ return {opacity:0.1, fillOpacity:0.05, interactive:false}; }
+    const color = localRamp[Math.max(0,Math.min(idx, localRamp.length-1))] || localRamp[0];
+    return {fill:true, fillColor:color, fillOpacity:0.65, color, weight:0.6, interactive:true};
+  };
+}
+
+function modeFromCounts(obj){
+  const entries = Object.entries(obj||{});
+  if(!entries.length) return ['–',0];
+  entries.sort((a,b)=>{
+    if(b[1]!==a[1]) return b[1]-a[1];
+    const an=+a[0], bn=+b[0];
+    if(Number.isFinite(bn) && Number.isFinite(an)) return bn-an;
+    return String(b[0]).localeCompare(String(a[0]));
+  });
+  return entries[0];
+}
+
+function bindHoverPopups(layer){
+  let locked=false;
+  const keydown=(e)=>{ if(e.key==='Escape'){ locked=false; map.closePopup(); } };
+  document.addEventListener('keydown',keydown);
+  map.on('click',()=>{ if(!locked) map.closePopup(); });
+
+  layer.on('mouseover', e=>{
+    if(locked) return;
+    const p = e.layer?.properties||{};
+    const key = hexKey(p);
+    const agg = key? aggByHex.get(key): undefined;
+    if(!agg) return;
+
+    const sum = Number.isFinite(agg.sum)?agg.sum:0;
+    const uid = (agg.maxUid!=null)?agg.maxUid:agg.rowCount;
+
+    const sexP = pctParts(agg.sexCounts);
+    const stageP = pctParts(agg.stageCounts);
+    const seasonP = pctParts(agg.seasonCounts);
+    const [topYear,yc] = modeFromCounts(agg.yearCounts);
+    const [topMonth,mc] = modeFromCounts(agg.monthCounts);
+
+    const spSel=getCheckboxValues('speciesGroup');
+    const spLabel=(spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'All');
+
+    const partsToHTML=(x)=> x.parts.length ? x.parts.map(([k,v])=>`${k} ${nf(v)}%`).join(' · ') + (x.unknownCount?` · Unknown ${nf(x.unknownCount)}`:'') : '—';
+
+    const html = `
+      <div style="min-width:280px">
+        <div class="kv"><b>Species</b><span>${spLabel}</span></div>
+        <div class="kv"><b>Sum (${metricField})</b><span>${nf(sum)}</span></div>
+        <div class="kv"><b>Unique turtle IDs</b><span>${(agg.maxUid!=null)?nf(uid):nf(uid)+' (row-count fallback)'}</span></div>
+        <hr/>
+        <div class="kv"><b>Sex</b><span style="font-size:11px">${partsToHTML(sexP)}</span></div>
+        <div class="kv"><b>Stage</b><span style="font-size:11px">${partsToHTML(stageP)}</span></div>
+        <div class="kv"><b>Season</b><span style="font-size:11px">${partsToHTML(seasonP)}</span></div>
+        <div class="kv"><b>Top year</b><span>${topYear} (${nf(yc)})</span></div>
+        <div class="kv"><b>Top month</b><span>${topMonth} (${nf(mc)})</span></div>
+        <hr/>
+        <small class="muted">H3: ${key??'–'}</small>
+      </div>`;
+    L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+  });
+  layer.on('mouseout',()=>{ if(!locked) map.closePopup(); });
+  layer.on('click',()=>{ locked=!locked; });
+  layer.on('remove',()=>document.removeEventListener('keydown',keydown));
+}
+
+/* ========= Build / Rebuild ========= */
+function currentRamp(){
+  const sp=getCheckboxValues('speciesGroup');
+  return (sp.length===1 && ramps[sp[0]])?ramps[sp[0]]:ramps['multi'];
+}
+
+function makePredicate(){
+  const sel={
     species: new Set(getCheckboxValues('speciesGroup')),
     development_stage: new Set(getCheckboxValues('stageGroup')),
     sex: new Set(getCheckboxValues('sexGroup')),
     Fishing: new Set(getCheckboxValues('fishingGroup')),
     Marine_Debris: new Set(getCheckboxValues('marineDebrisGroup')),
-    Agression: new Set(getCheckboxValues('aggressionGroup')),
     Boat_collision: new Set(getCheckboxValues('boatGroup')),
     Dredging: new Set(getCheckboxValues('dredgingGroup')),
     Oil: new Set(getCheckboxValues('oilGroup')),
     Petrol: new Set(getCheckboxValues('petrolGroup')),
     season: new Set(getCheckboxValues('seasonGroup')),
-    decomposition_code: new Set(getCheckboxValues('decompGroup')),
-    month: new Set(getMulti('monthFilter'))
+    year: new Set(getMulti('yearFilter')),
+    month: new Set(getMulti('monthFilter')),
+    decomposition_code: new Set(getMulti('decompFilter'))
   };
-  const yearMin=+$('yearRangeMin').value, yearMax=+$('yearRangeMax').value;
-  const warned = new Set();
-
-  function test(k, raw){
-    const set = sel[k]; if (!set || !set.size) return true;
-    const need = {year:caps.hasYear, month:caps.hasMonth, sex:caps.hasSex, development_stage:caps.hasStage, season:caps.hasSeason, species:caps.hasSpecies, decomposition_code:caps.hasDecomp};
-    if (k in need && !need[k]){ if(!warned.has(k)){ warned.add(k); showToast(`${k.charAt(0).toUpperCase()+k.slice(1)} filter ignored (field missing)`,3000,'warning'); } return true; }
-
-    let pv=raw;
-    if (k==='season') pv=canon.season(raw);
-    else if (k==='sex') pv=canon.sex(raw);
-    else if (k==='development_stage') pv=canon.stage(raw);
-    else if (k==='year') pv=canon.year(raw);
-    else if (k==='month') pv=asIntString(raw);
-    else if (k==='decomposition_code') pv=canonDecomp(raw);
-    else if (['Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol'].includes(k)) pv=canonYesNo(raw);
-
-    if (set.has(pv)) return true;
-    if (k==='month') return set.has(asIntString(raw)) || set.has(asIntString(pv));
-    return false;
-  }
-  const testYear = (raw)=>{ if(!caps.hasYear) return true; const y=+canon.year(raw); if(!Number.isFinite(y)) return true; return y>=yearMin && y<=yearMax; };
-  return p => (
-    test('species',p.species)&&test('development_stage',p.development_stage)&&test('sex',p.sex)&&
-    test('Fishing',p.Fishing)&&test('Marine_Debris',p.Marine_Debris)&&test('Agression',p.Agression)&&
-    test('Boat_collision',p.Boat_collision)&&test('Dredging',p.Dredging)&&test('Oil',p.Oil)&&test('Petrol',p.Petrol)&&
-    test('season',p.season)&&test('decomposition_code',p.decomposition_code)&&test('month',p.month)&&testYear(p.year)
+  const test=(k,v)=>{
+    const set=sel[k]; if(!set || !set.size) return true;
+    let pv=v;
+    if(k==='season') pv=canon.season(v);
+    else if(k==='sex') pv=canon.sex(v);
+    else if(k==='development_stage') pv=canon.stage(v);
+    else if(k==='year') pv=canon.year(v);
+    else if(k==='month' || k==='decomposition_code') pv=asIntString(v);
+    return set.has(pv);
+  };
+  return p=>(
+    test('species',p.species) &&
+    test('development_stage',p.development_stage) &&
+    test('sex',p.sex) &&
+    test('Fishing',p.Fishing) &&
+    test('Marine_Debris',p.Marine_Debris) &&
+    test('Boat_collision',p.Boat_collision) &&
+    test('Dredging',p.Dredging) &&
+    test('Oil',p.Oil) &&
+    test('Petrol',p.Petrol) &&
+    test('season',p.season) &&
+    test('year',p.year) &&
+    test('month',p.month) &&
+    test('decomposition_code',p.decomposition_code)
   );
 }
 
-/* ===== PMTiles shim ===== */
-const origFetch = window.fetch.bind(window);
-const pmCache = new Map();
-async function getPM(archive){ const u=new URL(archive, new URL('.', location.href)).toString(); if(pmCache.has(u)) return pmCache.get(u); const inst=new pmtiles.PMTiles(u); pmCache.set(u,inst); return inst; }
-window.fetch = async (input, init)=>{
-  if (typeof input==='string' && input.startsWith('pmtiles://')){
-    const m=input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/); if(!m) return Promise.reject(new Error('Bad pmtiles URL'));
-    const [_, archive,z,x,y]=m;
-    try{ const pm=await getPM(archive); const t=await pm.getZxy(+z,+x,+y); if(!t||!t.data) return new Response(null,{status:204}); return new Response(t.data); }
-    catch(e){ console.warn('Tile fetch failed',archive,z,x,y,e); return new Response(null,{status:204}); }
-  }
-  return origFetch(input,init);
-};
-
-/* ===== Utils ===== */
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
-function lat2tile(lat,z){const r=lat*Math.PI/180; return Math.floor((1 - Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
-function tileRangeForBounds(b,z){const nw=b.getNorthWest(), se=b.getSouthEast(); let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z); let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z); if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY]; const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY)); return {minX,maxX,minY,maxY};}
-const wrapX=(x,z)=>{const n=Math.pow(2,z); return ((x%n)+n)%n;}
-function fileFor(res,ct){const v='20250812'; return `hexgrid_${res}_${ct}.pmtiles?v=${v}`;}
-
-/* ===== State ===== */
-let vtLayer=null, layerName='', header=null;
-const aggByHex = new Map();
-let metricField='sum_val';
-
-/* ===== Detect layer name ===== */
-async function detectLayerName(pmFile){
-  try{
-    const pm=await getPM(pmFile); header=await pm.getHeader(); const md=await pm.getMetadata();
-    if(md && md.json){ const j=(typeof md.json==='string')?JSON.parse(md.json):md.json;
-      if(j && j.vector_layers){ if(Array.isArray(j.vector_layers)&&j.vector_layers.length) return j.vector_layers[0].id||'hexgrid';
-        const keys=Object.keys(j.vector_layers); if(keys.length) return keys[0]; }
-    }
-    if(!window.__VT__||!window.__PBF__) throw new Error('VectorTile/Pbf not ready');
-    const z=clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
-    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(),z);
-    for(let x=minX;x<=maxX;x++){ for(let y=minY;y<=maxY;y++){ const r=await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y); if(!r||!r.data) continue;
-      const vt=new window.__VT__(new window.__PBF__(r.data)); const names=Object.keys(vt.layers||{}); if(names.length) return names[0]; } }
-  }catch(e){ console.warn('Layer detect failed:',e); }
-  return 'hexgrid';
-}
-
-/* ===== Breaks (HARDENED) ===== */
-const JENKS_CLASSES=5, MIN_SAMPLES_JENKS=20, MIN_DISTINCT=3, MAX_TILES_STATS=90, MAX_HEXES_STATS=1800;
-function expandIfFlat(min,max){ if(!isFinite(min)||!isFinite(max)) return [0,1,2,3,4,5]; if(min===max){ const bump=min===0?1:Math.max(Math.abs(min)*.1,1e-6); return [min-2*bump,min-bump,min,min+bump,min+2*bump,min+3*bump]; } return null; }
-
-/* CHANGED: safer computeSafeBreaks with full guards + try/catch */
-function computeSafeBreaks(values){
-  try{
-    if (!Array.isArray(values) || values.length===0) return null;
-    const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
-    if (sorted.length===0) return null;
-    const min=sorted[0], max=sorted[sorted.length-1];
-    const flat=expandIfFlat(min,max); if(flat) return flat;
-    let edges;
-    const distinct = new Set(sorted.map(v=>+v.toFixed(6))).size;
-    if (sorted.length < MIN_SAMPLES_JENKS || distinct < MIN_DISTINCT){
-      edges = (window.ss && ss.quantileSorted) ? ss.quantileSorted(sorted,[0,.2,.4,.6,.8,1]) : [min, min+(max-min)*.2, min+(max-min)*.4, min+(max-min)*.6, min+(max-min)*.8, max];
-    } else {
-      try{
-        edges = (window.ss && ss.jenks) ? ss.jenks(sorted, JENKS_CLASSES) : [min, min+(max-min)*.2, min+(max-min)*.4, min+(max-min)*.6, min+(max-min)*.8, max];
-        const u=new Set(edges.map(v=>+v.toFixed(10))); if(u.size < JENKS_CLASSES+1){
-          edges = (window.ss && ss.quantileSorted) ? ss.quantileSorted(sorted,[0,.2,.4,.6,.8,1]) : [min, min+(max-min)*.2, min+(max-min)*.4, min+(max-min)*.6, min+(max-min)*.8, max];
-        }
-      }catch{
-        edges = (window.ss && ss.quantileSorted) ? ss.quantileSorted(sorted,[0,.2,.4,.6,.8,1]) : [min, min+(max-min)*.2, min+(max-min)*.4, min+(max-min)*.6, min+(max-min)*.8, max];
-      }
-    }
-    for(let i=1;i<edges.length;i++){ if(!(edges[i]>edges[i-1])) edges[i]=edges[i-1]+1e-9; }
-    return edges;
-  }catch(e){
-    console.warn('computeSafeBreaks failed, values length=', Array.isArray(values)?values.length:values, e);
-    return null;
-  }
-}
-
-/* ===== Metric & category helpers ===== */
-const metricCandidatesByCT={
-  weight:['sum_val','weight'],
-  new_weight:['sum_val','new_weight'],
-  new_mortality_est_bf_mean:['sum_val','new_mortality_est_bf_mean'],
-  new_mortality_est_bf_low:['sum_val','new_mortality_est_bf_low'],
-  new_mortality_est_bf_high:['sum_val','new_mortality_est_bf_high']
-};
-function discoverMetricField(sampleProps, ct){
-  if(Number.isFinite(Number(sampleProps?.sum_val))) return 'sum_val';
-  const c=(metricCandidatesByCT[ct]||[]); for(const k of c){ if(Number.isFinite(Number(sampleProps?.[k]))) return k; }
-  for(const k of Object.keys(sampleProps||{})){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
-  return 'sum_val';
-}
-
-/* CHANGED: do NOT treat generic "count" as unique-id metric to avoid huge sums */
-function getUidCountFromProps(p){
-  const keys=['uid_count','unique_ids','unique_turtle_ids','unique_id_count','turtle_id_count','uidCount'];
-  for(const k of keys){ const n=Number(p[k]); if(Number.isFinite(n)) return n; }
-  return null; // explicit
-}
-
-/* CHANGED: flexible categorical extraction by lowercasing all keys once */
-function extractCountsFlexible(props){
-  const lower={}; for(const k in props){ lower[k.toLowerCase()]=props[k]; }
-  function sumKeys(names){ let s=0, found=false; for(const n of names){ const v=Number(lower[n]); if(Number.isFinite(v)){ s+=v; found=true; } } return found?s:0; }
-
-  const sex={
-    Female: sumKeys(['sex_female','female','sexfemale']),
-    Male: sumKeys(['sex_male','male','sexmale']),
-    Unknown: sumKeys(['sex_unknown','unknown','sexunknown'])
-  };
-  const haveSex = sex.Female||sex.Male||sex.Unknown;
-
-  const stage={
-    Adult: sumKeys(['stage_adult','development_stage_adult','adult','stageadult','development_stage']),
-    Juvenile: sumKeys(['stage_juvenile','development_stage_juvenile','juvenile','stagejuvenile']),
-    Hatchling: sumKeys(['stage_hatchling','development_stage_hatchling','hatchling','filhote','stagehatchling']),
-    Unknown: sumKeys(['stage_unknown','development_stage_unknown','stageunknown'])
-  };
-  const haveStage = stage.Adult||stage.Juvenile||stage.Hatchling||stage.Unknown;
-
-  const season={
-    Autumn: sumKeys(['season_autumn','autumn','fall','seasonfall']),
-    Spring: sumKeys(['season_spring','spring']),
-    Summer: sumKeys(['season_summer','summer','verao','verão']),
-    Winter: sumKeys(['season_winter','winter']),
-    Unknown: sumKeys(['season_unknown','unknown','seasonunknown'])
-  };
-  const haveSeason = season.Autumn||season.Spring||season.Summer||season.Winter||season.Unknown;
-
-  return {
-    sexCounts: haveSex ? sex : null,
-    stageCounts: haveStage ? stage : null,
-    seasonCounts: haveSeason ? season : null
-  };
-}
-function pctParts(countMap){
-  if (!countMap) return {parts:[], unknownCount:0, totalLabelled:0};
-  const unknown=Number(countMap.Unknown||0);
-  const pairs=Object.entries(countMap).filter(([k])=>k!=='Unknown');
-  const total=pairs.reduce((s,[,v])=>s+(Number(v)||0),0);
-  const pct=v=> total ? 100*(Number(v)||0)/total : 0;
-  return { parts:pairs.map(([k,v])=>[k,pct(v)]), unknownCount:unknown, totalLabelled:total };
-}
-
-/* ===== Aggregation (CHANGED for unique ID logic) ===== */
-async function aggregateAndCollect(pmFile, layerName, predicate, ct){
-  if(!window.__VT__||!window.__PBF__){ showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks.'); return []; }
-  aggByHex.clear();
-  const pm=await getPM(pmFile); const hdr=header||await pm.getHeader();
-  const zView=Math.min(Math.max(6,hdr.minZoom), hdr.maxZoom);
-  const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), zView);
-  const totalTiles=(maxX-minX+1)*(maxY-minY+1);
-  let stride=1; if (totalTiles>MAX_TILES_STATS){ const f=Math.ceil(Math.sqrt(totalTiles/MAX_TILES_STATS)); stride=Math.max(1,f); }
-
-  let discovered=false;
-  const process=async s=>{
-    const jobs=[]; let cellCount=0;
-    outer: for(let x=minX;x<=maxX;x+=s){
-      for(let y=minY;y<=maxY;y+=s){
-        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(r=>{
-          if(!r||!r.data) return;
-          const vt=new window.__VT__(new window.__PBF__(r.data));
-          const lyr=vt.layers[layerName]; if(!lyr) return;
-          for(let i=0;i<lyr.length;i++){
-            const f=lyr.feature(i); const p=f.properties||{};
-            if(!predicate(p)) continue;
-            if(!discovered){ metricField=discoverMetricField(p,ct); discovered=true; }
-            const key=p.h3_index ?? p.h3 ?? p.id; if(!key) continue;
-
-            const val=Number(p[metricField]); const uidMetric=getUidCountFromProps(p);
-
-            const entry=aggByHex.get(key) || {
-              sum:0,
-              uidMetricMax:0, uidMetricSeen:false, rowCount:0, /* CHANGED: track both */
-              sexCounts:null, stageCounts:null, seasonCounts:null,
-              yearCounts:Object.create(null), monthCounts:Object.create(null),
-              species:p.species||null
-            };
-
-            if (Number.isFinite(val)) entry.sum += val;
-
-            if (uidMetric!=null && Number.isFinite(uidMetric)){
-              entry.uidMetricSeen = true;
-              entry.uidMetricMax = Math.max(entry.uidMetricMax, uidMetric); // CHANGED: max, not sum
-            } else {
-              entry.rowCount += 1; // fallback contributes by rows
-            }
-
-            // CHANGED: robust categorical extraction
-            if (!entry.sexCounts || !entry.stageCounts || !entry.seasonCounts){
-              const ex = extractCountsFlexible(p);
-              entry.sexCounts = entry.sexCounts || ex.sexCounts;
-              entry.stageCounts = entry.stageCounts || ex.stageCounts;
-              entry.seasonCounts = entry.seasonCounts || ex.seasonCounts;
-            }
-
-            if (p.year!=null){ const yv=canon.year(p.year); if (yv) entry.yearCounts[yv]=(entry.yearCounts[yv]||0)+1; }
-            if (p.month!=null){ const mv=asIntString(p.month); if (mv) entry.monthCounts[mv]=(entry.monthCounts[mv]||0)+1; }
-
-            aggByHex.set(key, entry); cellCount++;
-          }
-        }).catch(e=>console.warn('Tile decode skipped:', e)));
-        if (cellCount>MAX_HEXES_STATS) break outer;
-      }
-    }
-    await Promise.allSettled(jobs);
-    return cellCount;
-  };
-
-  let cells=await process(stride);
-  if (cells===0 && stride>1){ showToast('Expanding search area...',2000,'info'); cells=await process(1); }
-
-  const values = Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
-  return values;
-}
-
-/* ===== Styling & popup ===== */
-function makeStyle(localBreaks, localRamp, opts){
-  const {opacity, top10, p90, isoBin} = opts;
-  return (props)=>{
-    const key=props.h3_index||props.h3||props.id;
-    const a= key? aggByHex.get(key) : undefined;
-    const v= a? a.sum : undefined;
-    if (!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
-    const idx=computeBinIndex(localBreaks, v);
-    const safeIdx=Math.max(0, Math.min(idx, localRamp.length-1));
-    if (isoBin>=0 && idx!==isoBin) return {opacity:0.1, fillOpacity:0.05, interactive:false};
-    const color=localRamp[safeIdx]||localRamp[0];
-    const isTop = Number.isFinite(p90) && v>=p90 && top10;
-    return {fill:true, fillColor:color, fillOpacity: isTop? Math.min(opacity+0.15,0.95) : opacity, color: isTop?'#111':color, weight:isTop?1.5:0.6, interactive:true};
-  };
-}
-function modeFromCounts(obj){
-  const e=Object.entries(obj||{}); if(!e.length) return ['–',0];
-  e.sort((a,b)=> b[1]!==a[1]? b[1]-a[1] : ((+b[0]||0)-(+a[0]||0)) ); return e[0];
-}
-function bindHoverPopups(layer){
-  let locked=false; const onKey=e=>{ if(e.key==='Escape'){ locked=false; map.closePopup(); } };
-  document.addEventListener('keydown', onKey); map.on('click', ()=>{ locked=false; });
-  layer.on('mouseover', e=>{
-    if (locked) return;
-    const p=e.layer?.properties||{}; const key=p.h3_index||p.h3||p.id;
-    const a= key? aggByHex.get(key) : undefined;
-    const sum= a? a.sum : undefined;
-    /* CHANGED: pick unique id count according to availability */
-    const uidCount = a ? (a.uidMetricSeen ? a.uidMetricMax : a.rowCount) : undefined;
-    const uidLabel = a ? (a.uidMetricSeen ? '' : ' (row-count fallback)') : '';
-
-    const sexP = pctParts(a && a.sexCounts);
-    const stageP = pctParts(a && a.stageCounts);
-    const seasonP = pctParts(a && a.seasonCounts);
-    const [ty, yc] = modeFromCounts(a && a.yearCounts);
-    const [tm, mc] = modeFromCounts(a && a.monthCounts);
-
-    const spSel=getCheckboxValues('speciesGroup');
-    const spLabel=(spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'All');
-
-    const partsToHTML=(arr, unk, tot)=> (arr.length?arr.map(([k,v])=>`${k} ${nf(v)}%`).join(' · '):'—') + (unk?` · Unknown ${nf(unk)}`:'') + (tot?` (of ${nf(tot)})`:'');
-    const html = `
-      <div>
-        <div class="kv"><b>Species</b><span>${spLabel}</span></div>
-        <div class="kv"><b>Sum (${metricField})</b><span>${Number.isFinite(sum)?nf(sum):'–'}</span></div>
-        <div class="kv"><b>Unique turtle IDs</b><span>${Number.isFinite(uidCount)?nf(uidCount):'–'}${uidLabel}</span></div>
-        <hr style="margin:8px 0;border:none;border-top:1px solid rgba(226,232,240,.5)"/>
-        <div class="kv"><b>Sex</b><span style="font-size:11px">${partsToHTML(sexP.parts, sexP.unknownCount, sexP.totalLabelled)}</span></div>
-        <div class="kv"><b>Stage</b><span style="font-size:11px">${partsToHTML(stageP.parts, stageP.unknownCount, stageP.totalLabelled)}</span></div>
-        <div class="kv"><b>Season</b><span style="font-size:11px">${partsToHTML(seasonP.parts, seasonP.unknownCount, seasonP.totalLabelled)}</span></div>
-        <div class="kv"><b>Top year</b><span>${ty} (${nf(yc)})</span></div>
-        <div class="kv"><b>Top month</b><span>${tm} (${nf(mc)})</span></div>
-        <hr style="margin:8px 0;border:none;border-top:1px solid rgba(226,232,240,.5)"/>
-        <small class="muted">H3 Index: ${key||'–'}</small>
-      </div>`;
-    L.popup({autoPan:false,offset:[0,-10],className:'modern-popup'}).setLatLng(e.latlng).setContent(html).openOn(map);
-  });
-  layer.on('mouseout', ()=>{ if(!locked) map.closePopup(); });
-  layer.on('click', ()=>{ locked=!locked; });
-  layer.on('remove', ()=> document.removeEventListener('keydown', onKey));
-}
-
-/* ===== Build layer ===== */
 async function buildLayer(){
-  showSpinner('Loading & aggregating data…');
+  showSpinner('Loading & aggregating…');
   try{
-    const res=$('resolution').value, ct=$('counttype').value, pmFile=fileFor(res, ct);
+    const res=$('resolution').value, ct=$('counttype').value;
+    const pmFile=fileFor(res, ct);
     layerName = await detectLayerName(pmFile);
-    detectedCapabilities = await probeCapabilities(pmFile, layerName);
-    const predicate = makePredicate(detectedCapabilities);
-    const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
 
-    if (!Array.isArray(values) || values.length===0 || !values.some(Number.isFinite)){
-      showToast('No data in current view — zoom out or change filters.', 5000, 'warning'); hideSpinner(); return;
+    const predicate = makePredicate();
+    const values = await aggregateAndCollect(pmFile, layerName, predicate, ct); // ALWAYS array
+
+    // If no finite values, keep previous layer and toast
+    const finiteVals = values.filter(Number.isFinite);
+    if(finiteVals.length===0){
+      showToast('No data in view — zoom out or change filters.', 4000, 'info');
+      hideSpinner();
+      return;
     }
 
-    /* CHANGED: hardened breaks usage */
-    const edges = computeSafeBreaks(values);
-    if (!Array.isArray(edges) || edges.length<2 || edges.some(v=>!Number.isFinite(v))){
-      console.warn('Breaks invalid:', edges);
-      showToast('Could not compute breaks (kept previous layer).', 4000, 'warning');
-      hideSpinner(); return;
+    const edges = computeSafeBreaks(finiteVals);
+    if(!Array.isArray(edges) || edges.length<2){
+      showToast('Could not compute breaks (fallback prevented). Keeping previous layer.', 4500, 'warn');
+      hideSpinner();
+      return;
     }
 
-    const localBreaks=edges.slice(); const localRamp=currentRamp().slice();
-    const opacity = +$('opacitySlider').value / 100;
-    const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
-    const p90 = (window.ss && ss.quantileSorted && sorted.length) ? ss.quantileSorted(sorted, .9) : (sorted[Math.floor(sorted.length*.9)]||Infinity);
+    activeRamp=currentRamp();
+    updateLegend(edges, activeRamp, finiteVals);
 
-    updateLegend(localBreaks, localRamp, values);
-
-    if (vtLayer) { map.removeLayer(vtLayer); vtLayer=null; }
-    const frozen = Object.freeze({ opacity, top10:$('highlightTop10').checked, p90, isoBin:isolatedBin });
-
+    if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
     vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-      rendererFactory:L.canvas.tile, interactive:true,
-      vectorTileLayerStyles:{ [layerName]: makeStyle(localBreaks, localRamp, frozen) },
-      getFeatureId:f=> f.properties && (f.properties.h3_index||f.properties.h3||f.properties.id)
+      rendererFactory: L.canvas.tile,
+      vectorTileLayerStyles: { [layerName]: makeStyle(edges, activeRamp) },
+      interactive:true,
+      getFeatureId: f => hexKey(f.properties || {}) // unified
     });
     bindHoverPopups(vtLayer);
     vtLayer.addTo(map);
-    showToast('Layer updated successfully!',1800,'success');
   }catch(err){
     console.error('buildLayer error:', err);
-    showToast('Failed to load layer. See console.', 5000, 'error');
-  }finally{ hideSpinner(); }
+    showToast('Failed to load layer. See console for details.',5000,'error');
+  }finally{
+    hideSpinner();
+  }
 }
 
-/* ===== Events ===== */
-$('applyBtn').addEventListener('click', buildLayer);
-$('resolution').addEventListener('change', ()=>debouncedRebuild());
-$('counttype').addEventListener('change', ()=>debouncedRebuild());
-$('resetBtn').addEventListener('click', ()=>{ clearAllFilters(); buildLayer(); });
-
-$('opacitySlider').addEventListener('input', ()=>debouncedRebuild());
-$('highlightTop10').addEventListener('change', ()=>debouncedRebuild());
-$('yearRangeMin').addEventListener('input', ()=>debouncedRebuild());
-$('yearRangeMax').addEventListener('input', ()=>debouncedRebuild());
-
-/* ===== Permalink ===== */
-function readStateFromHash(){
-  const h=new URLSearchParams(location.hash.slice(1));
-  if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'), +h.get('lng')], +h.get('z'));
-  if(h.has('res')) $('resolution').value=h.get('res');
-  if(h.has('ct')) $('counttype').value=h.get('ct');
-  if(h.has('opacity')){ $('opacitySlider').value=h.get('opacity'); $('opacityValue').textContent=(h.get('opacity')/100).toFixed(2); }
-  if(h.has('highlight')) $('highlightTop10').checked = h.get('highlight')==='1';
-  if(h.has('isolated')) isolatedBin=+h.get('isolated');
-  if(h.has('yearMin')) $('yearRangeMin').value=h.get('yearMin');
-  if(h.has('yearMax')) $('yearRangeMax').value=h.get('yearMax');
-  updateYearLabels();
-
-  const groups={'sp':'speciesGroup','st':'stageGroup','sx':'sexGroup','fish':'fishingGroup','debris':'marineDebrisGroup','aggr':'aggressionGroup','boat':'boatGroup','dredge':'dredgingGroup','oil':'oilGroup','petrol':'petrolGroup','season':'seasonGroup','decomp':'decompGroup'};
-  Object.entries(groups).forEach(([k,id])=>{
-    const v=h.get(k); if(!v) return; const group=$(id); const inputs=Array.from(group.querySelectorAll('input[type="checkbox"]'));
-    inputs.forEach(cb=>cb.checked=false);
-    if (v==='all'){ const all=inputs.find(cb=>cb.id.endsWith('_all')); if(all) all.checked=true; }
-    else {
-      const want=new Set(v.split('|'));
-      inputs.filter(cb=>!cb.id.endsWith('_all')).forEach(cb=>{ if(want.has(cb.getAttribute('data-value'))) cb.checked=true; });
-    }
+/* ========= Controls ========= */
+$('applyBtn').addEventListener('click',()=>buildLayer());
+$('resolution').addEventListener('change',()=>buildLayer());
+$('counttype').addEventListener('change',()=>buildLayer());
+$('resetBtn').addEventListener('click',()=>{
+  // reset checkboxes
+  document.querySelectorAll('.checkbox-group').forEach(g=>{
+    const all=g.querySelector('.all input'); if(all){ all.checked=true; }
+    g.querySelectorAll(':scope input:not(.all input)').forEach(cb=>cb.checked=false);
   });
-  if(h.has('month')){ const vals=new Set(h.get('month').split('|')); Array.from($('monthFilter').options).forEach(o=>o.selected=vals.has(o.value)); }
-}
-function writeStateToHash(){
-  const h=new URLSearchParams(); const c=map.getCenter();
-  h.set('z', map.getZoom().toFixed(2)); h.set('lat', c.lat.toFixed(6)); h.set('lng', c.lng.toFixed(6));
-  h.set('res',$('resolution').value); h.set('ct',$('counttype').value); h.set('opacity',$('opacitySlider').value);
-  if($('highlightTop10').checked) h.set('highlight','1'); if(isolatedBin>=0) h.set('isolated',String(isolatedBin));
-  h.set('yearMin',$('yearRangeMin').value); h.set('yearMax',$('yearRangeMax').value);
-  const groups={'sp':'speciesGroup','st':'stageGroup','sx':'sexGroup','fish':'fishingGroup','debris':'marineDebrisGroup','aggr':'aggressionGroup','boat':'boatGroup','dredge':'dredgingGroup','oil':'oilGroup','petrol':'petrolGroup','season':'seasonGroup','decomp':'decompGroup'};
-  Object.entries(groups).forEach(([k,id])=>{ const vals=getCheckboxValues(id); h.set(k, vals.length?vals.join('|'):'all'); });
-  const months=getMulti('monthFilter'); if(months.length) h.set('month', months.join('|'));
-  location.hash=h.toString();
-}
-$('permalink').addEventListener('click', async ()=>{
-  writeStateToHash();
-  try{ await navigator.clipboard.writeText(location.href); showToast('Shareable link copied to clipboard!',3000,'success'); }
-  catch{ showToast('Link updated in address bar (copy manually).',4000,'info'); }
+  // reset selects
+  document.querySelectorAll('#panel select').forEach(s=>{
+    if(s.multiple){
+      Array.from(s.options).forEach(o=>o.selected=false);
+      const all = Array.from(s.options).find(o=>o.value==='__ALL__'); if(all) all.selected=true;
+    }else s.selectedIndex=0;
+  });
+  isolatedBin=-1;
+  buildLayer();
 });
 
-/* ===== Boot ===== */
-(function init(){ if(location.hash){ try{ readStateFromHash(); }catch(e){ console.warn('URL state parse failed',e); } } buildLayer(); updateYearLabels(); })();
+/* ========= Permalink ========= */
+function writeStateToHash(){
+  const h=new URLSearchParams(), c=map.getCenter();
+  h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
+  h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
+  // groups
+  const groups={
+    sp:'speciesGroup', st:'stageGroup', sx:'sexGroup', fish:'fishingGroup', debris:'marineDebrisGroup',
+    boat:'boatGroup', dredge:'dredgingGroup', oil:'oilGroup', petrol:'petrolGroup', season:'seasonGroup'
+  };
+  Object.entries(groups).forEach(([key, gid])=>{
+    const vals=getCheckboxValues(gid);
+    h.set(key, vals.length?vals.join('|'):'all');
+  });
+  // selects
+  const yearVals=getMulti('yearFilter'); if(yearVals.length) h.set('year',yearVals.join('|'));
+  const monVals=getMulti('monthFilter'); if(monVals.length) h.set('month',monVals.join('|'));
+  const decVals=getMulti('decompFilter'); if(decVals.length) h.set('decomp',decVals.join('|'));
+  if(isolatedBin>=0) h.set('isolated',String(isolatedBin));
+  location.hash=h.toString();
+}
+function readStateFromHash(){
+  const h=new URLSearchParams(location.hash.slice(1));
+  if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
+  if(h.has('res')) $('resolution').value=h.get('res');
+  if(h.has('ct')) $('counttype').value=h.get('ct');
+
+  const groups={
+    sp:'speciesGroup', st:'stageGroup', sx:'sexGroup', fish:'fishingGroup', debris:'marineDebrisGroup',
+    boat:'boatGroup', dredge:'dredgingGroup', oil:'oilGroup', petrol:'petrolGroup', season:'seasonGroup'
+  };
+  Object.entries(groups).forEach(([key,gid])=>{
+    const val=h.get(key);
+    if(!val) return;
+    const g=$(gid);
+    const all=g.querySelector('.all input');
+    const rest=Array.from(g.querySelectorAll(':scope input:not(.all input)'));
+    // reset
+    if(all) all.checked=false;
+    rest.forEach(cb=>cb.checked=false);
+    if(val==='all'){ if(all) all.checked=true; return; }
+    const wanted=new Set(val.split('|'));
+    rest.forEach(cb=>{
+      const lbl=cb.labels?.[0]?.textContent?.trim();
+      if(lbl && wanted.has(lbl)) cb.checked=true;
+    });
+    if(rest.every(cb=>!cb.checked) && all) all.checked=true;
+  });
+
+  const setMulti=(id,key)=>{
+    if(!h.has(key)) return;
+    const vals=new Set(h.get(key).split('|'));
+    Array.from($(id).options).forEach(o=>o.selected=vals.has(o.value));
+  };
+  setMulti('yearFilter','year');
+  setMulti('monthFilter','month');
+  setMulti('decompFilter','decomp');
+
+  isolatedBin = h.has('isolated') ? parseInt(h.get('isolated')) : -1;
+}
+$('permalink').addEventListener('click',async()=>{
+  writeStateToHash();
+  try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!',3000,'info'); }
+  catch{ showToast('Link updated in address bar.',3000,'info'); }
+});
+
+/* ========= Boot ========= */
+(function init(){
+  if(location.hash){ try{ readStateFromHash(); }catch(e){ console.warn('Permalink parse failed',e); } }
+  buildLayer();
+})();
 </script>
 </body>
 </html>
