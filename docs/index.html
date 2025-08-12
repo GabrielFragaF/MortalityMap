@@ -5,78 +5,82 @@
 <title>Sea Turtle Mortality Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E'">
+<!-- Prevent favicon 404 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
 
-<link rel="stylesheet" href="./vendor/leaflet.css"/>
-<script src="./vendor/leaflet.js"></script>
+<!-- Leaflet (local, CSP-safe) -->
+<link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
+<script src="./vendor/leaflet.js?v=20250812"></script>
 
-<script src="./vendor/pmtiles.js"></script>
-<script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
-<script src="./vendor/pbf.js"></script>
-<script src="./vendor/vector-tile.js"></script>
-<script src="./vendor/simple-statistics.min.js"></script>
+<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local, CSP-safe) -->
+<script src="./vendor/pmtiles.js?v=20250812"></script>
+<script src="./vendor/Leaflet.VectorGrid.bundled.js?v=20250812"></script>
+<script src="./vendor/pbf.js?v=20250812"></script>
+<script src="./vendor/vector-tile.js?v=20250812"></script>
+<script src="./vendor/simple-statistics.min.js?v=20250812"></script>
 
 <style>
 :root{
-  --bg:#0b1220;
-  --panel:#fff;
-  --panel-weak:#f8fafc;
-  --text:#0f172a;
-  --muted:#64748b;
-  --ring:#3b82f6;
-  --shadow:0 12px 30px rgba(2,6,23,.18);
+  --bg:#0b1220; --panel:#fff; --panel-weak:#f8fafc; --text:#0f172a; --muted:#64748b;
+  --ring:#93c5fd; --shadow:0 10px 30px rgba(2,6,23,.25); --primary:#0ea5e9; --danger:#e11d48;
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,sans-serif}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
 #map{position:absolute;inset:0}
 
-/* Panel (unchanged layout; small a11y polish) */
+/* Panel */
 #panel{
-  position:absolute;top:14px;left:14px;z-index:1000;width:360px;
-  max-height:90vh;overflow:auto;background:var(--panel);
-  border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0
+  position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:90vh;overflow:auto;
+  background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0
 }
 #panel.collapsed{height:46px;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
+.topbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
 .topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
-.btn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
-.btn:hover{filter:brightness(0.98)}
+.iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
+.iconbtn:hover{filter:brightness(0.98)}
 .section{padding:10px 14px}
-.row{margin-bottom:10px}
-label{display:block;font-weight:700;margin:6px 0;font-size:13px}
-select{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
-select:focus,.btn:focus,input[type="checkbox"]:focus{outline:2px solid rgba(59,130,246,.35);outline-offset:2px}
-details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
-details+details{margin-top:10px}
-summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
-summary::-webkit-details-marker{display:none}
-details .content{padding:10px 12px}
-.controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
-#resetBtn,#applyBtn{flex:1;background:#0ea5e9;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
-#resetBtn{background:#e11d48}
+.row{margin-bottom:12px}
+label{display:block;font-weight:700;margin:6px 0 6px;font-size:13px}
+select, input[type="range"]{width:100%}
+select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.details{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin:10px 0}
+.details .sum{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
+.details .content{padding:6px 12px 10px}
+.controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:8px}
+#resetBtn,#applyBtn{flex:1;background:var(--primary);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn{background:var(--danger)}
 .help{font-size:12px;color:var(--muted);margin-top:4px}
 
-/* Checkbox groups (simple; keep existing look) */
-.checkbox-group{border:1px solid #e2e8f0;border-radius:10px;padding:8px}
-.checkbox-row{display:flex;align-items:center;gap:8px;padding:6px 4px}
-.checkbox-row.all{border-bottom:1px solid #eef2f7;margin-bottom:6px;padding-bottom:8px}
-.checkbox-row input[type="checkbox"]{transform:scale(1.1)}
+/* Checkbox groups */
+.group{border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+.group + .group{margin-top:8px}
+.group .gtitle{font-weight:800;margin-bottom:4px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.opt{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:8px}
+.opt input{accent-color:var(--primary)}
+.smallgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.yeargrid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.mgrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
 
 /* Legend bottom-right */
-#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px}
-.leghdr{font-weight:800;margin-bottom:8px;display:flex;justify-content:space-between}
-.legend-row{display:flex;align-items:center;margin:4px 0;cursor:pointer;border-radius:6px;padding:4px 6px}
-.legend-row:hover{background:#f1f5f9}
-.legend-row.isolated{background:#fff7ed;border:1px solid #fed7aa}
-.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
-.histogram{display:flex;align-items:flex-end;gap:2px;height:24px;margin:8px 0}
-.hist-bar{flex:1;min-width:3px;background:linear-gradient(to top,rgba(59,130,246,.6),rgba(59,130,246,.85));border-radius:2px}
+#legend{
+  position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);
+  border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px
+}
+.leghdr{font-weight:800;margin-bottom:8px}
+.legend-row{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px;display:inline-block}
+.hist{display:flex;gap:4px;margin-top:8px;align-items:flex-end;height:42px}
+.hist .bar{flex:1;border-radius:4px;background:#cbd5e1}
+.hist .bar.active{outline:2px solid #0f172a}
+.legend-controls{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.legend-controls .row{margin:0}
 
 /* Spinner + toast */
 #spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
-#toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:360px}
-#toast.info{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
-#toast.warn{background:#fef3c7;color:#92400e;border-color:#fde68a}
+#toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:320px}
 
 /* Popup / hover */
 .leaflet-popup-content{margin:8px 12px}
@@ -88,30 +92,32 @@ small.muted{color:#64748b}
 <body>
 <div id="map"></div>
 
-<div id="panel" aria-label="Filters panel">
+<!-- Filter Panel -->
+<div id="panel">
   <div class="topbar">
     <h1>Sea Turtle Mortality</h1>
     <div style="display:flex;gap:8px">
-      <button id="permalink" class="btn" title="Copy shareable link" aria-label="Copy shareable link">🔗 Share</button>
-      <button id="collapseBtn" class="btn" title="Collapse panel" aria-label="Collapse panel">–</button>
+      <button id="permalink" class="iconbtn" title="Copy link">🔗 Share</button>
+      <button id="collapseBtn" class="iconbtn" title="Collapse">–</button>
     </div>
   </div>
 
   <div class="section">
+    <!-- Resolution relabeled to grid size (values kept) -->
     <div class="row">
-      <label for="resolution">Resolution (H3)</label>
-      <select id="resolution" name="resolution">
-        <option value="r3" selected>r3</option>
-        <option value="r4">r4</option>
-        <option value="r5">r5</option>
-        <option value="r6">r6</option>
+      <label for="resolution">Grid cell size (H3)</label>
+      <select id="resolution">
+        <option value="r3" selected>≈ 60 km edge (r3)</option>
+        <option value="r4">≈ 22.6 km (r4)</option>
+        <option value="r5">≈ 8.6 km (r5)</option>
+        <option value="r6">≈ 3.2 km (r6)</option>
       </select>
-      <div class="help">Start at r3 for speed; switch to r6 for detail.</div>
+      <div class="help">Starts at r3 for speed; r6 shows the finest details.</div>
     </div>
 
     <div class="row">
-      <label for="counttype">Count Type</label>
-      <select id="counttype" name="counttype">
+      <label for="counttype">Count type</label>
+      <select id="counttype">
         <option value="weight" selected>Mortality position (weight)</option>
         <option value="new_weight">Mortality position (new_weight)</option>
         <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
@@ -119,968 +125,954 @@ small.muted{color:#64748b}
         <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
       </select>
     </div>
-  </div>
 
-  <div class="section">
-    <div class="row">
-      <label>Species</label>
-      <div class="checkbox-group" id="speciesGroup" role="group" aria-label="Species">
-        <div class="checkbox-row all">
-          <input type="checkbox" id="species_all" aria-checked="true" checked>
-          <label for="species_all">(All)</label>
-        </div>
-        <div class="checkbox-row"><input type="checkbox" id="species_caretta"><label for="species_caretta">Caretta caretta</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="species_chelonia"><label for="species_chelonia">Chelonia mydas</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="species_dermochelys"><label for="species_dermochelys">Dermochelys coriacea</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="species_eretmochelys"><label for="species_eretmochelys">Eretmochelys imbricata</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="species_lepidochelys"><label for="species_lepidochelys">Lepidochelys olivacea</label></div>
-      </div>
+    <!-- Species / Stage / Sex -->
+    <div class="group" id="speciesGroup">
+      <div class="gtitle">Species</div>
+      <div class="opts" id="speciesOpts"></div>
+      <div class="hint">Pick any combination; “(All)” selects everything.</div>
     </div>
 
-    <div class="row">
-      <label>Development Stage</label>
-      <div class="checkbox-group" id="stageGroup" role="group" aria-label="Development Stage">
-        <div class="checkbox-row all"><input type="checkbox" id="stage_all" checked><label for="stage_all">(All)</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="stage_adult"><label for="stage_adult">Adult</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="stage_juvenile"><label for="stage_juvenile">Juvenile</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="stage_hatchling"><label for="stage_hatchling">Hatchling</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="stage_unknown"><label for="stage_unknown">Unknown</label></div>
-      </div>
+    <div class="group" id="stageGroup">
+      <div class="gtitle">Development stage</div>
+      <div class="opts smallgrid" id="stageOpts"></div>
     </div>
 
-    <div class="row">
-      <label>Sex</label>
-      <div class="checkbox-group" id="sexGroup" role="group" aria-label="Sex">
-        <div class="checkbox-row all"><input type="checkbox" id="sex_all" checked><label for="sex_all">(All)</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="sex_female"><label for="sex_female">Female</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="sex_male"><label for="sex_male">Male</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="sex_unknown"><label for="sex_unknown">Unknown</label></div>
-      </div>
+    <div class="group" id="sexGroup">
+      <div class="gtitle">Sex</div>
+      <div class="opts smallgrid" id="sexOpts"></div>
     </div>
-  </div>
 
-  <div class="section">
-    <details>
-      <summary>Human interactions</summary>
+    <!-- Human interactions -->
+    <div class="details">
+      <div class="sum"><span>Human interactions</span></div>
       <div class="content">
-        <div class="row">
-          <label>Fishing</label>
-          <div class="checkbox-group" id="fishingGroup" role="group" aria-label="Fishing">
-            <div class="checkbox-row all"><input type="checkbox" id="fishing_all" checked><label for="fishing_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="fishing_yes"><label for="fishing_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="fishing_no"><label for="fishing_no">No</label></div>
-          </div>
-        </div>
-        <div class="row">
-          <label>Marine Debris</label>
-          <div class="checkbox-group" id="marineDebrisGroup" role="group" aria-label="Marine Debris">
-            <div class="checkbox-row all"><input type="checkbox" id="debris_all" checked><label for="debris_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="debris_yes"><label for="debris_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="debris_no"><label for="debris_no">No</label></div>
-          </div>
-        </div>
-        <div class="row">
-          <label>Boat collision</label>
-          <div class="checkbox-group" id="boatGroup" role="group" aria-label="Boat collision">
-            <div class="checkbox-row all"><input type="checkbox" id="boat_all" checked><label for="boat_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="boat_yes"><label for="boat_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="boat_no"><label for="boat_no">No</label></div>
-          </div>
-        </div>
-        <div class="row">
-          <label>Dredging</label>
-          <div class="checkbox-group" id="dredgingGroup" role="group" aria-label="Dredging">
-            <div class="checkbox-row all"><input type="checkbox" id="dredging_all" checked><label for="dredging_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="dredging_yes"><label for="dredging_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="dredging_no"><label for="dredging_no">No</label></div>
-          </div>
-        </div>
-        <div class="row">
-          <label>Oil</label>
-          <div class="checkbox-group" id="oilGroup" role="group" aria-label="Oil">
-            <div class="checkbox-row all"><input type="checkbox" id="oil_all" checked><label for="oil_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="oil_yes"><label for="oil_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="oil_no"><label for="oil_no">No</label></div>
-          </div>
-        </div>
-        <div class="row">
-          <label>Petrol</label>
-          <div class="checkbox-group" id="petrolGroup" role="group" aria-label="Petrol">
-            <div class="checkbox-row all"><input type="checkbox" id="petrol_all" checked><label for="petrol_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="petrol_yes"><label for="petrol_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="petrol_no"><label for="petrol_no">No</label></div>
-          </div>
-        </div>
-      </div>
-    </details>
-  </div>
-
-  <div class="section">
-    <div class="row">
-      <label for="decompFilter">Decomposition code</label>
-      <select id="decompFilter" name="decompFilter" multiple size="6">
-        <option value="__ALL__" selected>(All)</option>
-        <option>1</option><option>2</option><option>3</option>
-        <option>4</option><option>5</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <label>Season</label>
-      <div class="checkbox-group" id="seasonGroup" role="group" aria-label="Season">
-        <div class="checkbox-row all"><input type="checkbox" id="season_all" checked><label for="season_all">(All)</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="season_autumn"><label for="season_autumn">Autumn</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="season_spring"><label for="season_spring">Spring</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="season_summer"><label for="season_summer">Summer</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="season_winter"><label for="season_winter">Winter</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="season_unknown"><label for="season_unknown">Unknown</label></div>
+        <div class="group" id="FishingGroup"><div class="gtitle">Fishing</div><div class="opts smallgrid" id="FishingOpts"></div></div>
+        <div class="group" id="Marine_DebrisGroup"><div class="gtitle">Marine debris</div><div class="opts smallgrid" id="Marine_DebrisOpts"></div></div>
+        <div class="group" id="AgressionGroup"><div class="gtitle">Aggression</div><div class="opts smallgrid" id="AgressionOpts"></div></div>
+        <div class="group" id="Boat_collisionGroup"><div class="gtitle">Boat collision</div><div class="opts smallgrid" id="Boat_collisionOpts"></div></div>
+        <div class="group" id="DredgingGroup"><div class="gtitle">Dredging</div><div class="opts smallgrid" id="DredgingOpts"></div></div>
+        <div class="group" id="OilGroup"><div class="gtitle">Oil</div><div class="opts smallgrid" id="OilOpts"></div></div>
+        <div class="group" id="PetrolGroup"><div class="gtitle">Petrol</div><div class="opts smallgrid" id="PetrolOpts"></div></div>
       </div>
     </div>
 
-    <div class="row">
-      <label for="yearFilter">Year</label>
-      <select id="yearFilter" name="yearFilter" multiple size="10">
-        <option value="__ALL__" selected>(All)</option>
-        <option>2015</option><option>2016</option><option>2017</option>
-        <option>2018</option><option>2019</option><option>2020</option>
-        <option>2021</option><option>2022</option><option>2023</option><option>2024</option>
-      </select>
+    <!-- Environment & time -->
+    <div class="details">
+      <div class="sum"><span>Environment & time</span></div>
+      <div class="content">
+        <div class="group" id="seasonGroup">
+          <div class="gtitle">Season</div>
+          <div class="opts smallgrid" id="seasonOpts"></div>
+        </div>
+
+        <div class="group" id="decompGroup">
+          <div class="gtitle">Decomposition code</div>
+          <div class="opts smallgrid" id="decompOpts"></div>
+        </div>
+
+        <!-- Year slider + checkboxes -->
+        <div class="group">
+          <div class="gtitle">Year range</div>
+          <div class="row" style="display:flex;gap:8px;align-items:center">
+            <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1" />
+            <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1" />
+          </div>
+          <div id="yearLabel" class="hint">2015 – 2024</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button id="resetYearBtn" class="iconbtn" type="button">Reset range</button>
+          </div>
+        </div>
+
+        <div class="group" id="yearGroup">
+          <div class="gtitle">Year</div>
+          <div class="opts yeargrid" id="yearOpts"></div>
+          <div class="hint">Years outside the slider range are disabled automatically.</div>
+        </div>
+
+        <div class="group" id="monthGroup">
+          <div class="gtitle">Month</div>
+          <div class="opts mgrid" id="monthOpts"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="row">
-      <label for="monthFilter">Month</label>
-      <select id="monthFilter" name="monthFilter" multiple size="6">
-        <option value="__ALL__" selected>(All)</option>
-        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-        <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="section">
     <div class="controls-footer">
-      <button id="resetBtn" class="btn" aria-label="Reset all filters">Reset</button>
-      <button id="applyBtn" class="btn" aria-label="Apply filters" style="background:#0ea5e9;color:#fff">Apply</button>
+      <button id="resetBtn">Reset</button>
+      <button id="applyBtn">Apply</button>
     </div>
   </div>
 </div>
 
-<div id="legend" aria-live="polite"></div>
+<!-- Legend -->
+<div id="legend"></div>
 <div id="spinner">Loading…</div>
-<div id="toast" role="status" aria-live="assertive"></div>
+<div id="toast"></div>
 
 <script>
-/* ========= Decoder shim (works with UMD/browserified builds) ========= */
-(function ensureDecoders(){
-  var VT = (window.VectorTile)
-      || (window.vectorTile && window.vectorTile.VectorTile)
-      || (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile)
-      || null;
+(function(){
+  "use strict";
 
-  var PBF = (window.Pbf)
-       || (window.pbf && window.pbf.Pbf)
-       || null;
-
-  if (!window.VectorTile && VT) window.VectorTile = VT;
-  if (!window.Pbf && PBF) window.Pbf = PBF;
-
-  window.__VT__ = VT || window.VectorTile || null;
-  window.__PBF__ = PBF || window.Pbf || null;
-
-  if (!window.__VT__ || !window.__PBF__) {
-    console.warn('Decoder globals missing:',
-      (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
-    );
-  }
-})();
-
-/* ========= Map ========= */
-const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
-
-/* ========= UI helpers ========= */
-const $ = id => document.getElementById(id);
-const spinner=$('spinner'), toast=$('toast');
-const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
-const hideSpinner = () => { spinner.style.display='none'; };
-const showToast=(m,ms=5000,type='error')=>{
-  toast.textContent=m; toast.className = type==='info'?'info':(type==='warn'?'warn':''); toast.style.display='block';
-  setTimeout(()=>toast.style.display='none',ms);
-};
-$('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
-window.addEventListener('error',()=>hideSpinner());
-window.addEventListener('unhandledrejection',()=>hideSpinner());
-
-/* ========= Checkbox groups (keep All logic) ========= */
-function setupCheckboxGroup(groupId){
-  const g=$(groupId); if(!g) return;
-  const all = g.querySelector('.all input');
-  const rest = Array.from(g.querySelectorAll(':scope input:not(.all input)'));
-  all.addEventListener('change', e=>{
-    if(e.target.checked){ rest.forEach(cb=>cb.checked=false); }
-  });
-  rest.forEach(cb=>{
-    cb.addEventListener('change', e=>{
-      if(e.target.checked) all.checked=false;
-      if(rest.every(r=>!r.checked)) all.checked=true;
-    });
-  });
-}
-['speciesGroup','stageGroup','sexGroup','fishingGroup','marineDebrisGroup','boatGroup','dredgingGroup','oilGroup','petrolGroup','seasonGroup'].forEach(setupCheckboxGroup);
-
-function getCheckboxValues(groupId){
-  const g=$(groupId); if(!g) return [];
-  if(g.querySelector('.all input')?.checked) return [];
-  return Array.from(g.querySelectorAll(':scope input:not(.all input):checked'))
-    .map(cb=>cb.labels?.[0]?.textContent?.trim())
-    .filter(Boolean);
-}
-
-/* ========= Multi-select (year/month, decomp) ========= */
-function enforceAllOption(e){
-  const sel=e.target; if(!sel.multiple) return;
-  const all = Array.from(sel.options).find(o=>o.value==='__ALL__');
-  const chosen = Array.from(sel.selectedOptions).map(o=>o.value);
-  if(chosen.length===0){ all.selected=true; }
-  else if(chosen.includes('__ALL__') && chosen.length>1){
-    Array.from(sel.options).forEach(o=>o.selected=false); all.selected=true;
-  }else if(!chosen.includes('__ALL__') && all.selected){ all.selected=false; }
-}
-document.querySelectorAll('#panel select[multiple]').forEach(s=>s.addEventListener('change',enforceAllOption));
-const getMulti = id => {
-  const vals = Array.from($(id).selectedOptions||[]).map(o=>o.value);
-  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
-};
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
-
-/* ========= Colors ========= */
-const ramps={
-  'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
-  'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
-  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
-  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
-  'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
-  'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
-};
-let activeRamp=ramps['multi'];
-let isolatedBin=-1;
-
-/* ========= Legend ========= */
-function computeBinIndex(breaks, v){
-  if(!Array.isArray(breaks) || breaks.length<2 || !Number.isFinite(v)) return -1;
-  const n=breaks.length-1;
-  if(v<=breaks[0]) return 0;
-  if(v>=breaks[n]) return n-1;
-  for(let i=1;i<breaks.length;i++){
-    if(v <= breaks[i]) return i-1;
-  }
-  return n-1;
-}
-function updateLegend(localBreaks, localRamp, cellValues=[]){
-  const el=$('legend');
-  const ramp=(Array.isArray(localRamp)&&localRamp.length)?localRamp.slice():ramps['multi'];
-  const brks=(Array.isArray(localBreaks)&&localBreaks.length>1)?localBreaks.slice():[0,1,2,3,4,5];
-
-  const spSel=getCheckboxValues('speciesGroup');
-  const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
-  el.innerHTML=`<div class="leghdr"><span>${name}</span><span>${nf(cellValues.length)} cells</span></div>`;
-
-  const n=Math.min(ramp.length, brks.length-1);
-  if(n<=0){ el.insertAdjacentHTML('beforeend','<div>No data in view</div>'); return; }
-
-  // mini histogram
-  const hist=new Array(n).fill(0);
-  const vals = cellValues.filter(Number.isFinite);
-  vals.forEach(v=>{
-    const b=computeBinIndex(brks,v);
-    if(b>=0&&b<hist.length) hist[b]++; 
-  });
-  const maxH=Math.max(...hist,1);
-  el.insertAdjacentHTML('beforeend',
-    `<div class="histogram">${hist.map(c=>`<div class="hist-bar" style="height:${Math.max(2,Math.round(c/maxH*20))}px" title="${nf(c)} cells"></div>`).join('')}</div>`
-  );
-
-  for(let i=0;i<n;i++){
-    const a=brks[i], b=brks[i+1], iso=(isolatedBin===i)?' isolated':'';
-    el.insertAdjacentHTML('beforeend',
-      `<div class="legend-row${iso}" data-bin="${i}" title="${nf(a)} – ${nf(b)}">
-         <span class="swatch" style="background:${ramp[i]}"></span><span>${nf(a)} – ${nf(b)}</span>
-       </div>`
-    );
-  }
-  el.querySelectorAll('.legend-row[data-bin]').forEach(row=>{
-    row.addEventListener('click', e=>{
-      const bin=parseInt(e.currentTarget.dataset.bin,10);
-      isolatedBin=(isolatedBin===bin)?-1:bin;
-      buildLayer(); // rebuild with isolation
-    });
-  });
-}
-
-/* ========= Canonicalization ========= */
-const canon = {
-  season: v => {
-    const s=(v??'').toString().toLowerCase().trim();
-    if(!s) return 'Unknown';
-    if(['outono','autumn','fall'].includes(s)) return 'Autumn';
-    if(['primavera','spring'].includes(s)) return 'Spring';
-    if(['verao','verão','summer'].includes(s)) return 'Summer';
-    if(['inverno','winter'].includes(s)) return 'Winter';
-    return 'Unknown';
-  },
-  sex: v => {
-    const s=(v??'').toString().toLowerCase().trim();
-    if(['fêmea','femea','female','f'].includes(s)) return 'Female';
-    if(['macho','male','m'].includes(s)) return 'Male';
-    return 'Unknown';
-  },
-  stage: v => {
-    const s=(v??'').toString().toLowerCase().trim();
-    if(['adulto','adult'].includes(s)) return 'Adult';
-    if(['juvenil','juvenile'].includes(s)) return 'Juvenile';
-    if(['filhote','hatchling'].includes(s)) return 'Hatchling';
-    return 'Unknown';
-  },
-  year: v => {
-    if(v==null) return '';
-    const n=parseInt(String(v).replace(/\.0+$/,''),10);
-    return Number.isFinite(n)?String(n):'';
-  },
-  // FIXED: Add a robust handler for "Yes/No" type data
-  binary: v => {
-    const s = (v ?? '').toString().toLowerCase().trim();
-    if (['yes', 'y', 'true', '1', 'sim', 's'].includes(s)) return 'Yes';
-    if (['no', 'n', 'false', '0', 'nao', 'não'].includes(s)) return 'No';
-    return 'Unknown'; // Fallback for other values
-  }
-};
-const asIntString=v=>{ const n=parseInt(v,10); return Number.isFinite(n)?String(n):String(v); };
-
-/* ========= pmtiles:// fetch shim ========= */
-const origFetch = window.fetch.bind(window);
-const pmCache = new Map();
-async function getPM(archive){
-  const u=new URL(archive, new URL('.', location.href)).toString();
-  if(pmCache.has(u)) return pmCache.get(u);
-  const inst=new pmtiles.PMTiles(u);
-  pmCache.set(u,inst);
-  return inst;
-}
-window.fetch = async (input, init) => {
-  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
-    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
-    const [_, archive, z, x, y] = m;
-    try{
-      const pm = await getPM(archive);
-      const t   = await pm.getZxy(+z,+x,+y);
-      if(!t || !t.data){ return new Response(null,{status:204}); }
-      return new Response(t.data);
-    }catch(e){
-      console.warn('Tile fetch failed for', archive, z, x, y, e);
-      return new Response(null,{status:204});
+  /* ===== Decoder shim (works with browserified/UMD builds) ===== */
+  (function ensureDecoders(){
+    var VT = (window.VectorTile) ||
+             (window.vectorTile && window.vectorTile.VectorTile) ||
+             (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) || null;
+    var PBF = (window.Pbf) || (window.pbf && window.pbf.Pbf) || null;
+    if (!window.VectorTile && VT) window.VectorTile = VT;
+    if (!window.Pbf && PBF) window.Pbf = PBF;
+    window.__VT__ = VT || window.VectorTile || null;
+    window.__PBF__ = PBF || window.Pbf || null;
+    if (!window.__VT__ || !window.__PBF__) {
+      console.warn('Decoder globals missing:',
+        (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
+      );
     }
+  })();
+
+  /* ===== Map ===== */
+  const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  /* ===== UI helpers ===== */
+  const $ = id => document.getElementById(id);
+  const panel = $('panel');
+  const spinner=$('spinner'), toast=$('toast'), legendEl=$('legend');
+  const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
+  const hideSpinner = () => { spinner.style.display='none'; };
+  const showToast=(m,ms=5000)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
+  $('collapseBtn').addEventListener('click',()=>panel.classList.toggle('collapsed'));
+  // Mobile nicety: first map tap collapses panel
+  let collapsedOnce=false;
+  map.on('click',()=>{ if(window.innerWidth<768 && !collapsedOnce){ panel.classList.add('collapsed'); collapsedOnce=true; }});
+
+  // Always hide spinner even if unexpected error bubbles up
+  window.addEventListener('error',()=>hideSpinner());
+  window.addEventListener('unhandledrejection',()=>hideSpinner());
+
+  /* ===== Constants / color ramps ===== */
+  const CACHE_BUSTER = '20250812'; // helps avoid Chrome range-cache errors
+  const MIN_YEAR = 2015, MAX_YEAR = 2024;
+
+  const ramps={
+    'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
+    'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
+    'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
+    'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
+    'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
+    'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
+  };
+
+  const metricCandidatesByCT = {
+    weight: ['weight','sum_val'],
+    new_weight: ['new_weight','sum_val'],
+    new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
+    new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
+    new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
+  };
+
+  const idCandidates = ['turtle_id','individual_id','uid','id'];
+
+  /* ===== pmtiles:// fetch shim + PM cache ===== */
+  const origFetch = window.fetch.bind(window);
+  const pmCache = new Map();
+  async function getPM(archive){
+    const u = new URL(archive, new URL('.', location.href)).toString();
+    if(pmCache.has(u)) return pmCache.get(u);
+    const inst = new pmtiles.PMTiles(u);
+    pmCache.set(u, inst);
+    return inst;
   }
-  return origFetch(input, init);
-};
+  window.fetch = async (input, init) => {
+    if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+      const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+      if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
+      const [_, archive, z, x, y] = m;
+      try{
+        const pm = await getPM(archive);
+        const t  = await pm.getZxy(+z,+x,+y);
+        if(!t || !t.data){ return new Response(null,{status:204}); }
+        return new Response(t.data);
+      }catch(e){
+        console.warn('Tile fetch failed for', archive, z, x, y, e);
+        return new Response(null,{status:204});
+      }
+    }
+    return origFetch(input, init);
+  };
 
-/* ========= Helpers ========= */
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
-function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
-function tileRangeForBounds(b,z){
-  const nw=b.getNorthWest(), se=b.getSouthEast();
-  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
-  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
-  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
-  return {minX,maxX,minY,maxY};
-}
-const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
-function fileFor(res, ct){ const v='20250812'; return `hexgrid_${res}_${ct}.pmtiles?v=${v}`; }
+  /* ===== Helpers ===== */
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+  function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+  function tileRangeForBounds(b,z){
+    const nw=b.getNorthWest(), se=b.getSouthEast();
+    let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+    let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+    if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+    const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+    return {minX,maxX,minY,maxY};
+  }
+  const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+  function fileFor(res, ct){ return hexgrid_${res}_${ct}.pmtiles?v=${CACHE_BUSTER}; }
+  const nf=(v)=>{ if(!isFinite(v)) return '-'; if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
-/* ========= State ========= */
-let vtLayer=null, layerNames=[], header=null;
-const aggByHex=new Map();
-let metricField='sum_val';
-const stats = (window.ss || window.simpleStatistics || null);
-let lastStyleFn=null; // for hover highlight
+  /* ===== Canonicalization ===== */
+  const deaccent = s => (s==null?'':String(s)).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const lower = s => deaccent(s).toLowerCase().trim();
 
-/* ========= Detect ALL layer names (more robust for r5 etc.) ========= */
-async function detectLayerNames(pmFile){
-  const names = new Set();
-  try{
-    const pm = await getPM(pmFile);
-    header = await pm.getHeader();
-    const md = await pm.getMetadata();
-    if(md && md.json){
-      const j=(typeof md.json==='string')?JSON.parse(md.json):md.json;
-      if(j && j.vector_layers){
-        if(Array.isArray(j.vector_layers)){
-          j.vector_layers.forEach(vl=>{ if(vl && vl.id) names.add(vl.id); });
-        }else{
-          Object.keys(j.vector_layers).forEach(k=>names.add(k));
+  function canonSeason(v){
+    const x=lower(v);
+    if(!x) return 'Unknown';
+    if(x==='outono') return 'Autumn';
+    if(x==='primavera') return 'Spring';
+    if(x==='verao' || x==='verão') return 'Summer';
+    if(x==='inverno') return 'Winter';
+    if(['autumn','spring','summer','winter'].includes(x)) return x[0].toUpperCase()+x.slice(1);
+    return 'Unknown';
+  }
+  function canonSex(v){
+    const x=lower(v);
+    if(!x || x==='indefinido' || x==='unknown') return 'Unknown';
+    if(x==='femea' || x==='female') return 'Female';
+    if(x==='macho' || x==='male') return 'Male';
+    return 'Unknown';
+  }
+  function canonStage(v){
+    const x=lower(v);
+    if(!x || x==='indeterminado' || x==='unknown') return 'Unknown';
+    if(x==='adulto' || x==='adult') return 'Adult';
+    if(x==='juvenil' || x==='juvenile') return 'Juvenile';
+    if(x==='filhote' || x==='hatchling') return 'Hatchling';
+    return 'Unknown';
+  }
+  function canonYesNo(v){
+    const x=lower(v);
+    if(x==='sim' || x==='yes') return 'Yes';
+    if(x==='nao' || x==='não' || x==='no') return 'No';
+    return ''; // treat unknown/empty as not set
+  }
+  function canonYear(v){
+    if(v==null) return NaN;
+    const n = Number(String(v).replace(/\.0$/,''));
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function canonMonth(v){
+    const n = Number(v);
+    return (Number.isFinite(n) && n>=1 && n<=12) ? n : NaN;
+  }
+
+  /* ===== Checkbox UI builders ===== */
+  function makeGroup(containerId, name, values, defaults){ // values: [{label,value}], defaults Set of values initially checked
+    const cont = $(containerId);
+    const optsDiv = cont.querySelector('.opts') || cont;
+    optsDiv.innerHTML='';
+    // "(All)" master
+    const allId = ${name}__ALL__;
+    const wrapAll = document.createElement('label'); wrapAll.className='opt';
+    wrapAll.innerHTML = <input type="checkbox" id="${allId}" data-name="${name}" value="__ALL__" checked><span>(All)</span>;
+    optsDiv.appendChild(wrapAll);
+
+    values.forEach((o,i)=>{
+      const id=${name}_${i};
+      const el = document.createElement('label'); el.className='opt';
+      const checked = defaults ? defaults.has(o.value) : false;
+      el.innerHTML = <input type="checkbox" id="${id}" data-name="${name}" value="${o.value}" ${checked?'checked':''}><span>${o.label}</span>;
+      optsDiv.appendChild(el);
+    });
+
+    // All-logic: if All checked => check all; if any specific toggled => uncheck All (unless none selected)
+    optsDiv.addEventListener('change', (e)=>{
+      const t = e.target; if(t.tagName!=='INPUT') return;
+      const groupInputs = Array.from(optsDiv.querySelectorAll(input[data-name="${name}"]));
+      const allBox = optsDiv.querySelector(#${allId});
+      if(t.value==='__ALL__'){
+        const on = allBox.checked;
+        groupInputs.forEach(inp=>{ if(inp!==allBox){ inp.checked = on; inp.disabled=false; } });
+      }else{
+        if(allBox.checked){ allBox.checked=false; }
+        const anyChecked = groupInputs.some(inp=> inp!==null && inp.value!=='__ALL__' && inp.checked);
+        if(!anyChecked) allBox.checked=true; // revert to All if none
+      }
+    });
+  }
+  function getChecked(name){
+    const inputs = Array.from(document.querySelectorAll(input[data-name="${name}"]));
+    const vals = inputs.filter(i=>i.checked && i.value!=='__ALL__').map(i=>i.value);
+    return vals; // [] => treat as All
+  }
+  function setChecked(name, values){
+    const set = new Set(values);
+    const inputs = Array.from(document.querySelectorAll(input[data-name="${name}"]));
+    let any=false;
+    inputs.forEach(i=>{
+      if(i.value==='__ALL__') return;
+      i.checked = set.has(i.value);
+      if(i.checked) any=true;
+    });
+    const allBox = inputs.find(i=>i.value==='__ALL__');
+    if(allBox) allBox.checked = !any;
+  }
+
+  // Build groups
+  const speciesVals = [
+    {label:'Caretta caretta', value:'Caretta caretta'},
+    {label:'Chelonia mydas', value:'Chelonia mydas'},
+    {label:'Dermochelys coriacea', value:'Dermochelys coriacea'},
+    {label:'Eretmochelys imbricata', value:'Eretmochelys imbricata'},
+    {label:'Lepidochelys olivacea', value:'Lepidochelys olivacea'}
+  ];
+  makeGroup('speciesOpts','species',speciesVals);
+
+  const stageVals = [
+    {label:'Adult', value:'Adult'},
+    {label:'Juvenile', value:'Juvenile'},
+    {label:'Hatchling', value:'Hatchling'},
+    {label:'Unknown', value:'Unknown'}
+  ];
+  makeGroup('stageOpts','stage',stageVals);
+
+  const sexVals = [
+    {label:'Female', value:'Female'},
+    {label:'Male', value:'Male'},
+    {label:'Unknown', value:'Unknown'}
+  ];
+  makeGroup('sexOpts','sex',sexVals);
+
+  const seasonVals = [
+    {label:'Autumn', value:'Autumn'},
+    {label:'Spring', value:'Spring'},
+    {label:'Summer', value:'Summer'},
+    {label:'Winter', value:'Winter'}
+  ];
+  makeGroup('seasonOpts','season',seasonVals);
+
+  const yesNoVals = [{label:'Yes', value:'Yes'},{label:'No', value:'No'}];
+  ['Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol'].forEach(k=>{
+    makeGroup(${k}Opts,k,yesNoVals);
+  });
+
+  const decompVals = ['1','2','3','4','5'].map(x=>({label:x,value:x}));
+  makeGroup('decompOpts','decomposition_code',decompVals);
+
+  // Year checkboxes (2015..2024)
+  const yearVals = [];
+  for(let y=MIN_YEAR;y<=MAX_YEAR;y++) yearVals.push({label:String(y), value:String(y)});
+  makeGroup('yearOpts','year',yearVals);
+  // Month 1..12
+  const monVals = [];
+  for(let m=1;m<=12;m++) monVals.push({label:String(m), value:String(m)});
+  makeGroup('monthOpts','month',monVals);
+
+  // Year range slider
+  const yearMinEl=$('yearMin'), yearMaxEl=$('yearMax'), yearLabel=$('yearLabel');
+  function syncYearSlider(){
+    let a=Number(yearMinEl.value), b=Number(yearMaxEl.value);
+    if(a>b){ const t=a; a=b; b=t; }
+    yearMinEl.value=a; yearMaxEl.value=b;
+    yearLabel.textContent = ${a} – ${b};
+    // Disable out-of-range year checkboxes + deselect them
+    const inputs = Array.from(document.querySelectorAll('input[data-name="year"]'));
+    inputs.forEach(inp=>{
+      if(inp.value==='__ALL__') return;
+      const val = Number(inp.value);
+      const inRange = val>=a && val<=b;
+      inp.disabled = !inRange;
+      if(!inRange) inp.checked = false;
+    });
+    // If none selected and All is unchecked (due to earlier), re-check All
+    const anyChecked = inputs.some(i=>i.value!=='__ALL__' && i.checked);
+    const allBox = inputs.find(i=>i.value==='__ALL__');
+    if(allBox) allBox.checked = !anyChecked;
+  }
+  yearMinEl.addEventListener('input',syncYearSlider);
+  yearMaxEl.addEventListener('input',syncYearSlider);
+  $('resetYearBtn').addEventListener('click',()=>{ yearMinEl.value=String(MIN_YEAR); yearMaxEl.value=String(MAX_YEAR); syncYearSlider(); });
+
+  /* ===== Legend & layer UI controls ===== */
+  let opacityVal = 0.65;
+  let highlightTop10 = false;
+  let isolatedBin = -1; // -1 => none
+
+  // Legend UI scaffold
+  function renderLegendUI(cfg, counts){
+    const ramp = cfg.ramp; const brks = cfg.breaks;
+    const n = Math.min(ramp.length, brks.length-1);
+    const spSel = getChecked('species');
+    const name = (spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
+
+    let html = <div class="leghdr">${name}</div>;
+    for(let i=0;i<n;i++){
+      const a=brks[i], b=brks[i+1];
+      const active = (i===isolatedBin) ? ' style="font-weight:700"' : '';
+      html += <div class="legend-row" data-bin="${i}">
+        <span><span class="swatch" title="${nf(a)} – ${nf(b)}" style="background:${ramp[i]}"></span><span${active}>${nf(a)} – ${nf(b)}</span></span>
+        <span>${counts? (counts[i]||0) : ''}</span>
+      </div>;
+    }
+    html += <div class="hist">;
+    const maxc = counts ? Math.max(1,...counts) : 1;
+    for(let i=0;i<n;i++){
+      const h = counts? Math.max(2, Math.round(40*(counts[i]/maxc))) : 2;
+      const active = (i===isolatedBin) ? 'active' : '';
+      html += <div class="bar ${active}" data-bin="${i}" style="height:${h}px" title="Bin ${i+1}"></div>;
+    }
+    html += </div>;
+
+    html += <div class="legend-controls">
+      <div class="row" style="display:flex;align-items:center;gap:6px">
+        <input id="highlightTop10" type="checkbox" ${highlightTop10?'checked':''}/>
+        <label for="highlightTop10" title="Emphasize top decile">Highlight top 10%</label>
+      </div>
+      <div class="row" style="display:flex;align-items:center;gap:6px">
+        <label for="opacitySlider">Opacity</label>
+        <input id="opacitySlider" type="range" min="0.30" max="0.90" step="0.01" value="${opacityVal.toFixed(2)}" style="width:120px"/>
+      </div>
+      <div class="hint">Breaks based on visible, filtered hexes.</div>
+    </div>;
+
+    legendEl.innerHTML = html;
+
+    // Interactions
+    legendEl.querySelectorAll('.legend-row,.bar').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const bin = Number(el.getAttribute('data-bin'));
+        isolatedBin = (isolatedBin===bin)? -1 : bin;
+        // rebuild layer with same data, new style
+        if(lastConfig) rebuildLayerWithConfig(lastConfig);
+      });
+    });
+    $('highlightTop10').addEventListener('change',(e)=>{
+      highlightTop10 = e.target.checked;
+      if(lastConfig) rebuildLayerWithConfig(lastConfig);
+    });
+    $('opacitySlider').addEventListener('input',(e)=>{
+      opacityVal = Number(e.target.value);
+      if(lastConfig) rebuildLayerWithConfig(lastConfig);
+    });
+  }
+
+  /* ===== State ===== */
+  let vtLayer=null, layerName='', header=null, lastGoodLayerOptions=null;
+  const aggByHex = new Map(); // key -> {sum, ids:Set, sex:Map, stage:Map, season:Map, year:Map, month:Map, species:Map, rows:number}
+  let metricField = 'sum_val';
+  let lastConfig = null; // frozen per-render style config
+
+  /* ===== Detection: vector layer name ===== */
+  async function detectLayerName(pmFile){
+    try{
+      const pm = await getPM(pmFile);
+      header = await pm.getHeader();
+      const md = await pm.getMetadata();
+      if (md && md.json){
+        const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
+        if (j && j.vector_layers){
+          if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+          const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
         }
       }
-      if(names.size) return Array.from(names);
-    }
-    if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available for probing');
-    const zCandidates = Array.from(new Set([
-      Math.floor(map.getZoom()),
-      6, header.minZoom, header.maxZoom
-    ].filter(n=>Number.isFinite(n)))).sort((a,b)=>a-b);
-    for(const z0 of zCandidates){
-      const z=clamp(z0, header.minZoom, header.maxZoom);
+      if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available for probing.');
+      const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
       const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
       for(let x=minX;x<=maxX;x++){
         for(let y=minY;y<=maxY;y++){
           const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
           if(!r || !r.data) continue;
-          const vt=new window.__VT__(new window.__PBF__(r.data));
-          Object.keys(vt.layers||{}).forEach(k=>names.add(k));
+          const vt = new window.__VT__(new window.__PBF__(r.data));
+          const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
         }
       }
-      if(names.size) break;
-    }
-  }catch(e){ console.warn('Layer detect failed:', e); }
-  if(!names.size){ console.warn('Falling back to ["hexgrid"]'); return ['hexgrid']; }
-  return Array.from(names);
-}
-
-/* ========= Metric detection (strict) ========= */
-const metricCandidatesByCT = {
-  weight: ['sum_val','weight'],
-  new_weight: ['sum_val','new_weight'],
-  new_mortality_est_bf_mean: ['sum_val','new_mortality_est_bf_mean'],
-  new_mortality_est_bf_low: ['sum_val','new_mortality_est_bf_low'],
-  new_mortality_est_bf_high: ['sum_val','new_mortality_est_bf_high']
-};
-function chooseMetricFieldAcrossFeatures(observedPropsArr, ct){
-  const priority = metricCandidatesByCT[ct] || ['sum_val'];
-  for(const k of priority){
-    let hits=0;
-    for(const p of observedPropsArr){
-      const v = Number(p[k]);
-      if(Number.isFinite(v)){ hits++; if(hits>=3) return k; }
-    }
+    }catch(e){ console.warn('Layer detect failed:', e); }
+    console.warn('Falling back to "hexgrid"');
+    return 'hexgrid';
   }
-  for(const p of observedPropsArr){ if(Number.isFinite(Number(p.sum_val))) return 'sum_val'; }
-  console.warn('[metric] Falling back to sum_val');
-  return 'sum_val';
-}
 
-/* ========= Hex key (unified) ========= */
-function hexKey(p){
-  return p.h3_index ?? p.h3 ?? p.hex_id ?? p.index ?? p.id ?? null;
-}
+  /* ===== Filters / predicate ===== */
+  function getFilterState(){
+    // Read checkboxes
+    const species     = new Set(getChecked('species'));
+    const stage       = new Set(getChecked('stage'));
+    const sex         = new Set(getChecked('sex'));
+    const season      = new Set(getChecked('season'));
+    const Fishing     = new Set(getChecked('Fishing'));
+    const Marine_Debris = new Set(getChecked('Marine_Debris'));
+    const Agression   = new Set(getChecked('Agression'));
+    const Boat_collision = new Set(getChecked('Boat_collision'));
+    const Dredging    = new Set(getChecked('Dredging'));
+    const Oil         = new Set(getChecked('Oil'));
+    const Petrol      = new Set(getChecked('Petrol'));
+    const decomp      = new Set(getChecked('decomposition_code'));
+    const yearSel     = new Set(getChecked('year').map(y=>Number(y)));
+    const monthSel    = new Set(getChecked('month').map(m=>Number(m)));
 
-/* ========= Category helpers ========= */
-function lowerPropMap(obj){ const out={}; for(const k in obj){ out[k.toLowerCase()]=obj[k]; } return out; }
-function increment(mapObj, key, by){ if(!key) return; const k=String(key); mapObj[k]=(mapObj[k]||0)+(Number(by)||0); }
-function pctParts(countMap){
-  if(!countMap) return {parts:[], unknownCount:0, totalLabelled:0};
-  const unknown = Number(countMap.Unknown || countMap.unknown || 0);
-  const entries = Object.entries(countMap).filter(([k])=>k!=='Unknown'&&k!=='unknown');
-  const totalLabelled = entries.reduce((s,[,v])=>s+(Number(v)||0),0);
-  const pct = v => totalLabelled ? 100*(Number(v)||0)/totalLabelled : 0;
-  return { parts: entries.map(([k,v])=>[k, pct(v)]), unknownCount: unknown, totalLabelled };
-}
+    const yMin = Number(yearMinEl.value), yMax = Number(yearMaxEl.value);
 
-/* ========= Aggregation + stride-retry ========= */
-const MAX_TILES_STATS=90;
-const MAX_HEXES_STATS=1800;
+    return {species, stage, sex, season, Fishing, Marine_Debris, Agression, Boat_collision, Dredging, Oil, Petrol, decomp, yearSel, monthSel, yMin, yMax};
+  }
 
-async function aggregateAndCollect(pmFile, layerNames, predicate, ct){
-  aggByHex.clear();
-  const sums=[]; // always array
-  try{
+  function makePredicate(state){
+    const t = state;
+    const testSet = (set, val) => {
+      if(set.size===0) return true;
+      return set.has(val);
+    };
+    return (raw) => {
+      // Canonicalize feature props
+      const species = raw.species || raw.Species;
+      const stage   = canonStage(raw.development_stage || raw.stage);
+      const sex     = canonSex(raw.sex);
+      const season  = canonSeason(raw.season);
+      const fish    = canonYesNo(raw.Fishing);
+      const debris  = canonYesNo(raw.Marine_Debris);
+      const aggr    = canonYesNo(raw.Agression);
+      const boat    = canonYesNo(raw.Boat_collision);
+      const dred    = canonYesNo(raw.Dredging);
+      const oil     = canonYesNo(raw.Oil);
+      const petrol  = canonYesNo(raw.Petrol);
+      const decomp  = String(raw.decomposition_code ?? '').replace(/\.0$/,'');
+      const year    = canonYear(raw.year);
+      const month   = canonMonth(raw.month);
+
+      if (t.species.size>0 && !t.species.has(species)) return false;
+      if (!testSet(t.stage, stage)) return false;
+      if (!testSet(t.sex,   sex)) return false;
+      if (!testSet(t.season,season)) return false;
+      if (!testSet(t.Fishing,fish)) return false;
+      if (!testSet(t.Marine_Debris,debris)) return false;
+      if (!testSet(t.Agression,aggr)) return false;
+      if (!testSet(t.Boat_collision,boat)) return false;
+      if (!testSet(t.Dredging,dred)) return false;
+      if (!testSet(t.Oil,oil)) return false;
+      if (!testSet(t.Petrol,petrol)) return false;
+      if (t.decomp.size>0 && !t.decomp.has(decomp)) return false;
+
+      // Year rule: if year checkboxes have explicit selections, enforce them (and slider keeps them in-range).
+      // Else, use slider range only.
+      if (t.yearSel.size>0) {
+        if (!t.yearSel.has(year)) return false;
+      } else {
+        if (!(year>=t.yMin && year<=t.yMax)) return false;
+      }
+
+      if (t.monthSel.size>0 && !t.monthSel.has(month)) return false;
+
+      return true;
+    };
+  }
+
+  /* ===== Aggregation ===== */
+  function ensureAgg(key){
+    let a = aggByHex.get(key);
+    if(!a){
+      a = {sum:0, ids:new Set(), sex:new Map(), stage:new Map(), season:new Map(),
+           year:new Map(), month:new Map(), species:new Map(), rows:0 };
+      aggByHex.set(key,a);
+    }
+    return a;
+  }
+  function bump(map, k){ if(!k && k!==0) return; map.set(k, (map.get(k)||0)+1); }
+
+  function discoverMetric(sampleProps, ct){
+    const cands = metricCandidatesByCT[ct] || ['sum_val'];
+    for(const k of cands){ const v = Number(sampleProps[k]); if(Number.isFinite(v)) return k; }
+    if ('sum_val' in sampleProps && Number.isFinite(Number(sampleProps.sum_val))) return 'sum_val';
+    for(const k of Object.keys(sampleProps)){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
+    console.warn('Metric field fallback to sum_val');
+    return 'sum_val';
+  }
+
+  async function aggregateViewport(pmFile, layerName, predicate, ct, forStatsOnly=false){
+    aggByHex.clear();
     if(!window.__VT__ || !window.__PBF__){
-      showToast('Decoders not loaded (vector-tile/pbf).',4000,'warn');
-      return sums;
+      showToast('vector-tile.js / pbf.js not loaded — cannot compute.');
+      return [];
     }
     const pm = await getPM(pmFile);
     const hdr = header || await pm.getHeader();
+
+    // choose a modest decode zoom to limit tile count
     const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
     const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
-    const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
-    const totalTiles=tilesX*tilesY;
-    let stride=1;
-    if(totalTiles>MAX_TILES_STATS){
-      const factor=Math.ceil(Math.sqrt(totalTiles/MAX_TILES_STATS));
-      stride=Math.max(1,factor);
-    }
 
-    let observedForMetric=[];
+    let discovered=false;
+    const jobs=[];
+    for(let x=minX;x<=maxX;x++){
+      for(let y=minY;y<=maxY;y++){
+        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+          if(!resp || !resp.data) return;
+          const vt = new window.__VT__(new window.__PBF__(resp.data));
+          const lyr = vt.layers[layerName]; if(!lyr) return;
+          for(let i=0;i<lyr.length;i++){
+            const f = lyr.feature(i);
+            const p = f.properties || {};
+            if(!discovered){ metricField=discoverMetric(p, ct); discovered=true; }
+            if(!predicate(p)) continue;
 
-    const process = async (step)=>{
-      const jobs=[];
-      let cells=0;
-      outer:
-      for(let x=minX;x<=maxX;x+=step){
-        for(let y=minY;y<=maxY;y+=step){
-          jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
-            if(!resp || !resp.data) return;
-            const vt = new window.__VT__(new window.__PBF__(resp.data));
-            const candidateLayers = layerNames && layerNames.length ? layerNames : Object.keys(vt.layers||{});
-            for(const lname of candidateLayers){
-              const lyr = vt.layers[lname]; if(!lyr) continue;
-              for(let i=0;i<lyr.length;i++){
-                const f = lyr.feature(i);
-                const props = f.properties || {};
-                const key = hexKey(props); if(!key) continue; // ensure hex layer
-                if(!predicate(props)) continue;
+            const key = p.h3_index ?? p.h3 ?? p.id; if(!key) continue;
+            const val = Number(p[metricField]);
+            const idKey = idCandidates.find(k=> p[k]!=null );
+            const uid = idKey ? String(p[idKey]) : null;
 
-                if(observedForMetric.length<16) observedForMetric.push(props);
+            const a = ensureAgg(key);
+            if(Number.isFinite(val)) a.sum += val;
+            if(uid) a.ids.add(uid); else a.rows++;
 
-                const entry = aggByHex.get(key) || {
-                  sum:0,
-                  maxUid: null, rowCount: 0,
-                  sexCounts: Object.create(null),
-                  stageCounts: Object.create(null),
-                  seasonCounts: Object.create(null),
-                  yearCounts: Object.create(null),
-                  monthCounts: Object.create(null),
-                  species: props.species || null
-                };
-
-                entry._vals = entry._vals || [];
-                entry._vals.push(props);
-
-                const l = lowerPropMap(props);
-                const uidc = Number(l['uid_count'] ?? l['unique_ids'] ?? l['unique_turtle_ids'] ?? l['turtle_id_count']);
-                if(Number.isFinite(uidc)){
-                  entry.maxUid = (entry.maxUid==null)?uidc:Math.max(entry.maxUid, uidc);
-                }else{
-                  const rc = Number(props.count);
-                  entry.rowCount += Number.isFinite(rc) ? rc : 1;
-                }
-
-                // Sex
-                const sf = Number(l['sex_female']), sm = Number(l['sex_male']), su = Number(l['sex_unknown']);
-                if(Number.isFinite(sf)||Number.isFinite(sm)||Number.isFinite(su)){
-                  if(Number.isFinite(sf)) increment(entry.sexCounts,'Female',sf);
-                  if(Number.isFinite(sm)) increment(entry.sexCounts,'Male',sm);
-                  if(Number.isFinite(su)) increment(entry.sexCounts,'Unknown',su);
-                }else if(l['sex']){
-                  increment(entry.sexCounts, canon.sex(l['sex']), Number(props.count)||1);
-                }
-                // Stage
-                const sad=Number(l['stage_adult']), sjv=Number(l['stage_juvenile']), sha=Number(l['stage_hatchling']), su2=Number(l['stage_unknown']);
-                if(Number.isFinite(sad)||Number.isFinite(sjv)||Number.isFinite(sha)||Number.isFinite(su2)){
-                  if(Number.isFinite(sad)) increment(entry.stageCounts,'Adult',sad);
-                  if(Number.isFinite(sjv)) increment(entry.stageCounts,'Juvenile',sjv);
-                  if(Number.isFinite(sha)) increment(entry.stageCounts,'Hatchling',sha);
-                  if(Number.isFinite(su2)) increment(entry.stageCounts,'Unknown',su2);
-                }else if(l['development_stage']||l['stage']){
-                  increment(entry.stageCounts, canon.stage(l['development_stage']||l['stage']), Number(props.count)||1);
-                }
-                // Season
-                const sao=Number(l['season_autumn']), ssp=Number(l['season_spring']), ssu=Number(l['season_summer']), swi=Number(l['season_winter']), sun=Number(l['season_unknown']);
-                if(Number.isFinite(sao)||Number.isFinite(ssp)||Number.isFinite(ssu)||Number.isFinite(swi)||Number.isFinite(sun)){
-                  if(Number.isFinite(sao)) increment(entry.seasonCounts,'Autumn',sao);
-                  if(Number.isFinite(ssp)) increment(entry.seasonCounts,'Spring',ssp);
-                  if(Number.isFinite(ssu)) increment(entry.seasonCounts,'Summer',ssu);
-                  if(Number.isFinite(swi)) increment(entry.seasonCounts,'Winter',swi);
-                  if(Number.isFinite(sun)) increment(entry.seasonCounts,'Unknown',sun);
-                }else if(l['season']){
-                  increment(entry.seasonCounts, canon.season(l['season']), Number(props.count)||1);
-                }
-
-                if(props.year!=null){
-                  const y=canon.year(props.year); if(y) increment(entry.yearCounts,y, Number(props.count)||1);
-                }
-                if(props.month!=null){
-                  const m=asIntString(props.month); if(m) increment(entry.monthCounts,m, Number(props.count)||1);
-                }
-
-                aggByHex.set(key,entry);
-                cells++;
-                if(cells>MAX_HEXES_STATS) break;
-              }
-            }
-          }).catch(e=>console.warn('tile decode skipped',e)));
-          if(aggByHex.size>MAX_HEXES_STATS) break outer;
-        }
+            bump(a.sex,    canonSex(p.sex));
+            bump(a.stage,  canonStage(p.development_stage || p.stage));
+            bump(a.season, canonSeason(p.season));
+            bump(a.year,   canonYear(p.year));
+            bump(a.month,  canonMonth(p.month));
+            bump(a.species, p.species || p.Species);
+          }
+        }).catch(e=>console.warn('tile decode skipped',e)));
       }
-      await Promise.allSettled(jobs);
-      return cells;
-    };
-
-    let cells = await process(stride);
-    if(cells===0 && stride>1){
-      console.info('Stats retry with stride=1');
-      cells = await process(1);
     }
-
-    metricField = chooseMetricFieldAcrossFeatures(
-      Array.from(aggByHex.values()).flatMap(e=>e._vals||[]).slice(0,36),
-      ct
-    );
-
-    aggByHex.forEach((entry)=>{
-      let sum=0;
-      if(Array.isArray(entry._vals)){
-        for(const p of entry._vals){
-          const v=Number(p[metricField]);
-          if(Number.isFinite(v)) sum+=v;
-        }
-      }
-      entry.sum=sum;
-      delete entry._vals;
-    });
-
-    aggByHex.forEach(v=>{ if(Number.isFinite(v.sum)) sums.push(v.sum); });
-
-  }catch(e){
-    console.warn('aggregateAndCollect failed', e);
-    return [];
-  }
-  return sums;
-}
-
-/* ========= Breaks (robust) ========= */
-const JENKS_CLASSES=5;
-function manualQuantilesSorted(arr, probs){
-  const n=arr.length-1;
-  return probs.map(p=>{
-    if(p<=0) return arr[0];
-    if(p>=1) return arr[n];
-    const idx = n*p;
-    const lo = Math.floor(idx), hi=Math.ceil(idx);
-    if(lo===hi) return arr[lo];
-    const t = idx-lo;
-    return arr[lo]*(1-t)+arr[hi]*t;
-  });
-}
-function computeSafeBreaks(values){
-  if(!Array.isArray(values)) return null;
-  const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
-  if(sorted.length===0) return null;
-
-  const min=sorted[0], max=sorted[sorted.length-1];
-  if(min===max){
-    const bump = (min===0)?1:Math.max(Math.abs(min)*0.1,1e-6);
-    return [min-2*bump,min-bump,min,min+bump,min+2*bump,min+3*bump];
+    await Promise.all(jobs);
+    // return aggregated sums for stats/breaks
+    return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
   }
 
-  let edges=null;
-  try{
-    if(stats && typeof stats.jenks==='function' && sorted.length>=20){
-      edges = stats.jenks(sorted, JENKS_CLASSES);
-      const uniq = Array.from(new Set(edges.map(x=>+x.toFixed(10))));
-      if(uniq.length<JENKS_CLASSES+1){
-        const probs=[0,0.2,0.4,0.6,0.8,1];
-        edges = stats.quantileSorted ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
-      }
-    }else{
-      const probs=[0,0.2,0.4,0.6,0.8,1];
-      edges = (stats && stats.quantileSorted) ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
+  /* ===== Breaks (Jenks → quantiles fallback) ===== */
+  const JENKS_K = 5;
+  function widenIfFlat(min,max){
+    if(min===max){
+      const eps = (min===0)? 1 : Math.abs(min)*0.1;
+      return [min-eps, max+eps];
     }
-  }catch{
-    const probs=[0,0.2,0.4,0.6,0.8,1];
-    edges = (stats && stats.quantileSorted) ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
+    return [min,max];
   }
-  for(let i=1;i<edges.length;i++){ if(!(edges[i]>edges[i-1])) edges[i]=edges[i-1]+1e-9; }
-  return edges;
-}
-
-/* ========= Style + popups ========= */
-function makeStyle(localBreaks, localRamp){
-  return (props)=>{
-    const key = hexKey(props);
-    const agg = key ? aggByHex.get(key) : undefined;
-    const v = agg ? agg.sum : undefined;
-    if(!Number.isFinite(v) && v!==0){ return {opacity:0, fillOpacity:0, interactive:false}; }
-    const idx = computeBinIndex(localBreaks, v);
-    if(isolatedBin>=0 && idx!==isolatedBin){ return {opacity:0, fillOpacity:0, interactive:false}; }
-    const color = localRamp[Math.max(0,Math.min(idx, localRamp.length-1))] || localRamp[0];
-    return {fill:true, fillColor:color, fillOpacity:0.65, color, weight:0.6, interactive:true};
-  };
-}
-
-// Helpers for popup with symbols and percentages
-function computePctMap(obj){
-  const o=obj||{};
-  const F=Number(o.Female||0), M=Number(o.Male||0), U=Number(o.Unknown||0);
-  const totalLabelled = F+M;
-  const pf = totalLabelled? (100*F/totalLabelled):0;
-  const pm = totalLabelled? (100*M/totalLabelled):0;
-  return {F, M, U, pf, pm};
-}
-function computePct4(obj, keys){
-  const o=obj||{};
-  let total=0; keys.forEach(k=>{ total += Number(o[k]||0); });
-  const out={}; keys.forEach(k=>{
-    const v=Number(o[k]||0); out[k]={v, p: total? (100*v/total):0};
-  });
-  const unknown=Number(o.Unknown||0);
-  return {out, unknown};
-}
-
-let hoverLocked=false, highlightedId=null;
-function bindHoverPopups(layer, styleFn){
-  const keydown=(e)=>{ if(e.key==='Escape'){ hoverLocked=false; if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId);}catch{} highlightedId=null; } map.closePopup(); } };
-  document.addEventListener('keydown',keydown);
-  map.on('click',()=>{ if(!hoverLocked) map.closePopup(); });
-
-  layer.on('mouseover', e=>{
-    if(hoverLocked) return;
-    const p = e.layer?.properties||{};
-    const id = hexKey(p);
-    if(id==null) return;
-    const agg = aggByHex.get(id); if(!agg) return;
-
-    // highlight this hex (same idea you liked earlier)
+  function computeBreaks(values){
+    if(!values || values.length===0) return null;
+    if(values.length<8){
+      const min = Math.min(...values), max=Math.max(...values);
+      const [a,b]=widenIfFlat(min,max);
+      const step=(b-a)/JENKS_K, arr=[a];
+      for(let i=1;i<=JENKS_K;i++) arr.push(a+i*step);
+      return arr;
+    }
     try{
-      const base = styleFn(p);
-      layer.setFeatureStyle(id, Object.assign({}, base, {weight:2, color:'#111827', fillOpacity:Math.min(0.95,(base.fillOpacity||0.65)+0.1)}));
-      highlightedId=id;
+      const edges = ss.jenks(values, JENKS_K);
+      // Normalize edges; ensure unique ascending; fallback if too few
+      const uniq = Array.from(new Set(edges.map(x=>+x)));
+      if(uniq.length>=JENKS_K+1){
+        // ensure min/max cover data
+        const min = Math.min(...values), max=Math.max(...values);
+        if(uniq[0] > min) uniq[0]=min;
+        if(uniq[uniq.length-1] < max) uniq[uniq.length-1]=max;
+        return uniq;
+      }
     }catch{}
+    // Quantiles fallback
+    const sorted = values.slice().sort((a,b)=>a-b);
+    return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+  }
 
-    const sum = Number.isFinite(agg.sum)?agg.sum:0;
-    const uid = (agg.maxUid!=null)?agg.maxUid:agg.rowCount;
+  function computeBinIndex(breaks, v){
+    if(!Array.isArray(breaks) || breaks.length<2 || !Number.isFinite(v)) return -1;
+    // clamp to range
+    if(v<=breaks[0]) return 0;
+    for(let i=0;i<breaks.length-1;i++){
+      const a=breaks[i], b=breaks[i+1];
+      if(b<=a){ continue; } // skip degenerate
+      if(v>=a && v<=b) return i;
+    }
+    return breaks.length-2; // >= last edge
+  }
 
-    const sex = computePctMap(agg.sexCounts);
-    const stage = computePct4(agg.stageCounts, ['Adult','Juvenile','Hatchling']);
-    const season = computePct4(agg.seasonCounts, ['Autumn','Spring','Summer','Winter']);
+  function computeLegendCounts(breaks){
+    if(!Array.isArray(breaks) || breaks.length<2) return null;
+    const counts = new Array(breaks.length-1).fill(0);
+    for(const a of aggByHex.values()){
+      const v = a.sum;
+      const bin = computeBinIndex(breaks, v);
+      if(bin>=0) counts[bin]++;
+    }
+    return counts;
+  }
 
-    const years = agg.yearCounts||{};
-    const months = agg.monthCounts||{};
-    const topYear = Object.entries(years).sort((a,b)=> (b[1]||0)-(a[1]||0) || (Number(b[0]) - Number(a[0])) )[0]?.[0] ?? '–';
-    const topYearC = years[topYear]||0;
-    const topMonth = Object.entries(months).sort((a,b)=> (b[1]||0)-(a[1]||0) || (Number(b[0]) - Number(a[0])) )[0]?.[0] ?? '–';
-    const topMonthC = months[topMonth]||0;
+  /* ===== Style + popups ===== */
+  function styleFactory(cfg){
+    const ramp = cfg.ramp, breaks = cfg.breaks, top10 = cfg.top10, iso = cfg.isolatedBin, opacity=cfg.opacity;
+    return (props) => {
+      const key = props.h3_index || props.h3 || props.id;
+      const a = key ? aggByHex.get(key) : undefined;
+      const v = a ? a.sum : undefined;
+      const bin = computeBinIndex(breaks, v);
+      if(bin<0) return {opacity:0, fillOpacity:0, interactive:false};
+      if(iso>=0 && bin!==iso) return {opacity:0, fillOpacity:0, interactive:false};
 
-    const spSel=getCheckboxValues('speciesGroup');
-    const spLabel=(spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'All');
+      const color = ramp[Math.min(bin, ramp.length-1)];
+      const base = {fill:true, fillColor:color, fillOpacity:opacity, color, weight:0.5, opacity:1};
 
-    // CHANGED: Use the dynamic `metricField` in the popup title for clarity.
-    const html = `
-      <div style="min-width:280px">
-        <div class="kv"><b>Species</b><span>${spLabel}</span></div>
-        <div class="kv"><b>Sum (${metricField.replace(/_/g, ' ')})</b><span>${nf(sum)}</span></div>
-        <div class="kv"><b>Unique turtle IDs</b><span>${(agg.maxUid!=null)?nf(uid):nf(uid)+' (row-count fallback)'}</span></div>
+      if(top10 && Number.isFinite(v) && v>=cfg.top10Threshold){
+        base.weight = 1.5;
+        base.fillOpacity = Math.min(0.95, opacity+0.15);
+        base.color = '#111827';
+      }
+      return base;
+    };
+  }
+
+  function aggregatedPopupHTML(a, speciesLabel){
+    if(!a) return '<div>No data</div>';
+    const sum = a.sum;
+    const uniqueCount = a.ids.size || a.rows;
+
+    // helper to pct excluding Unknown
+    function pct(map, keyGood){
+      const unknown = map.get('Unknown')||0;
+      let total = 0;
+      for(const [k,v] of map.entries()) if(k!=='Unknown' && Number.isFinite(v)) total += v;
+      const good = map.get(keyGood)||0;
+      const perc = (total>0) ? (100*good/total) : 0;
+      return {perc, total, unknown};
+    }
+    function pctAll(map, keys){
+      const unknown = map.get('Unknown')||0;
+      let total = 0;
+      for(const [k,v] of map.entries()) if(k!=='Unknown' && Number.isFinite(v)) total += v;
+      const out = {};
+      keys.forEach(k=>{
+        const v = map.get(k)||0;
+        out[k] = {v, p: (total>0? (100*v/total):0)};
+      });
+      return {out, total, unknown};
+    }
+    function topMode(map, isMonth=false){
+      // highest count; ties => newest (largest key)
+      let bestK=null, bestV=-1;
+      for(const [k,v] of map.entries()){
+        if(!Number.isFinite(v)) continue;
+        if(v>bestV || (v===bestV && Number(k)>Number(bestK))) { bestV=v; bestK=k; }
+      }
+      return isMonth ? {k:bestK, v:bestV} : {k:bestK, v:bestV};
+    }
+
+    const sexes = pctAll(a.sex, ['Female','Male']);
+    const stages = pctAll(a.stage, ['Adult','Juvenile','Hatchling']);
+    const seasons = pctAll(a.season, ['Autumn','Spring','Summer','Winter']);
+    const topY = topMode(a.year, false);
+    const topM = topMode(a.month, true);
+
+    const idNote = (a.ids.size>0) ? '' : '<div class="hint">(Counting rows — no unique turtle IDs in data)</div>';
+
+    return 
+      <div style="min-width:260px">
+        <div class="kv"><b>Species</b><span>${speciesLabel}</span></div>
+        <div class="kv"><b>Sum (${metricField})</b><span>${nf(sum)}</span></div>
+        <div class="kv"><b>Count (unique IDs)</b><span>${nf(a.ids.size||a.rows)}</span></div>
+        ${idNote}
         <hr/>
         <div class="kv"><b>Sex</b>
-          <span style="font-size:11px">♀ ${nf(sex.F)} (${sex.pf.toFixed(1)}%) · ♂ ${nf(sex.M)} (${sex.pm.toFixed(1)}%) · Unknown ${nf(sex.U)}</span>
+          <span>♀ ${nf(sexes.out.Female.v)} (${sexes.out.Female.p.toFixed(1)}%) · ♂ ${nf(sexes.out.Male.v)} (${sexes.out.Male.p.toFixed(1)}%) · Unknown ${nf(a.sex.get('Unknown')||0)}</span>
         </div>
         <div class="kv"><b>Stage</b>
-          <span style="font-size:11px">Adult ${stage.out.Adult.p.toFixed(1)}% · Juvenile ${stage.out.Juvenile.p.toFixed(1)}% · Hatchling ${stage.out.Hatchling.p.toFixed(1)}% · Unknown ${nf(stage.unknown)}</span>
+          <span>Adult ${stages.out.Adult.p.toFixed(1)}% · Juvenile ${stages.out.Juvenile.p.toFixed(1)}% · Hatchling ${stages.out.Hatchling.p.toFixed(1)}% · Unknown ${nf(a.stage.get('Unknown')||0)}</span>
         </div>
         <div class="kv"><b>Season</b>
-          <span style="font-size:11px">Aut ${season.out.Autumn.p.toFixed(1)}% · Spr ${season.out.Spring.p.toFixed(1)}% · Sum ${season.out.Summer.p.toFixed(1)}% · Win ${season.out.Winter.p.toFixed(1)}% · Unknown ${nf(season.unknown)}</span>
+          <span>Aut ${seasons.out.Autumn.p.toFixed(1)}% · Spr ${seasons.out.Spring.p.toFixed(1)}% · Sum ${seasons.out.Summer.p.toFixed(1)}% · Win ${seasons.out.Winter.p.toFixed(1)}% · Unknown ${nf(a.season.get('Unknown')||0)}</span>
         </div>
-        <div class="kv"><b>Top year</b><span>${topYear} (${nf(topYearC)})</span></div>
-        <div class="kv"><b>Top month</b><span>${topMonth} (${nf(topMonthC)})</span></div>
-        <hr/>
-        <small class="muted">H3: ${id}</small>
-      </div>`;
-    L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
-  });
-  layer.on('mouseout',()=>{
-    if(hoverLocked) return;
-    if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId);}catch{} highlightedId=null; }
-    map.closePopup();
-  });
-  layer.on('click',()=>{ hoverLocked=!hoverLocked; });
-  layer.on('remove',()=>document.removeEventListener('keydown',keydown));
-}
-
-/* ========= Build / Rebuild ========= */
-function currentRamp(){
-  const sp=getCheckboxValues('speciesGroup');
-  return (sp.length===1 && ramps[sp[0]])?ramps[sp[0]]:ramps['multi'];
-}
-
-// FIXED: This whole function is rewritten to be more robust
-function makePredicate(){
-  // Use consistent snake_case for keys, matching common GeoJSON/DB conventions
-  const sel={
-    species: new Set(getCheckboxValues('speciesGroup')),
-    development_stage: new Set(getCheckboxValues('stageGroup')),
-    sex: new Set(getCheckboxValues('sexGroup')),
-    fishing: new Set(getCheckboxValues('fishingGroup')),
-    marine_debris: new Set(getCheckboxValues('marineDebrisGroup')),
-    boat_collision: new Set(getCheckboxValues('boatGroup')),
-    dredging: new Set(getCheckboxValues('dredgingGroup')),
-    oil: new Set(getCheckboxValues('oilGroup')),
-    petrol: new Set(getCheckboxValues('petrolGroup')),
-    season: new Set(getCheckboxValues('seasonGroup')),
-    year: new Set(getMulti('yearFilter')),
-    month: new Set(getMulti('monthFilter')),
-    decomposition_code: new Set(getMulti('decompFilter'))
-  };
-
-  const hasFilter = key => sel[key] && sel[key].size > 0;
-
-  return p => {
-    // Ensure it's a hex feature before doing expensive checks
-    if (hexKey(p) == null) return false;
-
-    // Species
-    if (hasFilter('species') && !sel.species.has(p.species)) return false;
-
-    // Biology
-    if (hasFilter('development_stage') && !sel.development_stage.has(canon.stage(p.development_stage))) return false;
-    if (hasFilter('sex') && !sel.sex.has(canon.sex(p.sex))) return false;
-
-    // Human Interactions (check for multiple common property name variants)
-    if (hasFilter('fishing') && !sel.fishing.has(canon.binary(p.fishing ?? p.Fishing))) return false;
-    if (hasFilter('marine_debris') && !sel.marine_debris.has(canon.binary(p.marine_debris ?? p.Marine_Debris))) return false;
-    if (hasFilter('boat_collision') && !sel.boat_collision.has(canon.binary(p.boat_collision ?? p.Boat_collision))) return false;
-    if (hasFilter('dredging') && !sel.dredging.has(canon.binary(p.dredging ?? p.Dredging))) return false;
-    if (hasFilter('oil') && !sel.oil.has(canon.binary(p.oil ?? p.Oil))) return false;
-    if (hasFilter('petrol') && !sel.petrol.has(canon.binary(p.petrol ?? p.Petrol))) return false;
-
-    // Environment & Time
-    if (hasFilter('season') && !sel.season.has(canon.season(p.season))) return false;
-    if (hasFilter('year') && !sel.year.has(canon.year(p.year))) return false;
-    if (hasFilter('month') && !sel.month.has(asIntString(p.month))) return false;
-    if (hasFilter('decomposition_code') && !sel.decomposition_code.has(asIntString(p.decomposition_code))) return false;
-
-    return true; // If all checks pass, include the feature
-  };
-}
-
-
-async function buildLayer(){
-  showSpinner('Loading & aggregating…');
-  try{
-    const res=$('resolution').value, ct=$('counttype').value;
-    const pmFile=fileFor(res, ct);
-    layerNames = await detectLayerNames(pmFile); // robust: style all found layers
-
-    const predicate = makePredicate();
-    const values = await aggregateAndCollect(pmFile, layerNames, predicate, ct); // ALWAYS array
-
-    const finiteVals = values.filter(Number.isFinite);
-    if(finiteVals.length===0){
-      showToast('No data in view — zoom out or change filters.', 4000, 'info');
-      // Do not clear the legend or layer if no data is found, keep the old view
-      if(vtLayer === null) { updateLegend([],[]); } // clear legend only if first load
-      hideSpinner();
-      return;
-    }
-
-    const edges = computeSafeBreaks(finiteVals);
-    if(!Array.isArray(edges) || edges.length<2){
-      showToast('Could not compute breaks for styling. Keeping previous layer.', 4500, 'warn');
-      hideSpinner();
-      return;
-    }
-
-    activeRamp=currentRamp();
-    updateLegend(edges, activeRamp, finiteVals);
-
-    // build style mapping for ALL detected layers
-    lastStyleFn = makeStyle(edges, activeRamp);
-    const styleMap = {};
-    layerNames.forEach(n=> styleMap[n]=lastStyleFn );
-
-    if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
-    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-      rendererFactory: L.canvas.tile,
-      vectorTileLayerStyles: styleMap,
-      interactive:true,
-      getFeatureId: f => hexKey(f.properties || {}) // unified
-    });
-    bindHoverPopups(vtLayer, lastStyleFn);
-    vtLayer.addTo(map);
-  }catch(err){
-    console.error('buildLayer error:', err);
-    showToast('Failed to load layer. See console for details.',5000,'error');
-  }finally{
-    hideSpinner();
+        <div class="kv"><b>Top year</b><span>${topY.k ?? '-' } (${nf(topY.v||0)})</span></div>
+        <div class="kv"><b>Top month</b><span>${topM.k ?? '-' } (${nf(topM.v||0)})</span></div>
+      </div>
+    ;
   }
-}
 
-/* ========= Controls ========= */
-$('applyBtn').addEventListener('click',()=>buildLayer());
-$('resolution').addEventListener('change',()=>buildLayer());
-$('counttype').addEventListener('change',()=>buildLayer());
-$('resetBtn').addEventListener('click',()=>{
-  document.querySelectorAll('.checkbox-group').forEach(g=>{
-    const all=g.querySelector('.all input'); if(all){ all.checked=true; }
-    g.querySelectorAll(':scope input:not(.all input)').forEach(cb=>cb.checked=false);
-  });
-  document.querySelectorAll('#panel select').forEach(s=>{
-    if(s.multiple){
-      Array.from(s.options).forEach(o=>o.selected=false);
-      const all = Array.from(s.options).find(o=>o.value==='__ALL__'); if(all) all.selected=true;
-    }else s.selectedIndex=0;
-  });
-  isolatedBin=-1;
-  buildLayer();
-});
-
-/* ========= Permalink ========= */
-function writeStateToHash(){
-  const h=new URLSearchParams(), c=map.getCenter();
-  h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
-  h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
-  const groups={
-    sp:'speciesGroup', st:'stageGroup', sx:'sexGroup', fish:'fishingGroup', debris:'marineDebrisGroup',
-    boat:'boatGroup', dredge:'dredgingGroup', oil:'oilGroup', petrol:'petrolGroup', season:'seasonGroup'
-  };
-  Object.entries(groups).forEach(([key, gid])=>{
-    const vals=getCheckboxValues(gid);
-    h.set(key, vals.length?vals.join('|'):'all');
-  });
-  const yearVals=getMulti('yearFilter'); if(yearVals.length) h.set('year',yearVals.join('|'));
-  const monVals=getMulti('monthFilter'); if(monVals.length) h.set('month',monVals.join('|'));
-  const decVals=getMulti('decompFilter'); if(decVals.length) h.set('decomp',decVals.join('|'));
-  if(isolatedBin>=0) h.set('isolated',String(isolatedBin));
-  location.hash=h.toString();
-}
-function readStateFromHash(){
-  const h=new URLSearchParams(location.hash.slice(1));
-  if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
-  if(h.has('res')) $('resolution').value=h.get('res');
-  if(h.has('ct')) $('counttype').value=h.get('ct');
-
-  const groups={
-    sp:'speciesGroup', st:'stageGroup', sx:'sexGroup', fish:'fishingGroup', debris:'marineDebrisGroup',
-    boat:'boatGroup', dredge:'dredgingGroup', oil:'oilGroup', petrol:'petrolGroup', season:'seasonGroup'
-  };
-  Object.entries(groups).forEach(([key,gid])=>{
-    const val=h.get(key);
-    if(!val) return;
-    const g=$(gid);
-    const all=g.querySelector('.all input');
-    const rest=Array.from(g.querySelectorAll(':scope input:not(.all input)'));
-    if(all) all.checked=false;
-    rest.forEach(cb=>cb.checked=false);
-    if(val==='all'){ if(all) all.checked=true; return; }
-    const wanted=new Set(val.split('|'));
-    rest.forEach(cb=>{
-      const lbl=cb.labels?.[0]?.textContent?.trim();
-      if(lbl && wanted.has(lbl)) cb.checked=true;
+  let hoverLocked=false, highlightedId=null;
+  function bindInteractions(layer, cfg, speciesLabel){
+    layer.on('mouseover', e=>{
+      if(hoverLocked) return;
+      const id = e.layer && e.layer.properties && (e.layer.properties.h3_index || e.layer.properties.h3 || e.layer.properties.id);
+      if(id!=null){
+        try{ layer.setFeatureStyle(id, {...styleFactory(cfg)(e.layer.properties), weight:2, color:'#111827'}); highlightedId=id; }catch{}
+      }
+      const key = id;
+      const a = aggByHex.get(key);
+      const html = aggregatedPopupHTML(a, speciesLabel);
+      L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
     });
-    if(rest.every(cb=>!cb.checked) && all) all.checked=true;
+    layer.on('mouseout', e=>{
+      if(hoverLocked) return;
+      if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId); }catch{} highlightedId=null; }
+      map.closePopup();
+    });
+    layer.on('click', e=>{
+      hoverLocked = !hoverLocked;
+      if(!hoverLocked){
+        if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId); }catch{} highlightedId=null; }
+        map.closePopup();
+      }else{
+        const id = e.layer && e.layer.properties && (e.layer.properties.h3_index || e.layer.properties.h3 || e.layer.properties.id);
+        const key = id;
+        const a = aggByHex.get(key);
+        const spSel = getChecked('species');
+        const speciesLabel = (spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'Mixed');
+        const html = aggregatedPopupHTML(a, speciesLabel);
+        L.popup({autoPan:true,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+      }
+    });
+    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ hoverLocked=false; if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId); }catch{} highlightedId=null; } map.closePopup(); }});
+  }
+
+  /* ===== Build / Rebuild ===== */
+  function currentRamp(){
+    const sp=getChecked('species');
+    return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi'];
+  }
+
+  function validBreaks(b){ return Array.isArray(b) && b.length>=2 && b.every(x=>Number.isFinite(x)); }
+
+  async function buildLayer(){
+    showSpinner('Aggregating & computing breaks…');
+    try{
+      const res=$('resolution').value, ct=$('counttype').value;
+      const pmFile = fileFor(res, ct);
+      layerName = await detectLayerName(pmFile);
+
+      const state = getFilterState();
+      const predicate = makePredicate(state);
+
+      // Aggregate ALL tiles at chosen analysis zoom for styling + popup + breaks
+      const values = await aggregateViewport(pmFile, layerName, predicate, ct);
+      if(!values || values.length===0){
+        showToast('No data in view — zoom out or change filters.');
+        hideSpinner();
+        return; // keep current layer (non-regression)
+      }
+
+      // Breaks
+      let brks = computeBreaks(values);
+      if(!validBreaks(brks)){
+        showToast('Could not compute breaks; keeping current layer.');
+        hideSpinner();
+        return;
+      }
+      // Top-10% threshold (decile)
+      const sorted = values.slice().sort((a,b)=>a-b);
+      const top10Threshold = ss.quantileSorted(sorted, 0.9);
+
+      // Frozen config object (avoid races)
+      const cfg = Object.freeze({
+        breaks: brks.slice(),
+        ramp: currentRamp().slice(),
+        top10: highlightTop10,
+        top10Threshold,
+        isolatedBin: isolatedBin,
+        opacity: opacityVal
+      });
+      lastConfig = cfg;
+
+      // Legend (counts per bin)
+      const counts = computeLegendCounts(cfg.breaks);
+      renderLegendUI(cfg, counts);
+
+      // Build new vector layer with frozen style closure
+      const style = styleFactory(cfg);
+      const getId = f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id);
+
+      // Remove previous layer
+      if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+      vtLayer = L.vectorGrid.protobuf(pmtiles://${pmFile}/{z}/{x}/{y}.pbf,{
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: { [layerName]: style },
+        interactive:true,
+        getFeatureId: getId
+      });
+      const spSel = getChecked('species');
+      const speciesLabel = (spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'Mixed');
+      bindInteractions(vtLayer, cfg, speciesLabel);
+      vtLayer.addTo(map);
+      lastGoodLayerOptions = {pmFile, layerName}; // for future rebuilds with style-only changes
+    }catch(err){
+      console.error('buildLayer error', err);
+      showToast('Failed to load layer. Check console for details.');
+    }finally{
+      hideSpinner();
+    }
+  }
+
+  function rebuildLayerWithConfig(cfg){
+    if(!lastGoodLayerOptions) return;
+    const {pmFile, layerName} = lastGoodLayerOptions;
+    if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+    const style = styleFactory(cfg);
+    const getId = f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id);
+    vtLayer = L.vectorGrid.protobuf(pmtiles://${pmFile}/{z}/{x}/{y}.pbf,{
+      rendererFactory: L.canvas.tile,
+      vectorTileLayerStyles: { [layerName]: style },
+      interactive:true,
+      getFeatureId: getId
+    });
+    const spSel = getChecked('species');
+    const speciesLabel = (spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'Mixed');
+    bindInteractions(vtLayer, cfg, speciesLabel);
+    vtLayer.addTo(map);
+  }
+
+  /* ===== Apply / changes ===== */
+  $('applyBtn').addEventListener('click',()=>{ writeStateToHash(); buildLayer(); });
+  $('resolution').addEventListener('change',()=>{ writeStateToHash(); buildLayer(); });
+  $('counttype').addEventListener('change',()=>{ writeStateToHash(); buildLayer(); });
+  $('resetBtn').addEventListener('click',()=>{
+    // Reset all groups to (All)
+    ['species','stage','sex','season','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','year','month']
+      .forEach(name=> setChecked(name, []) );
+    yearMinEl.value=String(MIN_YEAR); yearMaxEl.value=String(MAX_YEAR); syncYearSlider();
+    isolatedBin = -1; highlightTop10=false; opacityVal=0.65;
+    writeStateToHash(); buildLayer();
   });
 
-  const setMulti=(id,key)=>{
-    if(!h.has(key)) return;
-    const vals=new Set(h.get(key).split('|'));
-    Array.from($(id).options).forEach(o=>o.selected=vals.has(o.value));
-  };
-  setMulti('yearFilter','year');
-  setMulti('monthFilter','month');
-  setMulti('decompFilter','decomp');
+  /* ===== Permalink ===== */
+  function writeStateToHash(){
+    const c=map.getCenter(); const h=new URLSearchParams();
+    h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
+    h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
+    // selections
+    const names=['species','stage','sex','season','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','year','month'];
+    for(const n of names){ const vals=getChecked(n); if(vals.length) h.set(n, vals.join('|')); }
+    // year range
+    h.set('ymin',yearMinEl.value); h.set('ymax',yearMaxEl.value);
+    // layer options
+    h.set('op',opacityVal.toFixed(2));
+    h.set('t10',highlightTop10?'1':'0');
+    if(isolatedBin>=0) h.set('bin',String(isolatedBin)); else h.delete('bin');
+    location.hash=h.toString();
+  }
+  function readStateFromHash(){
+    const h=new URLSearchParams(location.hash.slice(1));
+    if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
+    if(h.has('res')) $('resolution').value=h.get('res');
+    if(h.has('ct')) $('counttype').value=h.get('ct');
+    const names=['species','stage','sex','season','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','year','month'];
+    for(const n of names){ const v=h.get(n); if(!v) continue; setChecked(n, v.split('|')); }
+    if(h.has('ymin')) yearMinEl.value=h.get('ymin');
+    if(h.has('ymax')) yearMaxEl.value=h.get('ymax');
+    syncYearSlider();
+    if(h.has('op')) opacityVal = Number(h.get('op'))||opacityVal;
+    if(h.has('t10')) highlightTop10 = h.get('t10')==='1';
+    if(h.has('bin')) isolatedBin = Number(h.get('bin')); else isolatedBin = -1;
+  }
+  $('permalink').addEventListener('click',async()=>{
+    writeStateToHash();
+    try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!'); }
+    catch{ showToast('Link updated in address bar.'); }
+  });
 
-  isolatedBin = h.has('isolated') ? parseInt(h.get('isolated')) : -1;
-}
-$('permalink').addEventListener('click',async()=>{
-  writeStateToHash();
-  try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!',3000,'info'); }
-  catch{ showToast('Link updated in address bar.',3000,'info'); }
-});
+  /* ===== Boot ===== */
+  (function init(){
+    // details toggles
+    document.querySelectorAll('.details .sum').forEach(s=>{
+      s.addEventListener('click',()=>{ const c=s.parentElement.querySelector('.content'); if(c) c.style.display = (c.style.display==='none'?'':'none'); });
+    });
+    // initial year slider sync
+    syncYearSlider();
+    readStateFromHash();
+    buildLayer();
+  })();
 
-/* ========= Boot ========= */
-(function init(){
-  if(location.hash){ try{ readStateFromHash(); }catch(e){ console.warn('Permalink parse failed',e); } }
-  buildLayer();
-})();
+})(); // IIFE
 </script>
 </body>
 </html>
