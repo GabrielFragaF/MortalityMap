@@ -20,42 +20,75 @@
 <script src="./vendor/simple-statistics.min.js"></script>
 
 <style>
-:root{--bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;--ring:#93c5fd;--shadow:0 10px 30px rgba(2,6,23,.25)}
-*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+:root{
+  --bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;
+  --ring:#93c5fd;--shadow:0 10px 30px rgba(2,6,23,.25);
+  --accent:#0ea5e9;--danger:#e11d48;--ok:#16a34a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
 #map{position:absolute;inset:0}
 
 /* Panel */
-#panel{position:absolute;top:14px;left:14px;z-index:1000;width:360px;max-height:90vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
+#panel{position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:90vh;overflow:auto;background:var(--panel);
+  border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
 #panel.collapsed{height:46px;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
+.topbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
+  border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
 .topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
 .iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
 .iconbtn:hover{filter:brightness(0.98)}
 .section{padding:10px 14px}
 .row{margin-bottom:10px}
 label{display:block;font-weight:700;margin:6px 0;font-size:13px}
-select{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+select, input[type="range"]{width:100%}
+select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
 select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
 details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
 details+details{margin-top:10px}
-summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
+summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px;position:sticky;top:0}
 summary::-webkit-details-marker{display:none}
 details .content{padding:10px 12px}
 .controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
-#resetBtn,#applyBtn{flex:1;background:#0ea5e9;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
-#resetBtn{background:#e11d48}
+#resetBtn,#applyBtn{flex:1;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn{background:var(--danger)}
 .help{font-size:12px;color:var(--muted);margin-top:4px}
 
+/* Dual range (year) */
+.range-wrap{position:relative;height:36px;margin-top:6px}
+.range-wrap input[type="range"]{position:absolute;left:0;right:0;top:10px;-webkit-appearance:none;background:transparent;pointer-events:none}
+.range-wrap input[type="range"]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#0ea5e9;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.range-values{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:20px}
+
 /* Legend bottom-right */
-#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:220px}
-.leghdr{font-weight:800;margin-bottom:8px}.legend-row{display:flex;align-items:center;margin:4px 0}
-.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
+#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);
+  border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:300px}
+.leghdr{font-weight:800;margin-bottom:8px}
+.legend-row{display:flex;align-items:center;margin:4px 0;gap:8px}
+.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8}
+.legend-hint{color:var(--muted);font-size:12px;margin-top:6px}
+.hist{display:flex;align-items:flex-end;gap:4px;height:40px;margin-top:6px;margin-bottom:6px}
+.hist div{flex:1;background:#bfdbfe}
+
+/* Legend controls */
+.legend-controls{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.ctl{display:flex;align-items:center;gap:6px;font-size:12px}
 
 /* Spinner + toast */
 #spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
 #toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:320px}
 
-.leaflet-popup-content{margin:8px 12px}.kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}small.muted{color:#64748b}
+.leaflet-popup-content{margin:8px 12px}
+.kv{display:flex;justify-content:space-between;gap:10px}
+.kv b{color:#0f172a}
+small.muted{color:#64748b}
+
+/* Hover highlight */
+.hex-hover{filter:drop-shadow(0 0 4px rgba(14,165,233,.75))}
+@media (max-width: 820px){
+  #panel{width:92vw}
+}
 </style>
 </head>
 <body>
@@ -100,30 +133,16 @@ details .content{padding:10px 12px}
         <div class="row">
           <label for="speciesFilter">Species</label>
           <select id="speciesFilter" multiple size="6">
-            <option value="__ALL__" selected>(All)</option>
-            <option value="Caretta caretta">Caretta caretta</option>
-            <option value="Chelonia mydas">Chelonia mydas</option>
-            <option value="Dermochelys coriacea">Dermochelys coriacea</option>
-            <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
-            <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
+            <!-- canonical options injected on init -->
           </select>
         </div>
         <div class="row">
           <label for="stageFilter">Development stage</label>
-          <select id="stageFilter" multiple size="7">
-            <option value="__ALL__" selected>(All)</option>
-            <option value="Adulto">Adulto</option><option value="Juvenil">Juvenil</option>
-            <option value="Filhote">Filhote</option><option value="Indeterminado">Indeterminado</option>
-            <option value="Adult">Adult</option><option value="Juvenile">Juvenile</option>
-          </select>
+          <select id="stageFilter" multiple size="6"></select>
         </div>
         <div class="row">
           <label for="sexFilter">Sex</label>
-          <select id="sexFilter" multiple size="7">
-            <option value="__ALL__" selected>(All)</option>
-            <option value="Fêmea">Fêmea</option><option value="Macho">Macho</option><option value="Indefinido">Indefinido</option>
-            <option value="Female">Female</option><option value="Male">Male</option><option value="Unknown">Unknown</option>
-          </select>
+          <select id="sexFilter" multiple size="5"></select>
         </div>
       </div>
     </details>
@@ -132,39 +151,25 @@ details .content{padding:10px 12px}
       <summary>Human interactions</summary>
       <div class="content">
         <div class="row"><label for="FishingFilter">Fishing</label>
-          <select id="FishingFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="FishingFilter" multiple size="3"></select>
         </div>
         <div class="row"><label for="Marine_DebrisFilter">Marine Debris</label>
-          <select id="Marine_DebrisFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="Marine_DebrisFilter" multiple size="3"></select>
         </div>
         <div class="row"><label for="AgressionFilter">Aggression</label>
-          <select id="AgressionFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="AgressionFilter" multiple size="3"></select>
         </div>
         <div class="row"><label for="Boat_collisionFilter">Boat collision</label>
-          <select id="Boat_collisionFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="Boat_collisionFilter" multiple size="3"></select>
         </div>
         <div class="row"><label for="DredgingFilter">Dredging</label>
-          <select id="DredgingFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="DredgingFilter" multiple size="3"></select>
         </div>
         <div class="row"><label for="OilFilter">Oil</label>
-          <select id="OilFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="OilFilter" multiple size="3"></select>
         </div>
         <div class="row"><label for="PetrolFilter">Petrol</label>
-          <select id="PetrolFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option><option>Sim</option><option>Não</option>
-          </select>
+          <select id="PetrolFilter" multiple size="3"></select>
         </div>
       </div>
     </details>
@@ -174,38 +179,25 @@ details .content{padding:10px 12px}
       <div class="content">
         <div class="row">
           <label for="decompFilter">Decomposition code</label>
-          <select id="decompFilter" multiple size="11">
-            <option value="__ALL__" selected>(All)</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-            <option>1.0</option><option>2.0</option><option>3.0</option><option>4.0</option><option>5.0</option>
-          </select>
+          <select id="decompFilter" multiple size="6"></select>
         </div>
         <div class="row">
           <label for="seasonFilter">Season</label>
-          <select id="seasonFilter" multiple size="9">
-            <option value="__ALL__" selected>(All)</option>
-            <option>Autumn</option><option>Spring</option><option>Summer</option><option>Winter</option>
-            <option>Outono</option><option>Primavera</option><option>Verão</option><option>Inverno</option>
-          </select>
+          <select id="seasonFilter" multiple size="5"></select>
         </div>
         <div class="row">
           <label for="yearFilter">Year</label>
-          <select id="yearFilter" multiple size="13">
-            <option value="__ALL__" selected>(All)</option>
-            <option>2010</option><option>2011</option><option>2012</option><option>2013</option><option>2014</option>
-            <option>2015</option><option>2016</option><option>2017</option><option>2018</option><option>2019</option>
-            <option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option>
-            <option>2015.0</option><option>2016.0</option><option>2017.0</option><option>2018.0</option><option>2019.0</option>
-            <option>2020.0</option><option>2021.0</option><option>2022.0</option><option>2023.0</option><option>2024.0</option><option>2025.0</option>
-          </select>
+          <select id="yearFilter" multiple size="12"></select>
+          <div class="help">Use the slider to quickly restrict years; the list syncs to the chosen range.</div>
+          <div class="range-wrap">
+            <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
+            <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
+          </div>
+          <div class="range-values"><span id="yearMinLbl">2015</span><span id="yearMaxLbl">2024</span></div>
         </div>
         <div class="row">
           <label for="monthFilter">Month</label>
-          <select id="monthFilter" multiple size="13">
-            <option value="__ALL__" selected>(All)</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-            <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
-          </select>
+          <select id="monthFilter" multiple size="12"></select>
         </div>
       </div>
     </details>
@@ -217,12 +209,25 @@ details .content{padding:10px 12px}
   </div>
 </div>
 
-<div id="legend"></div>
+<!-- Legend -->
+<div id="legend">
+  <div class="leghdr">Legend</div>
+  <div id="legendBins"></div>
+  <div class="hist" id="legendHist"></div>
+  <div class="legend-controls">
+    <div class="ctl"><input type="checkbox" id="highlightTop"> <label for="highlightTop">Highlight top 10%</label></div>
+    <div class="ctl" title="Layer opacity"><label for="opacity">Opacity</label>
+      <input type="range" id="opacity" min="0.3" max="0.9" step="0.05" value="0.65" />
+    </div>
+  </div>
+  <div class="legend-hint">Breaks based on visible, filtered hexes.</div>
+</div>
+
 <div id="spinner">Loading…</div>
 <div id="toast"></div>
 
 <script>
-/* ========= Decoder shim (handles any build shape) ========= */
+/* ========= Decoder shim (handles any UMD/Browserify shape) ========= */
 (function ensureDecoders(){
   var VT = (window.VectorTile) ||
            (window.vectorTile && window.vectorTile.VectorTile) ||
@@ -256,10 +261,80 @@ const spinner=$('spinner'), toast=$('toast');
 const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
 const hideSpinner = () => { spinner.style.display='none'; };
 const showToast=(m,ms=5000)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
+
 $('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
+/* Mobile nicety: collapse panel on map tap */
+map.on('click',()=>{ if (window.innerWidth<820) $('panel').classList.add('collapsed'); });
 window.addEventListener('error',()=>hideSpinner());
 window.addEventListener('unhandledrejection',()=>hideSpinner());
 
+/* ===== Canonical values (UI shows only these) ===== */
+const CANON = {
+  species: [
+    "Caretta caretta","Chelonia mydas","Dermochelys coriacea","Eretmochelys imbricata","Lepidochelys olivacea"
+  ],
+  stage: ["Adult","Juvenile","Hatchling","Unknown"],
+  sex:   ["Female","Male","Unknown"],
+  yn:    ["Yes","No"],
+  decomp:["1","2","3","4","5"],
+  season:["Autumn","Spring","Summer","Winter"],
+  yearDefault: {min:2015, max:2024},
+  months: ["1","2","3","4","5","6","7","8","9","10","11","12"]
+};
+/* raw -> canonical mappers */
+const mapSeason = v => ({'outono':'autumn','primavera':'spring','verao':'summer','verão':'summer','inverno':'winter',
+                          'autumn':'autumn','spring':'spring','summer':'summer','winter':'winter'}[norm(v)]||null);
+const mapSex    = v => ({'femea':'female','fêmea':'female','macho':'male','female':'female','male':'male','indefinido':'unknown','unknown':'unknown'}[norm(v)]||null);
+const mapStage  = v => ({'adulto':'adult','juvenil':'juvenile','filhote':'hatchling','indeterminado':'unknown',
+                          'adult':'adult','juvenile':'juvenile','hatchling':'hatchling','unknown':'unknown'}[norm(v)]||null);
+const mapYN     = v => ({'sim':'yes','nao':'no','não':'no','yes':'yes','no':'no'}[norm(v)]||null);
+const stripDotYear = v => { const s=String(v); const m=s.match(/^(\d{4})(?:\.0+)?$/); return m?m[1]:null; };
+
+/* Inject canonical options into selects (with (All)) */
+function injectOptions(id, values){
+  const sel=$(id);
+  sel.innerHTML='';
+  const optAll=document.createElement('option'); optAll.value='__ALL__'; optAll.textContent='(All)'; optAll.selected=true; sel.appendChild(optAll);
+  for(const v of values){ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); }
+}
+/* Initialize static canonical selects */
+injectOptions('speciesFilter', CANON.species);
+injectOptions('stageFilter',   CANON.stage);
+injectOptions('sexFilter',     CANON.sex);
+['FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter'].forEach(id=>{
+  injectOptions(id, CANON.yn);
+});
+injectOptions('decompFilter',  CANON.decomp);
+injectOptions('seasonFilter',  CANON.season);
+injectOptions('monthFilter',   CANON.months);
+/* Years & slider initial */
+function initYearControls(minY, maxY){
+  const ySel=$('yearFilter');
+  ySel.innerHTML='';
+  const optAll=document.createElement('option'); optAll.value='__ALL__'; optAll.textContent='(All)'; optAll.selected=true; ySel.appendChild(optAll);
+  for(let y=minY;y<=maxY;y++){ const o=document.createElement('option'); o.value=String(y); o.textContent=String(y); ySel.appendChild(o); }
+  const yMin=$('yearMin'), yMax=$('yearMax'); yMin.min=minY; yMin.max=maxY; yMax.min=minY; yMax.max=maxY; yMin.value=minY; yMax.value=maxY;
+  $('yearMinLbl').textContent=minY; $('yearMaxLbl').textContent=maxY;
+}
+initYearControls(CANON.yearDefault.min, CANON.yearDefault.max);
+/* Dual range behavior */
+function clampNum(v, a, b){ return Math.max(a, Math.min(b, v)); }
+function syncYearRangeUI(){
+  const yMin=$('yearMin'), yMax=$('yearMax');
+  let a = parseInt(yMin.value,10), b = parseInt(yMax.value,10);
+  if (a>b){ const t=a; a=b; b=t; yMin.value=a; yMax.value=b; }
+  $('yearMinLbl').textContent=String(a); $('yearMaxLbl').textContent=String(b);
+  // sync multi-select: select all years in [a,b]
+  const sel=$('yearFilter');
+  Array.from(sel.options).forEach(o=>{
+    if (o.value==='__ALL__'){ o.selected=false; return; }
+    const y=parseInt(o.value,10); o.selected = (y>=a && y<=b);
+  });
+}
+$('yearMin').addEventListener('input',syncYearRangeUI);
+$('yearMax').addEventListener('input',syncYearRangeUI);
+
+/* ===== (All) handling for multi-selects ===== */
 function enforceAllOption(e){
   const sel=e.target; if(!sel.multiple) return;
   const all = Array.from(sel.options).find(o=>o.value==='__ALL__');
@@ -271,19 +346,9 @@ function enforceAllOption(e){
 }
 document.querySelectorAll('#panel select[multiple]').forEach(s=>s.addEventListener('change',enforceAllOption));
 
-const getMulti = id => {
-  const vals = Array.from($(id).selectedOptions||[]).map(o=>o.value);
-  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
-};
-const clearAllSelects = ()=>{
-  document.querySelectorAll('#panel select').forEach(s=>{
-    if(s.multiple){
-      Array.from(s.options).forEach(o=>o.selected=false);
-      const all = Array.from(s.options).find(o=>o.value==='__ALL__'); if(all) all.selected=true;
-    }else s.selectedIndex=0;
-  });
-};
+/* ===== Value helpers ===== */
 const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
+const norm=v=>(v==null?'':String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 
 /* ===== Color ramps ===== */
 const ramps={
@@ -294,67 +359,12 @@ const ramps={
   'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
   'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
+/* State */
+let vtLayer=null, layerName='', header=null;
 let jenksBreaks=[0,1,2,3,4,5];
 let activeRamp=ramps['multi'];
-
-/* Solid defensive legend */
-function updateLegend(){
-  const el=$('legend');
-
-  // pull safe local copies so a race can’t flip globals mid-render
-  const ramp = (Array.isArray(activeRamp) && activeRamp.length) ? activeRamp.slice() : ramps['multi'].slice();
-  const brks = (Array.isArray(jenksBreaks) && jenksBreaks.length>1) ? jenksBreaks.slice() : [0,1,2,3,4,5];
-
-  const spSel=getMulti('speciesFilter');
-  const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
-  el.innerHTML=`<div class="leghdr">${name}</div>`;
-
-  const n = Math.min(ramp.length, brks.length-1);
-  if (n <= 0) {
-    el.insertAdjacentHTML('beforeend', `<div class="legend-row"><span>No data in view</span></div>`);
-    return;
-  }
-  for(let i=0;i<n;i++){
-    const a=brks[i], b=brks[i+1];
-    el.insertAdjacentHTML('beforeend',
-      `<div class="legend-row"><span class="swatch" style="background:${ramp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
-  }
-}
-const currentRamp=()=>{ const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi']; };
-
-/* ===== Filters ===== */
-const norm=v=>(v==null?'':String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-const asIntString=v=>{ const n=parseInt(v,10); return Number.isFinite(n)?String(n):String(v); };
-function makePredicate(){
-  const sel={
-    species:new Set(getMulti('speciesFilter').map(norm)),
-    development_stage:new Set(getMulti('stageFilter').map(norm)),
-    sex:new Set(getMulti('sexFilter').map(norm)),
-    Fishing:new Set(getMulti('FishingFilter').map(norm)),
-    Marine_Debris:new Set(getMulti('Marine_DebrisFilter').map(norm)),
-    Agression:new Set(getMulti('AgressionFilter').map(norm)),
-    Boat_collision:new Set(getMulti('Boat_collisionFilter').map(norm)),
-    Dredging:new Set(getMulti('DredgingFilter').map(norm)),
-    Oil:new Set(getMulti('OilFilter').map(norm)),
-    Petrol:new Set(getMulti('PetrolFilter').map(norm)),
-    decomposition_code:new Set(getMulti('decompFilter').map(norm)),
-    season:new Set(getMulti('seasonFilter').map(norm)),
-    year:new Set(getMulti('yearFilter').map(norm)),
-    month:new Set(getMulti('monthFilter').map(norm))
-  };
-  const test=(k,v)=>{ const set=sel[k]; if(!set.size) return true; const pv=norm(v);
-    if(set.has(pv)) return true;
-    if(k==='year'||k==='month'||k==='decomposition_code'){ return set.has(asIntString(v))||set.has(asIntString(pv)); }
-    return false;
-  };
-  return p=>(
-    test('species',p.species)&&test('development_stage',p.development_stage)&&test('sex',p.sex)&&
-    test('Fishing',p.Fishing)&&test('Marine_Debris',p.Marine_Debris)&&test('Agression',p.Agression)&&
-    test('Boat_collision',p.Boat_collision)&&test('Dredging',p.Dredging)&&test('Oil',p.Oil)&&
-    test('Petrol',p.Petrol)&&test('decomposition_code',p.decomposition_code)&&
-    test('season',p.season)&&test('year',p.year)&&test('month',p.month)
-  );
-}
+let legendCounts=[0,0,0,0,0];
+let highlightTop=false, opacityVal=0.65, isolatedBin=null;
 
 /* ===== pmtiles:// fetch shim + PM cache ===== */
 const origFetch = window.fetch.bind(window);
@@ -384,7 +394,7 @@ window.fetch = async (input, init) => {
   return origFetch(input, init);
 };
 
-/* ===== Helpers ===== */
+/* ===== Helpers for tiles/bounds ===== */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
 function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
@@ -398,11 +408,6 @@ function tileRangeForBounds(b,z){
 }
 const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
 function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles`; }
-
-/* ===== State ===== */
-let vtLayer=null, layerName='', header=null;
-const aggByHex = new Map();
-let metricField = 'sum_val';
 
 /* ===== Detect layer name safely ===== */
 async function detectLayerName(pmFile){
@@ -434,30 +439,7 @@ async function detectLayerName(pmFile){
 }
 
 /* ===== Aggregation + breaks ===== */
-const JENKS_CLASSES = 5;
-const EXACT_MAX = 2000;
-const SAMPLE_TARGET = 1000;
-const MAX_TILES_STATS = 90;
-const MAX_HEXES_STATS  = 1800;
-
-function reservoirSample(values, k){
-  const out=[];
-  for(let i=0;i<values.length;i++){
-    if(i<k) out[i]=values[i];
-    else{
-      const j = Math.floor(Math.random()*(i+1));
-      if(j<k) out[j]=values[i];
-    }
-  }
-  return out;
-}
-function prettyBreaks(min, max){
-  if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
-  if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
-  const step=(max-min)/JENKS_CLASSES, arr=[min];
-  for(let i=1;i<=JENKS_CLASSES;i++) arr.push(min+i*step);
-  return arr;
-}
+/* Which numeric field represents the chosen count type inside tiles */
 const fieldCandidatesByCT = {
   weight: ['weight','sum_val'],
   new_weight: ['new_weight','sum_val'],
@@ -465,6 +447,8 @@ const fieldCandidatesByCT = {
   new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
   new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
 };
+let metricField='sum_val';
+
 function discoverMetricField(sampleProps, ct){
   const cands = fieldCandidatesByCT[ct] || ['sum_val'];
   for(const k of cands){ if(k in sampleProps && Number.isFinite(Number(sampleProps[k]))) return k; }
@@ -472,10 +456,99 @@ function discoverMetricField(sampleProps, ct){
   for(const k of Object.keys(sampleProps)){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
   return 'sum_val';
 }
+
+/* Predicate with canonicalization */
+function getMulti(id){
+  const sel=$(id);
+  const vals = Array.from(sel.selectedOptions||[]).map(o=>o.value);
+  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
+}
+function canonicalizeProp(k, v){
+  if (v==null) return null;
+  if (k==='season'){ const m=mapSeason(v); return m?({autumn:'Autumn',spring:'Spring',summer:'Summer',winter:'Winter'}[m]):null; }
+  if (k==='sex'){ const m=mapSex(v); return m?({female:'Female',male:'Male',unknown:'Unknown'}[m]):null; }
+  if (k==='development_stage'){ const m=mapStage(v); return m?({adult:'Adult',juvenile:'Juvenile',hatchling:'Hatchling',unknown:'Unknown'}[m]):null; }
+  if (k==='year'){ const y=stripDotYear(v); return y?y:null; }
+  if (k==='month'){ const m = String(parseInt(v,10)); return Number.isFinite(+m)?m:null; }
+  if (k==='Fishing'||k==='Marine_Debris'||k==='Agression'||k==='Boat_collision'||k==='Dredging'||k==='Oil'||k==='Petrol'){
+    const m=mapYN(v); return m?({yes:'Yes',no:'No'}[m]):null;
+  }
+  return String(v);
+}
+function makePredicate(yearMinMax){
+  const sel={
+    species:new Set(getMulti('speciesFilter')),
+    development_stage:new Set(getMulti('stageFilter')),
+    sex:new Set(getMulti('sexFilter')),
+    Fishing:new Set(getMulti('FishingFilter')),
+    Marine_Debris:new Set(getMulti('Marine_DebrisFilter')),
+    Agression:new Set(getMulti('AgressionFilter')),
+    Boat_collision:new Set(getMulti('Boat_collisionFilter')),
+    Dredging:new Set(getMulti('DredgingFilter')),
+    Oil:new Set(getMulti('OilFilter')),
+    Petrol:new Set(getMulti('PetrolFilter')),
+    decomposition_code:new Set(getMulti('decompFilter')),
+    season:new Set(getMulti('seasonFilter')),
+    year:new Set(getMulti('yearFilter')),
+    month:new Set(getMulti('monthFilter'))
+  };
+  const test=(k,v)=>{
+    const set=sel[k]; if(!set.size) return true;
+    const pv=canonicalizeProp(k,v);
+    if (pv==null) return false;
+    if(set.has(pv)) return true;
+    return false;
+  };
+  const [ymin,ymax] = yearMinMax;
+  return p=>{
+    // quick range check first (independent of explicit year selection)
+    const py = parseInt(stripDotYear(p.year||p.Year||p.YEAR||'' )||'NaN',10);
+    if (Number.isFinite(py) && (py<ymin || py>ymax)) return false;
+    return (
+      (!sel.species.size || sel.species.has(String(p.species))) &&
+      test('development_stage',p.development_stage) && test('sex',p.sex) &&
+      test('Fishing',p.Fishing) && test('Marine_Debris',p.Marine_Debris) && test('Agression',p.Agression) &&
+      test('Boat_collision',p.Boat_collision) && test('Dredging',p.Dredging) && test('Oil',p.Oil) &&
+      test('Petrol',p.Petrol) && test('decomposition_code',p.decomposition_code) &&
+      test('season',p.season) && test('year',p.year) && test('month',p.month)
+    );
+  };
+}
+
+/* Aggregation containers per hex */
+function makeAgg(){
+  return {
+    sum:0,
+    rowCount:0,
+    ids: new Set(),
+    sex: Object.create(null),
+    stage: Object.create(null),
+    season: Object.create(null),
+    year: Object.create(null),
+    month: Object.create(null),
+    species: new Set()
+  };
+}
+function bump(mapObj, key){
+  if(key==null) return;
+  const kk = String(key);
+  mapObj[kk] = (mapObj[kk]||0) + 1;
+}
+
+/* Collect + aggregate across visible tiles */
+const JENKS_CLASSES = 5;
+const EXACT_MAX = 3000;
+const SAMPLE_TARGET = 1200;
+const MAX_TILES_STATS = 90;
+const MAX_HEXES_STATS  = 2400;
+const ID_FIELDS = ['turtle_id','individual_id','uid','id','ID'];
+
+const aggByHex = new Map(); // key -> agg
+
 async function aggregateAndCollect(pmFile, layerName, predicate, ct){
   if(!window.__VT__ || !window.__PBF__){
     showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks. Verify docs/vendor files.');
-    return [];
+    return {values:[], stats:{}};
   }
   aggByHex.clear();
   const pm = await getPM(pmFile);
@@ -492,6 +565,8 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
   }
 
   let discovered=false;
+  let minYear=Infinity, maxYear=-Infinity;
+
   const jobs=[];
   outer:
   for(let x=minX;x<=maxX;x+=stride){
@@ -501,15 +576,39 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
         const vt = new window.__VT__(new window.__PBF__(resp.data));
         const lyr = vt.layers[layerName]; if(!lyr) return;
         for(let i=0;i<lyr.length;i++){
-          const props = lyr.feature(i).properties||{};
+          const f = lyr.feature(i);
+          const props = f.properties||{};
           if(!discovered){ metricField=discoverMetricField(props, ct); discovered=true; }
           if(!predicate(props)) continue;
           const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
+
           const val = Number(props[metricField]);
-          const cnt = Number(props.count);
-          const entry = aggByHex.get(key) || {sum:0,count:0};
+          const entry = aggByHex.get(key) || makeAgg();
           if(Number.isFinite(val)) entry.sum += val;
-          if(Number.isFinite(cnt)) entry.count += cnt; else entry.count += 1;
+
+          entry.rowCount += 1;
+          const idf = ID_FIELDS.find(k => props[k]!=null);
+          if (idf) entry.ids.add(String(props[idf]));
+
+          // Canonicalize group fields
+          const csex = canonicalizeProp('sex', props.sex);
+          const cstage = canonicalizeProp('development_stage', props.development_stage);
+          const cseason = canonicalizeProp('season', props.season);
+          const cyear = canonicalizeProp('year', props.year);
+          const cmonth = canonicalizeProp('month', props.month);
+
+          bump(entry.sex, csex);
+          bump(entry.stage, cstage);
+          bump(entry.season, cseason);
+          bump(entry.year, cyear);
+          bump(entry.month, cmonth);
+
+          if (props.species) entry.species.add(String(props.species));
+
+          // track data-driven year bounds
+          const py = parseInt(stripDotYear(props.year||'' )||'NaN',10);
+          if(Number.isFinite(py)){ if(py<minYear) minYear=py; if(py>maxYear) maxYear=py; }
+
           aggByHex.set(key, entry);
         }
       }).catch(e=>console.warn('tile decode skipped',e)));
@@ -517,7 +616,19 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
     }
   }
   await Promise.all(jobs);
-  return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+
+  // values for breaks
+  const values = Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+
+  return {values, stats:{minYear, maxYear}};
+}
+
+function prettyBreaks(min, max){
+  if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
+  if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
+  const step=(max-min)/JENKS_CLASSES, arr=[min];
+  for(let i=1;i<=JENKS_CLASSES;i++) arr.push(min+i*step);
+  return arr;
 }
 async function computeBreaksFromAggregates(values){
   const n=values.length;
@@ -546,72 +657,213 @@ async function computeBreaksFromAggregates(values){
   }
   return edges;
 }
+function reservoirSample(values, k){
+  const out=[]; for(let i=0;i<values.length;i++){
+    if(i<k) out[i]=values[i];
+    else{ const j=Math.floor(Math.random()*(i+1)); if(j<k) out[j]=values[i]; }
+  } return out;
+}
+
+/* ===== Legend render (with histogram & swatch interactions) ===== */
+function updateLegendUI(){
+  const binsEl=$('legendBins');
+  binsEl.innerHTML='';
+  const ramp = (Array.isArray(activeRamp)&&activeRamp.length)?activeRamp:ramps['multi'];
+  const brks = (Array.isArray(jenksBreaks)&&jenksBreaks.length>1)?jenksBreaks:[0,1,2,3,4,5];
+  const n = Math.min(ramp.length, brks.length-1);
+  if (n<=0){
+    binsEl.innerHTML='<div class="legend-row"><span>No data in view</span></div>';
+    $('legendHist').innerHTML='';
+    return;
+  }
+  for(let i=0;i<n;i++){
+    const a=brks[i], b=brks[i+1];
+    const row=document.createElement('div');
+    row.className='legend-row';
+    const sw=document.createElement('span'); sw.className='swatch'; sw.style.background=ramp[i];
+    sw.title=`${nf(a)} – ${nf(b)}`;
+    sw.style.cursor='pointer';
+    sw.addEventListener('click',()=>{
+      isolatedBin = (isolatedBin===i)? null : i;
+      buildLayer(false); // quick rebuild using current aggregates/breaks
+    });
+    row.appendChild(sw);
+    const lbl=document.createElement('span');
+    lbl.textContent=`${nf(a)} – ${nf(b)}`;
+    row.appendChild(lbl);
+    binsEl.appendChild(row);
+  }
+  // histogram
+  const hist=$('legendHist');
+  hist.innerHTML='';
+  const total = legendCounts.reduce((s,v)=>s+v,0) || 1;
+  for(let i=0;i<n;i++){
+    const bar=document.createElement('div');
+    const h=Math.round(40*(legendCounts[i]/total));
+    bar.style.height=`${Math.max(2,h)}px`;
+    bar.title=`Bin ${i+1}: ${legendCounts[i]} cells`;
+    if (isolatedBin===i) bar.style.outline='2px solid #0ea5e9';
+    hist.appendChild(bar);
+  }
+  // legend header shows species ramp
+  const spSel=getMulti('speciesFilter');
+  const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
+  document.querySelector('#legend .leghdr').textContent=name;
+}
+
+/* Legend controls handlers */
+$('opacity').addEventListener('input',e=>{
+  opacityVal = parseFloat(e.target.value)||0.65;
+  buildLayer(false);
+});
+$('highlightTop').addEventListener('change',e=>{
+  highlightTop = !!e.target.checked;
+  buildLayer(false);
+});
 
 /* ===== Styling & popups (aggregated values) ===== */
+function computeBinIndex(v){
+  for(let i=0;i<jenksBreaks.length-1;i++){
+    if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) return i;
+  }
+  return Math.max(0, jenksBreaks.length-2);
+}
+let p90=Infinity;
 function makeStyle(){
   return (props) => {
     const key = props.h3_index || props.h3 || props.id;
     const agg = key ? aggByHex.get(key) : undefined;
     const v = agg ? agg.sum : undefined;
     if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
-    let idx=0;
-    for(let i=0;i<jenksBreaks.length-1;i++){
-      if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) { idx=i; break; }
+
+    // filter by isolated bin
+    const idx=computeBinIndex(v);
+    if (isolatedBin!=null && idx!==isolatedBin){
+      return {opacity:0, fillOpacity:0, interactive:false};
     }
+
     const ramp=(Array.isArray(activeRamp)&&activeRamp.length)?activeRamp:ramps['multi'];
     const color = ramp[Math.min(idx,ramp.length-1)];
-    return {fill:true, fillColor:color, fillOpacity:0.65, color, weight:0.5};
+
+    const isTop = highlightTop && Number.isFinite(p90) && v>=p90;
+
+    return {
+      fill:true, fillColor:color, fillOpacity:opacityVal,
+      color:isTop? '#111' : color,
+      weight:isTop? 2.0 : 0.5,
+      opacity:isTop? 0.9 : 0.8
+    };
   };
 }
+function percentBreakdown(obj){
+  const total = Object.values(obj).reduce((s,v)=>s+v,0)||1;
+  const entries = Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  return entries.map(([k,v])=>`${k||'-'}: ${Math.round(100*v/total)}%`).join(', ');
+}
+function modeNewest(counts){
+  let bestKey=null, bestCount=-1;
+  for(const [k,v] of Object.entries(counts)){
+    const n = parseInt(k,10);
+    if(!Number.isFinite(n)) continue;
+    if (v>bestCount || (v===bestCount && n>(parseInt(bestKey||'-1',10)||-1))){
+      bestKey=String(n); bestCount=v;
+    }
+  }
+  return bestKey ? {key:bestKey, count:bestCount} : {key:'-', count:0};
+}
 function bindHoverPopups(layer){
-  layer.on('mouseover', e=>{
-    const p = e.layer?.properties || {};
+  let locked=false, lockPopup=null;
+  function renderPopup(latlng, p){
     const key = p.h3_index || p.h3 || p.id;
     const agg = key ? aggByHex.get(key) : undefined;
     const sum = agg ? agg.sum : undefined;
-    const cnt = agg ? agg.count : undefined;
-    L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(`
-      <div style="min-width:240px">
-        <div class="kv"><b>Species</b><span>${p.species ?? '(mixed)'}</span></div>
+    const idCount = agg ? (agg.ids && agg.ids.size ? agg.ids.size : agg.rowCount) : 0;
+    const idNote  = (agg && agg.ids && agg.ids.size ? '' : ' (row count)');
+    const topY = agg ? modeNewest(agg.year) : {key:'-',count:0};
+    const topM = agg ? modeNewest(agg.month) : {key:'-',count:0};
+    const spLabel = (agg && agg.species && agg.species.size===1) ? Array.from(agg.species)[0] :
+                    (getMulti('speciesFilter').length===1? getMulti('speciesFilter')[0] : 'Mixed');
+
+    const html = `
+      <div style="min-width:260px">
+        <div class="kv"><b>Species</b><span>${spLabel}</span></div>
         <div class="kv"><b>Sum (${metricField})</b><span>${Number.isFinite(sum)?nf(sum):'-'}</span></div>
-        <div class="kv"><b>Count</b><span>${Number.isFinite(cnt)?nf(cnt):'-'}</span></div>
+        <div class="kv"><b>Count</b><span>${nf(idCount)}${idNote}</span></div>
         <hr/>
-        <div class="kv"><b>Stage</b><span>${p.development_stage ?? '-'}</span></div>
-        <div class="kv"><b>Sex</b><span>${p.sex ?? '-'}</span></div>
-        <div class="kv"><b>Season</b><span>${p.season ?? '-'}</span></div>
-        <div class="kv"><b>Year</b><span>${p.year ?? '-'}</span></div>
-        <div class="kv"><b>Month</b><span>${p.month ?? '-'}</span></div>
+        <div class="kv"><b>Sex</b><span>${agg? percentBreakdown(agg.sex): '-'}</span></div>
+        <div class="kv"><b>Stage</b><span>${agg? percentBreakdown(agg.stage): '-'}</span></div>
+        <div class="kv"><b>Season</b><span>${agg? percentBreakdown(agg.season): '-'}</span></div>
+        <div class="kv"><b>Top year</b><span>${topY.key} (${nf(topY.count)})</span></div>
+        <div class="kv"><b>Top month</b><span>${topM.key} (${nf(topM.count)})</span></div>
         <hr/>
         <small class="muted">h3: ${key ?? '-'}</small>
-      </div>`).openOn(map);
+      </div>`;
+    (lockPopup||L.popup({autoPan:false,offset:[0,-8]}))
+      .setLatLng(latlng).setContent(html).openOn(map);
+  }
+  layer.on('mouseover', e=>{ if(locked) return; renderPopup(e.latlng, e.layer?.properties || {}); });
+  layer.on('mouseout', ()=>{ if(!locked) map.closePopup(); });
+  layer.on('click', e=>{ locked=!locked;
+    if (locked){ lockPopup=L.popup({autoPan:true}); renderPopup(e.latlng, e.layer?.properties || {}); }
+    else { lockPopup=null; map.closePopup(); }
   });
-  layer.on('mouseout',()=>map.closePopup());
+  document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape' && locked){ locked=false; lockPopup=null; map.closePopup(); }});
 }
 
 /* ===== Build / Rebuild ===== */
-async function buildLayer(){
-  showSpinner('Loading & aggregating…');
+function currentRamp(){
+  const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi'];
+}
+function computeLegendCounts(values){
+  const counts=[0,0,0,0,0];
+  if(!Array.isArray(values)||values.length===0) return counts;
+  for(const v of values){
+    const idx=computeBinIndex(v);
+    if (idx>=0 && idx<counts.length) counts[idx] += 1;
+  }
+  return counts;
+}
+function yearRangeFromUI(){
+  const a=parseInt($('yearMin').value,10), b=parseInt($('yearMax').value,10);
+  return (a<=b)? [a,b] : [b,a];
+}
+
+async function buildLayer(reaggregate=true){
+  showSpinner(reaggregate?'Loading & aggregating…':'Redrawing…');
+
   try{
     const res=$('resolution').value, ct=$('counttype').value;
     const pmFile = fileFor(res, ct);
-    layerName = await detectLayerName(pmFile);
-    const predicate = makePredicate();
+    if (!layerName || reaggregate) layerName = await detectLayerName(pmFile);
 
-    const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
+    const yearMM = yearRangeFromUI();
+    const predicate = makePredicate(yearMM);
 
-    // Always produce safe breaks
-    if(!Array.isArray(values)) {
-      jenksBreaks = [0,1,2,3,4,5];
-    } else {
+    let values=[];
+    if (reaggregate){
+      const out = await aggregateAndCollect(pmFile, layerName, predicate, ct);
+      values = out.values;
+      // Update year controls with actual data bounds the first time we learn them
+      if (Number.isFinite(out.stats.minYear) && Number.isFinite(out.stats.maxYear) && out.stats.minYear<=out.stats.maxYear){
+        initYearControls(out.stats.minYear, out.stats.maxYear);
+        syncYearRangeUI();
+      }
       jenksBreaks = await computeBreaksFromAggregates(values);
-      if(!Array.isArray(jenksBreaks) || jenksBreaks.length < 2) jenksBreaks = [0,1,2,3,4,5];
+      activeRamp = currentRamp();
+      // compute p90 for highlight & histogram
+      if(values.length){
+        const sorted = values.slice().sort((a,b)=>a-b);
+        const idx = Math.floor(0.9*(sorted.length-1));
+        p90 = sorted[idx];
+      }else p90=Infinity;
+      legendCounts = computeLegendCounts(values);
     }
 
-    activeRamp = currentRamp();
-    updateLegend();
+    updateLegendUI();
 
+    // (Re)build layer (style depends on opacity / highlight / isolation etc.)
     if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
-    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+    vtLayer = L.vectorGrid.protobuf(`pmtiles://${fileFor(res, ct)}/{z}/{x}/{y}.pbf`,{
       rendererFactory: L.canvas.tile,
       vectorTileLayerStyles: { [layerName]: makeStyle() },
       interactive:true,
@@ -619,28 +871,57 @@ async function buildLayer(){
     });
     bindHoverPopups(vtLayer);
     vtLayer.addTo(map);
+
   }catch(err){
     console.error('buildLayer error', err);
-    showToast('Failed to load layer. Check console for details.');
+    showToast('Failed to load or draw layer. Check console for details.');
   }finally{
     hideSpinner();
   }
 }
 
 /* ===== Apply / changes ===== */
-$('applyBtn').addEventListener('click',()=>buildLayer());
-$('resolution').addEventListener('change',()=>buildLayer());
-$('counttype').addEventListener('change',()=>buildLayer());
-$('resetBtn').addEventListener('click',()=>{clearAllSelects();buildLayer();});
+$('applyBtn').addEventListener('click',()=>buildLayer(true));
+$('resolution').addEventListener('change',()=>buildLayer(true));
+$('counttype').addEventListener('change',()=>buildLayer(true));
+$('resetBtn').addEventListener('click',()=>{
+  // Reset selects
+  document.querySelectorAll('#panel select').forEach(s=>{
+    if(s.multiple){
+      Array.from(s.options).forEach(o=>o.selected=false);
+      const all = Array.from(s.options).find(o=>o.value==='__ALL__'); if(all) all.selected=true;
+    }else s.selectedIndex=0;
+  });
+  // Reset sliders/toggles
+  initYearControls(CANON.yearDefault.min, CANON.yearDefault.max);
+  syncYearRangeUI();
+  $('highlightTop').checked=false; highlightTop=false;
+  $('opacity').value='0.65'; opacityVal=0.65;
+  isolatedBin=null;
+  buildLayer(true);
+});
 
 /* ===== Permalink ===== */
 function readStateFromHash(){
   const h=new URLSearchParams(location.hash.slice(1));
   if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
   if(h.has('res')) $('resolution').value=h.get('res');
-  if(h.has('ct')) $('counttype').value=h.get('ct');
+  if(h.has('ct'))  $('counttype').value=h.get('ct');
+
+  // species (canonical already)
   const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
-  for(const id of ids){ const val=h.get(id); if(!val) continue; const wanted=new Set(val.split('|')); Array.from($(id).options).forEach(o=>o.selected=wanted.has(o.value)); }
+  for(const id of ids){
+    const val=h.get(id); const sel=$(id);
+    if(!val || !sel) continue;
+    const wanted=new Set(val.split('|'));
+    Array.from(sel.options).forEach(o=>o.selected=wanted.has(o.value));
+  }
+  if(h.has('ymin')&&h.has('ymax')){
+    $('yearMin').value=h.get('ymin'); $('yearMax').value=h.get('ymax'); syncYearRangeUI();
+  }
+  if(h.has('op')){ const v=parseFloat(h.get('op')); if(v>=0.3&&v<=0.9){ $('opacity').value=String(v); opacityVal=v; } }
+  if(h.has('hi')){ const v=h.get('hi')==='1'; $('highlightTop').checked=v; highlightTop=v; }
+  if(h.has('ibin')){ const v=h.get('ibin'); isolatedBin = (v===''||v==null)? null : (v==='null'?null:parseInt(v,10)); }
 }
 function writeStateToHash(){
   const h=new URLSearchParams(), c=map.getCenter();
@@ -648,6 +929,10 @@ function writeStateToHash(){
   h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
   const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
   for(const id of ids){ const vals=getMulti(id); if(vals.length) h.set(id, vals.join('|')); }
+  const [ymin,ymax]=yearRangeFromUI(); h.set('ymin',String(ymin)); h.set('ymax',String(ymax));
+  h.set('op',String(opacityVal));
+  h.set('hi', highlightTop?'1':'0');
+  h.set('ibin', isolatedBin==null?'null':String(isolatedBin));
   location.hash=h.toString();
 }
 $('permalink').addEventListener('click',async()=>{
@@ -657,7 +942,14 @@ $('permalink').addEventListener('click',async()=>{
 });
 
 /* ===== Boot ===== */
-(function init(){ readStateFromHash(); buildLayer(); })();
+(function init(){
+  // sensible defaults (species all selected)
+  const spSel = $('speciesFilter'); if(spSel){ Array.from(spSel.options).forEach((o,i)=>{ if(o.value!=='__ALL__') o.selected=true; }); }
+  readStateFromHash();
+  // Initial sync for year range → multiselect
+  syncYearRangeUI();
+  buildLayer(true);
+})();
 </script>
 </body>
 </html>
