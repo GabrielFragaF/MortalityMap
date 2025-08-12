@@ -5,11 +5,14 @@
 <title>Sea Turtle Mortality Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E'">
+<!-- Avoid favicon 404 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
 
+<!-- Leaflet (local, CSP-safe) -->
 <link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
 <script src="./vendor/leaflet.js?v=20250812"></script>
 
+<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local, CSP-safe) -->
 <script src="./vendor/pmtiles.js?v=20250812"></script>
 <script src="./vendor/Leaflet.VectorGrid.bundled.js?v=20250812"></script>
 <script src="./vendor/pbf.js?v=20250812"></script>
@@ -18,100 +21,93 @@
 
 <style>
 :root{
-  --bg:#0b1220;
-  --panel:#fff;
-  --panel-weak:#f8fafc;
-  --text:#0f172a;
-  --muted:#64748b;
-  --ring:#3b82f6;
-  --shadow:0 12px 30px rgba(2,6,23,.18);
+  --bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;--ring:#93c5fd;
+  --shadow:0 10px 30px rgba(2,6,23,.25);--brand:#0ea5e9;--danger:#e11d48;--ok:#16a34a;
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
 #map{position:absolute;inset:0}
 
-/* ENHANCED: Panel styling */
-#panel{
-  position:absolute;top:14px;left:14px;z-index:1000;width:360px;
-  max-height:calc(100vh - 28px);overflow:auto;background:var(--panel);
-  border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0
-}
+/* Panel */
+#panel{position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:92vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
 #panel.collapsed{height:46px;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak);position:sticky;top:0;z-index:5}
 .topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
-.btn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
-.btn:hover{filter:brightness(0.98)}
+.iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
+.iconbtn:hover{filter:brightness(0.98)}
 .section{padding:10px 14px}
 .row{margin-bottom:10px}
-label{display:block;font-weight:700;margin:6px 0;font-size:13px}
-select{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
-select:focus,.btn:focus,input[type="checkbox"]:focus{outline:2px solid rgba(59,130,246,.35);outline-offset:2px}
+label{display:block;font-weight:700;margin:6px 0 4px;font-size:13px}
+select, input[type="range"]{width:100%}
+select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
 details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
 details+details{margin-top:10px}
-summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
+summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px;position:sticky;top:46px;z-index:4}
 summary::-webkit-details-marker{display:none}
 details .content{padding:10px 12px}
 .controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
-#resetBtn,#applyBtn{flex:1;background:#0ea5e9;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
-#resetBtn{background:#e11d48}
-.help{font-size:12px;color:var(--muted);margin-top:4px}
+#resetBtn,#applyBtn{flex:1;background:var(--brand);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn{background:var(--danger)}
 
-/* NEW: Checkbox groups for Yes/No toggles */
-.checkbox-group{border:1px solid #e2e8f0;border-radius:10px;padding:8px}
-.checkbox-row{display:flex;align-items:center;gap:8px;padding:6px 4px}
-.checkbox-row input[type="checkbox"]{transform:scale(1.1)}
+/* Checkbox groups */
+.chk-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chk{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 8px}
+.chk input{accent-color:var(--brand)}
+.small{font-size:12px;color:var(--muted)}
 
-/* ENHANCED: Interactive Legend */
-#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px}
-.leghdr{font-weight:800;margin-bottom:8px;display:flex;justify-content:space-between}
-.legend-row{display:flex;align-items:center;margin:4px 0;cursor:pointer;border-radius:6px;padding:4px 6px;transition:background .2s}
-.legend-row:hover{background:#f1f5f9}
-.legend-row.isolated{background:#fff7ed;border:1px solid #fed7aa}
-.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px}
-.histogram{display:flex;align-items:flex-end;gap:2px;height:24px;margin:8px 0}
-.hist-bar{flex:1;min-width:3px;background:linear-gradient(to top,rgba(59,130,246,.6),rgba(59,130,246,.85));border-radius:2px;transition:background .2s}
-.hist-bar:hover{background:linear-gradient(to top,rgba(234,88,12,.7),#ea580c)}
+/* Legend bottom-right */
+#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px}
+.leghdr{font-weight:800;margin-bottom:6px}
+.legend-row{display:flex;align-items:center;justify-content:space-between;margin:4px 0;gap:8px}
+.swatch{width:28px;height:12px;border-radius:3px;border:1px solid #94a3b8}
+.legend-hint{margin-top:6px;color:var(--muted);font-size:11px}
+
+/* Histogram */
+.hist{display:flex;align-items:flex-end;gap:4px;margin-top:6px;height:42px}
+.hist div{flex:1;background:#cbd5e1;border-radius:3px}
+.hist div.active{background:#94a3b8}
 
 /* Spinner + toast */
 #spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
-#toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:360px}
-#toast.info{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
-#toast.warn{background:#fef3c7;color:#92400e;border-color:#fde68a}
+#toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:340px}
 
-/* Popup / hover */
+/* Hover/selection polish */
+.leaflet-interactive:hover{filter:drop-shadow(0 0 2px rgba(14,165,233,.9))}
+
+/* Popup */
 .leaflet-popup-content{margin:8px 12px}
-.kv{display:flex;justify-content:space-between;gap:10px}
-.kv b{color:#0f172a}
+.kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}
 small.muted{color:#64748b}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
-<div id="panel" aria-label="Filters panel">
+<!-- Filter Panel -->
+<div id="panel">
   <div class="topbar">
     <h1>Sea Turtle Mortality</h1>
     <div style="display:flex;gap:8px">
-      <button id="permalink" class="btn" title="Copy shareable link" aria-label="Copy shareable link">🔗 Share</button>
-      <button id="collapseBtn" class="btn" title="Collapse panel" aria-label="Collapse panel">–</button>
+      <button id="permalink" class="iconbtn" title="Copy link">🔗 Share</button>
+      <button id="collapseBtn" class="iconbtn" title="Collapse">–</button>
     </div>
   </div>
 
   <div class="section">
     <div class="row">
-      <label for="resolution">Resolution (H3)</label>
-      <select id="resolution" name="resolution">
-        <option value="r3" selected>r3</option>
-        <option value="r4">r4</option>
-        <option value="r5">r5</option>
-        <option value="r6">r6</option>
+      <label for="resolution">Grid cell size (H3)</label>
+      <select id="resolution">
+        <option value="r3">≈ 60 km edge</option>
+        <option value="r4">≈ 22.6 km</option>
+        <option value="r5" selected>≈ 8.6 km</option>
+        <option value="r6">≈ 3.2 km</option>
       </select>
-      <div class="help">Start at r3 for speed; switch to r6 for detail.</div>
+      <div class="small">Tip: start coarse (r3/r4) for speed; switch to r6 when zoomed in.</div>
     </div>
 
     <div class="row">
       <label for="counttype">Count Type</label>
-      <select id="counttype" name="counttype">
+      <select id="counttype">
         <option value="weight" selected>Mortality position (weight)</option>
         <option value="new_weight">Mortality position (new_weight)</option>
         <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
@@ -119,252 +115,281 @@ small.muted{color:#64748b}
         <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
       </select>
     </div>
-  </div>
 
-  <div class="section">
-    <div class="row">
-      <label for="speciesFilter">Species</label>
-      <select id="speciesFilter" multiple size="6">
-        <option value="__ALL__" selected>(All)</option>
-        <option value="Caretta caretta">Caretta caretta</option>
-        <option value="Chelonia mydas">Chelonia mydas</option>
-        <option value="Dermochelys coriacea">Dermochelys coriacea</option>
-        <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
-        <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
-      </select>
-    </div>
+    <!-- Species -->
+    <details open>
+      <summary>Species</summary>
+      <div class="content">
+        <div class="chk-group" id="speciesGroup">
+          <!-- All toggle + species -->
+          <label class="chk"><input type="checkbox" data-group="species" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="species" value="Caretta caretta">Caretta caretta</label>
+          <label class="chk"><input type="checkbox" data-group="species" value="Chelonia mydas">Chelonia mydas</label>
+          <label class="chk"><input type="checkbox" data-group="species" value="Dermochelys coriacea">Dermochelys coriacea</label>
+          <label class="chk"><input type="checkbox" data-group="species" value="Eretmochelys imbricata">Eretmochelys imbricata</label>
+          <label class="chk"><input type="checkbox" data-group="species" value="Lepidochelys olivacea">Lepidochelys olivacea</label>
+        </div>
+      </div>
+    </details>
 
-    <div class="row">
-      <label for="stageFilter">Development Stage</label>
-      <select id="stageFilter" multiple size="5">
-        <option value="__ALL__" selected>(All)</option>
-        <option>Adult</option>
-        <option>Juvenile</option>
-        <option>Hatchling</option>
-        <option>Unknown</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <label for="sexFilter">Sex</label>
-      <select id="sexFilter" multiple size="4">
-        <option value="__ALL__" selected>(All)</option>
-        <option>Female</option>
-        <option>Male</option>
-        <option>Unknown</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="section">
+    <!-- Stage / Sex / Season -->
     <details>
-      <summary>Human interactions</summary>
+      <summary>Biology</summary>
+      <div class="content">
+        <label>Development stage</label>
+        <div class="chk-group" id="stageGroup">
+          <label class="chk"><input type="checkbox" data-group="stage" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="stage" value="Adult">Adult</label>
+          <label class="chk"><input type="checkbox" data-group="stage" value="Juvenile">Juvenile</label>
+          <label class="chk"><input type="checkbox" data-group="stage" value="Hatchling">Hatchling</label>
+          <label class="chk"><input type="checkbox" data-group="stage" value="Unknown">Unknown</label>
+        </div>
+
+        <label style="margin-top:8px">Sex</label>
+        <div class="chk-group" id="sexGroup">
+          <label class="chk"><input type="checkbox" data-group="sex" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="sex" value="Female">Female</label>
+          <label class="chk"><input type="checkbox" data-group="sex" value="Male">Male</label>
+          <label class="chk"><input type="checkbox" data-group="sex" value="Unknown">Unknown</label>
+        </div>
+
+        <label style="margin-top:8px">Season</label>
+        <div class="chk-group" id="seasonGroup">
+          <label class="chk"><input type="checkbox" data-group="season" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="season" value="Autumn">Autumn</label>
+          <label class="chk"><input type="checkbox" data-group="season" value="Spring">Spring</label>
+          <label class="chk"><input type="checkbox" data-group="season" value="Summer">Summer</label>
+          <label class="chk"><input type="checkbox" data-group="season" value="Winter">Winter</label>
+          <label class="chk"><input type="checkbox" data-group="season" value="Unknown">Unknown</label>
+        </div>
+      </div>
+    </details>
+
+    <!-- Human interactions (English only) + Decomposition -->
+    <details>
+      <summary>Human interactions & condition</summary>
+      <div class="content">
+        <label>Human interactions</label>
+        <div class="chk-group" id="humanGroup">
+          <label class="chk"><input type="checkbox" data-group="Fishing" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Fishing" value="Yes">Fishing: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Fishing" value="No">Fishing: No</label>
+
+          <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="Yes">Marine Debris: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="No">Marine Debris: No</label>
+
+          <label class="chk"><input type="checkbox" data-group="Aggression" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Aggression" value="Yes">Aggression: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Aggression" value="No">Aggression: No</label>
+
+          <label class="chk"><input type="checkbox" data-group="Boat_collision" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Boat_collision" value="Yes">Boat collision: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Boat_collision" value="No">Boat collision: No</label>
+
+          <label class="chk"><input type="checkbox" data-group="Dredging" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Dredging" value="Yes">Dredging: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Dredging" value="No">Dredging: No</label>
+
+          <label class="chk"><input type="checkbox" data-group="Oil" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Oil" value="Yes">Oil: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Oil" value="No">Oil: No</label>
+
+          <label class="chk"><input type="checkbox" data-group="Petrol" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Petrol" value="Yes">Petrol: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Petrol" value="No">Petrol: No</label>
+        </div>
+
+        <label style="margin-top:8px">Decomposition code</label>
+        <div class="chk-group" id="decompGroup">
+          <label class="chk"><input type="checkbox" data-group="decomposition_code" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="decomposition_code" value="1">1</label>
+          <label class="chk"><input type="checkbox" data-group="decomposition_code" value="2">2</label>
+          <label class="chk"><input type="checkbox" data-group="decomposition_code" value="3">3</label>
+          <label class="chk"><input type="checkbox" data-group="decomposition_code" value="4">4</label>
+          <label class="chk"><input type="checkbox" data-group="decomposition_code" value="5">5</label>
+        </div>
+      </div>
+    </details>
+
+    <!-- Environment & time -->
+    <details>
+      <summary>Environment & time</summary>
       <div class="content">
         <div class="row">
-          <label>Fishing</label>
-          <div class="checkbox-group" id="fishingGroup" role="group" aria-label="Fishing">
-            <div class="checkbox-row"><input type="checkbox" id="fishing_all" checked><label for="fishing_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="fishing_yes"><label for="fishing_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="fishing_no"><label for="fishing_no">No</label></div>
+          <label>Year range</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;margin-bottom:6px">
+            <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
+            <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
           </div>
+          <div class="small">Years: <span id="yearRangeLabel">2015–2024</span>
+            <button id="resetYearRange" class="iconbtn" style="margin-left:8px;padding:4px 8px">Reset range</button>
+          </div>
+        </div>
+
+        <label style="margin-top:8px">Year (checkboxes)</label>
+        <div class="chk-group" id="yearGroup">
+          <label class="chk"><input type="checkbox" data-group="year" value="__ALL__" checked>(All)</label>
+          <!-- Years will be populated dynamically based on observed data min/max -->
+        </div>
+
+        <label style="margin-top:8px">Month</label>
+        <div class="chk-group" id="monthGroup">
+          <label class="chk"><input type="checkbox" data-group="month" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="1">1</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="2">2</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="3">3</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="4">4</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="5">5</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="6">6</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="7">7</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="8">8</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="9">9</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="10">10</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="11">11</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="12">12</label>
+        </div>
+      </div>
+    </details>
+
+    <!-- Layer controls -->
+    <details>
+      <summary>Layer controls</summary>
+      <div class="content">
+        <div class="row">
+          <label for="opacity">Layer opacity</label>
+          <input id="opacity" type="range" min="0.30" max="0.90" step="0.01" value="0.65">
         </div>
         <div class="row">
-          <label>Marine Debris</label>
-          <div class="checkbox-group" id="marineDebrisGroup" role="group" aria-label="Marine Debris">
-            <div class="checkbox-row"><input type="checkbox" id="debris_all" checked><label for="debris_all">(All)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="debris_yes"><label for="debris_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="debris_no"><label for="debris_no">No</label></div>
-          </div>
+          <label class="chk" style="display:inline-flex"><input type="checkbox" id="top10"> Highlight top 10%</label>
         </div>
-        </div>
+      </div>
     </details>
-  </div>
 
-
-  <div class="section">
-    <div class="row">
-      <label for="decompFilter">Decomposition code</label>
-      <select id="decompFilter" multiple size="6">
-        <option value="__ALL__" selected>(All)</option>
-        <option>1</option><option>2</option><option>3</option>
-        <option>4</option><option>5</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <label for="seasonFilter">Season</label>
-      <select id="seasonFilter" multiple size="6">
-        <option value="__ALL__" selected>(All)</option>
-        <option>Autumn</option><option>Spring</option><option>Summer</option><option>Winter</option><option>Unknown</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <label for="yearFilter">Year</label>
-      <select id="yearFilter" multiple size="10">
-        <option value="__ALL__" selected>(All)</option>
-        <option>2015</option><option>2016</option><option>2017</option>
-        <option>2018</option><option>2019</option><option>2020</option>
-        <option>2021</option><option>2022</option><option>2023</option><option>2024</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <label for="monthFilter">Month</label>
-      <select id="monthFilter" multiple size="6">
-        <option value="__ALL__" selected>(All)</option>
-        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-        <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="section">
     <div class="controls-footer">
-      <button id="resetBtn" class="btn">Reset</button>
-      <button id="applyBtn" class="btn" style="background:#0ea5e9;color:#fff">Apply</button>
+      <button id="resetBtn">Reset</button>
+      <button id="applyBtn">Apply</button>
     </div>
   </div>
 </div>
 
-<div id="legend" aria-live="polite"></div>
+<!-- Legend -->
+<div id="legend">
+  <div class="leghdr">Legend</div>
+  <div id="legendRows"></div>
+  <div class="hist" id="histogram"></div>
+  <div class="legend-hint">Breaks based on visible, filtered hexes.</div>
+</div>
+
 <div id="spinner">Loading…</div>
-<div id="toast" role="status" aria-live="assertive"></div>
+<div id="toast"></div>
 
 <script>
-/* ========= Decoder shim (works with UMD/browserified builds) ========= */
+/* ========= Decoder shim (VectorTile + Pbf) ========= */
 (function ensureDecoders(){
-  var VT = (window.VectorTile) || (window.vectorTile && window.vectorTile.VectorTile) || null;
-  var PBF = (window.Pbf) || (window.pbf && window.pbf.Pbf) || null;
+  var VT = (window.VectorTile) ||
+           (window.vectorTile && window.vectorTile.VectorTile) ||
+           (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) || null;
+  var PBF = (window.Pbf) ||
+            (window.pbf && window.pbf.Pbf) || null;
   if (!window.VectorTile && VT) window.VectorTile = VT;
   if (!window.Pbf && PBF) window.Pbf = PBF;
-  window.__VT__ = VT; window.__PBF__ = PBF;
-  if (!VT || !PBF) console.warn('Decoder globals missing: vector-tile.js or pbf.js');
+  window.__VT__ = VT || window.VectorTile || null;
+  window.__PBF__ = PBF || window.Pbf || null;
+  if (!window.__VT__ || !window.__PBF__) {
+    console.warn('Decoder globals missing:',
+      (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
+    );
+  }
 })();
 
-/* ========= Map ========= */
+/* ===== Map ===== */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 
-/* ========= UI helpers ========= */
+/* ===== UI helpers ===== */
 const $ = id => document.getElementById(id);
 const spinner=$('spinner'), toast=$('toast');
 const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
 const hideSpinner = () => { spinner.style.display='none'; };
-const showToast=(m,ms=5000,type='error')=>{
-  toast.textContent=m; toast.className = type==='info'?'info':(type==='warn'?'warn':''); toast.style.display='block';
-  setTimeout(()=>toast.style.display='none',ms);
-};
+const showToast=(m,ms=4200)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
 $('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
 window.addEventListener('error',()=>hideSpinner());
 window.addEventListener('unhandledrejection',()=>hideSpinner());
 
-/* ========= Filter Controls Logic ========= */
-
-// For <select multiple>
-function enforceAllOption(e){
-  const sel=e.target;
-  if(!sel.multiple) return;
-  const all = Array.from(sel.options).find(o=>o.value==='__ALL__');
-  if (!all) return;
-  const chosen = Array.from(sel.selectedOptions).map(o=>o.value);
-  if(chosen.length===0 || (chosen.includes('__ALL__') && chosen.length > 1)){
-    Array.from(sel.options).forEach(o=>o.selected= (o.value === '__ALL__'));
-  } else if(!chosen.includes('__ALL__') && all.selected){
-    all.selected=false;
+/* ===== Checkbox “All” logic ===== */
+function syncAllCheckbox(groupEl){
+  const boxes = Array.from(groupEl.querySelectorAll('input[type="checkbox"][data-group]'));
+  const allBox = boxes.find(b=>b.value==='__ALL__');
+  const selected = boxes.filter(b=>b.checked && b.value!=='__ALL__');
+  if (selected.length===0 && allBox && !allBox.checked) allBox.checked = true;
+  if (selected.length>0 && allBox && allBox.checked) allBox.checked = false;
+}
+function onGroupClick(e){
+  const t = e.target;
+  if(!(t && t.matches('input[type="checkbox"][data-group]'))) return;
+  const parent = t.closest('.chk-group');
+  const boxes = Array.from(parent.querySelectorAll('input[type="checkbox"][data-group]'));
+  if (t.value==='__ALL__'){
+    const allChecked = t.checked;
+    boxes.forEach(b=>{ if(b!==t) b.checked=false; });
+    t.checked = allChecked || true;
+  } else {
+    const allBox = boxes.find(b=>b.value==='__ALL__');
+    if (allBox && allBox.checked) allBox.checked = false;
+    const anyChecked = boxes.some(b=>b.value!=='__ALL__' && b.checked);
+    if (!anyChecked && allBox) allBox.checked = true;
   }
 }
-document.querySelectorAll('#panel select[multiple]').forEach(s=>s.addEventListener('change',enforceAllOption));
-const getMulti = id => {
-  const vals = Array.from($(id)?.selectedOptions||[]).map(o=>o.value);
-  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
-};
-
-// ENHANCED: For new checkbox groups (Yes/No/All)
-function setupCheckboxGroup(groupId){
-  const g=$(groupId); if(!g) return;
-  const all = g.querySelector('input[id*="_all"]');
-  const rest = Array.from(g.querySelectorAll('input:not([id*="_all"])'));
-  all.addEventListener('change', e=>{
-    if(e.target.checked){ rest.forEach(cb=>cb.checked=false); }
+['speciesGroup','stageGroup','sexGroup','seasonGroup','humanGroup','decompGroup','monthGroup','yearGroup']
+  .forEach(id=>{
+    const el=$(id);
+    el.addEventListener('click',onGroupClick);
   });
-  rest.forEach(cb=>{
-    cb.addEventListener('change', e=>{
-      if(e.target.checked) all.checked=false;
-      if(rest.every(r=>!r.checked)) all.checked=true;
-    });
-  });
-}
-['fishingGroup','marineDebrisGroup'].forEach(setupCheckboxGroup);
 
-function getCheckboxValues(groupId){
-  const g=$(groupId); if(!g) return [];
-  if(g.querySelector('input[id*="_all"]')?.checked) return [];
-  return Array.from(g.querySelectorAll('input:not([id*="_all"]):checked'))
-    .map(cb=>cb.labels?.[0]?.textContent?.trim())
-    .filter(Boolean);
+/* ===== Range slider (dual thumb) ===== */
+const yearMinEl = $('yearMin'), yearMaxEl=$('yearMax'), yearRangeLabel=$('yearRangeLabel');
+$('resetYearRange').addEventListener('click',()=>{
+  yearMinEl.value = yearMinEl.min;
+  yearMaxEl.value = yearMaxEl.max;
+  updateYearRangeUI();
+  enableYearsWithinRange();
+});
+function updateYearRangeUI(){
+  let a = parseInt(yearMinEl.value,10), b = parseInt(yearMaxEl.value,10);
+  if (a>b){ const tmp=a; a=b; b=tmp; yearMinEl.value=a; yearMaxEl.value=b; }
+  yearRangeLabel.textContent = a + '–' + b;
 }
+yearMinEl.addEventListener('input',()=>{ updateYearRangeUI(); enableYearsWithinRange(); });
+yearMaxEl.addEventListener('input',()=>{ updateYearRangeUI(); enableYearsWithinRange(); });
 
+/* ===== Utilities ===== */
 const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+function tileRangeForBounds(b,z){
+  const nw=b.getNorthWest(), se=b.getSouthEast();
+  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+  return {minX,maxX,minY,maxY};
+}
+const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+function hashBBox(b){
+  const c=b.getCenter(); return [c.lat.toFixed(2),c.lng.toFixed(2), map.getZoom().toFixed(0)].join(',');
+}
 
-/* ========= Colors & Legend State ========= */
-const ramps={
-  'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
-  'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
-  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
-  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
-  'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
-  'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
-};
-let isolatedBin=-1;
-
-/* ========= Canonicalization (Data Cleaning) ========= */
-const canon = {
-  season: v => {
-    const s=(v??'').toString().toLowerCase().trim();
-    if(!s) return 'Unknown';
-    if(['outono','autumn','fall'].includes(s)) return 'Autumn';
-    if(['primavera','spring'].includes(s)) return 'Spring';
-    if(['verao','verão','summer'].includes(s)) return 'Summer';
-    if(['inverno','winter'].includes(s)) return 'Winter';
-    return 'Unknown';
-  },
-  sex: v => {
-    const s=(v??'').toString().toLowerCase().trim();
-    if(['fêmea','femea','female','f'].includes(s)) return 'Female';
-    if(['macho','male','m'].includes(s)) return 'Male';
-    return 'Unknown';
-  },
-  stage: v => {
-    const s=(v??'').toString().toLowerCase().trim();
-    if(['adulto','adult'].includes(s)) return 'Adult';
-    if(['juvenil','juvenile'].includes(s)) return 'Juvenile';
-    if(['filhote','hatchling'].includes(s)) return 'Hatchling';
-    return 'Unknown';
-  },
-  year: v => {
-    if(v==null) return '';
-    const n=parseInt(String(v).replace(/\.0+$/,''),10);
-    return Number.isFinite(n)?String(n):'';
-  },
-  // FIXED: Add a robust handler for "Yes/No" type data
-  binary: v => {
-    const s = (v ?? '').toString().toLowerCase().trim();
-    if (['yes', 'y', 'true', '1', 'sim', 's'].includes(s)) return 'Yes';
-    if (['no', 'n', 'false', '0', 'nao', 'não'].includes(s)) return 'No';
-    return 'Unknown';
-  }
-};
-const asIntString=v=>{ const n=parseInt(v,10); return Number.isFinite(n)?String(n):String(v); };
-
-/* ========= pmtiles:// fetch shim ========= */
+/* ===== pmtiles:// fetch shim + PM cache ===== */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
+function pmUrlWithBust(file){ return file + '?v=20250812'; }
 async function getPM(archive){
-  const u=new URL(archive, new URL('.', location.href)).toString();
-  if(pmCache.has(u)) return pmCache.get(u);
-  const inst=new pmtiles.PMTiles(u);
-  pmCache.set(u,inst);
+  const abs = new URL(archive, new URL('.', location.href)).toString();
+  if(pmCache.has(abs)) return pmCache.get(abs);
+  const inst = new pmtiles.PMTiles(abs);
+  pmCache.set(abs, inst);
   return inst;
 }
 window.fetch = async (input, init) => {
@@ -374,302 +399,685 @@ window.fetch = async (input, init) => {
     const [_, archive, z, x, y] = m;
     try{
       const pm = await getPM(archive);
-      const t = await pm.getZxy(+z,+x,+y);
+      const t  = await pm.getZxy(+z,+x,+y);
       if(!t || !t.data){ return new Response(null,{status:204}); }
       return new Response(t.data);
     }catch(e){
-      console.warn('Tile fetch failed for', archive, z, x, y, e);
+      console.warn('Tile fetch failed for', archive, z, x, y);
       return new Response(null,{status:204});
     }
   }
   return origFetch(input, init);
 };
 
-/* ========= State & Helpers ========= */
-let vtLayer=null, layerNames=[], header=null;
-const aggByHex=new Map();
-let metricField='sum_val';
-const stats = (window.ss || window.simpleStatistics || null);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function fileFor(res, ct){ const v='20250812'; return `hexgrid_${res}_${ct}.pmtiles?v=${v}`; }
-// FIXED: More robust UID counter that includes 'turtle_id'
-function getUidCountFromProps(p){
-  const keys = ['turtle_id', 'uid_count', 'unique_ids', 'unique_turtle_ids', 'count'];
-  for(const k of keys){
-    const n = Number(p[k]);
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
+/* ===== File mapping ===== */
+function fileFor(res, ct){ return pmUrlWithBust(`hexgrid_${res}_${ct}.pmtiles`); }
+
+/* ===== Color ramps ===== */
+const ramps={
+  'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
+  'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
+  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
+  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
+  'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
+  'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
+};
+function currentRamp(){ const sp=getChecked('species'); return (sp.length===1 && ramps[sp[0]])? ramps[sp[0]] : ramps['multi']; }
+
+/* ===== Canonicalization ===== */
+const canonMaps = {
+  season:{ 'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter','autumn':'Autumn','spring':'Spring','summer':'Summer','winter':'Winter' },
+  sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','indefinido':'Unknown','unknown':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
+  stage:{ 'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','unknown':'Unknown' },
+  yesno:{ 'sim':'Yes','não':'No','nao':'No','yes':'Yes','no':'No' }
+};
+function toCanon(str,kind){
+  if(str==null) return kind==='sex'||kind==='stage'||kind==='season'?'Unknown': '';
+  const s = String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const map = canonMaps[kind]; return (map && map[s]) ? map[s] : (kind==='season'||kind==='sex'||kind==='stage' ? (s? s[0].toUpperCase()+s.slice(1):'Unknown') : String(str));
+}
+function canonYear(y){
+  if(y==null) return '';
+  const s=String(y).trim(); return s.endsWith('.0')? s.slice(0,-2) : s;
 }
 
-/* ========= Filtering Predicate ========= */
-// FIXED: This whole function is rewritten to be more robust
-function makePredicate(){
-  const sel={
-    species: new Set(getMulti('speciesFilter')),
-    stage: new Set(getMulti('stageFilter')),
-    sex: new Set(getMulti('sexFilter')),
-    fishing: new Set(getCheckboxValues('fishingGroup')),
-    marine_debris: new Set(getCheckboxValues('marineDebrisGroup')),
-    season: new Set(getMulti('seasonFilter')),
-    year: new Set(getMulti('yearFilter')),
-    month: new Set(getMulti('monthFilter')),
-    decomp: new Set(getMulti('decompFilter'))
-  };
-
-  const hasFilter = key => sel[key] && sel[key].size > 0;
-
-  return p => {
-    if (hasFilter('species') && !sel.species.has(p.species)) return false;
-    if (hasFilter('stage') && !sel.stage.has(canon.stage(p.development_stage))) return false;
-    if (hasFilter('sex') && !sel.sex.has(canon.sex(p.sex))) return false;
-    
-    // Check multiple property casings for robustness
-    if (hasFilter('fishing') && !sel.fishing.has(canon.binary(p.fishing ?? p.Fishing))) return false;
-    if (hasFilter('marine_debris') && !sel.marine_debris.has(canon.binary(p.marine_debris ?? p.Marine_Debris))) return false;
-    
-    if (hasFilter('season') && !sel.season.has(canon.season(p.season))) return false;
-    if (hasFilter('year') && !sel.year.has(canon.year(p.year))) return false;
-    if (hasFilter('month') && !sel.month.has(asIntString(p.month))) return false;
-    if (hasFilter('decomp') && !sel.decomp.has(asIntString(p.decomposition_code))) return false;
-
-    return true; // If all checks pass, include the feature
-  };
+/* ===== Gather UI selections ===== */
+function getChecked(group){
+  const parent = ({
+    species:'speciesGroup', stage:'stageGroup', sex:'sexGroup', season:'seasonGroup',
+    Fishing:'humanGroup', Marine_Debris:'humanGroup', Aggression:'humanGroup',
+    Boat_collision:'humanGroup', Dredging:'humanGroup', Oil:'humanGroup', Petrol:'humanGroup',
+    decomposition_code:'decompGroup', year:'yearGroup', month:'monthGroup'
+  }[group]);
+  if(!parent) return [];
+  const boxes = Array.from($(parent).querySelectorAll(`input[type="checkbox"][data-group="${group}"]`));
+  const all = boxes.find(b=>b.value==='__ALL__');
+  const picked = boxes.filter(b=>b.checked && b.value!=='__ALL__').map(b=>b.value);
+  if(picked.length===0 && all && all.checked) return [];
+  return picked;
 }
 
+/* ===== Dynamic Year checkboxes based on observed range ===== */
+function setYearCheckboxes(minY, maxY){
+  const yg=$('yearGroup'); yg.innerHTML='';
+  const mk = (val, label, checked=true, disabled=false)=>{
+    const id='y'+val;
+    const outer=document.createElement('label'); outer.className='chk';
+    const input=document.createElement('input'); input.type='checkbox'; input.dataset.group='year'; input.value=val; input.checked=checked; input.disabled=disabled;
+    outer.appendChild(input); outer.appendChild(document.createTextNode(label));
+    yg.appendChild(outer);
+  };
+  mk('__ALL__','(All)',true,false);
+  for(let y=minY;y<=maxY;y++) mk(String(y), String(y), true, false);
+  yg.addEventListener('click',onGroupClick);
+}
+function enableYearsWithinRange(){
+  const min=parseInt(yearMinEl.value,10), max=parseInt(yearMaxEl.value,10);
+  const boxes = Array.from($('yearGroup').querySelectorAll('input[type="checkbox"][data-group="year"]'));
+  boxes.forEach(b=>{
+    if(b.value==='__ALL__') return;
+    const y=parseInt(b.value,10);
+    const inside = (y>=min && y<=max);
+    b.disabled = !inside;
+    if(!inside && b.checked) b.checked=false;
+  });
+  syncAllCheckbox($('yearGroup'));
+}
 
-/* ========= Data Aggregation & Analysis ========= */
-async function aggregateAndCollect(pmFile, predicate, ct){
-  aggByHex.clear();
-  const allValues = [];
+/* ===== State ===== */
+let vtLayer = null, lastGoodLayer = null;
+let layerName='', header=null;
+const aggByHex = new Map(); // h3 -> { sum, uids:Set, counts:{sex,stage,season,year,month}, rowCount }
+let metricField = 'sum_val';
+let cachedCap = null; // capability probe result
+let jenksBreaks = [0,1,2,3,4,5];
+let activeRamp = ramps['multi'];
+let histogramCounts = [0,0,0,0,0];
+let top10Threshold = null;
+let isolatedBin = -1;
+
+/* ===== Capability probe: detect existing fields quickly ===== */
+async function capabilityProbe(pmFile, layerName){
+  const caps = { hasYear:false, hasMonth:false, hasSex:false, hasStage:false, hasSeason:false, hasUID:false, sampleMetricKeys:new Set(), observedYears:new Set() };
   try{
-    if(!__VT__ || !__PBF__){
-      showToast('Decoders not loaded (vector-tile/pbf).', 4000, 'warn');
-      return allValues;
-    }
     const pm = await getPM(pmFile);
-    const hdr = await pm.getHeader();
-    const z = clamp(Math.floor(map.getZoom()), hdr.minZoom, hdr.maxZoom);
-    
-    const tileCoords = [];
-    const bounds = map.getBounds();
-    const {minX, maxX, minY, maxY} = L.bounds( L.point(bounds.getWest(), bounds.getNorth()), L.point(bounds.getEast(), bounds.getSouth()) );
-
-    // This part would need a proper tile enumeration for the given projection,
-    // for simplicity and because the original had a similar logic, we'll assume a simplified tile scan.
-    // A production version would use a library or more careful math.
-    const tileCheckLimit = 100; // Limit tiles to check to avoid browser freeze
-    const jobs = [];
-    // Simplified tile fetching logic for demonstration
-    const centerTile = L.CRS.EPSG3857.latLngToPoint(map.getCenter(), z).divideBy(256).floor();
-    for (let i = -5; i <= 5; i++) {
-        for (let j = -5; j <= 5; j++) {
-            const tilePoint = centerTile.add(L.point(i, j));
-            jobs.push(pm.getZxy(z, tilePoint.x, tilePoint.y));
+    const hdr = header || await pm.getHeader();
+    const z = clamp(Math.max(6,hdr.minZoom), hdr.minZoom, hdr.maxZoom);
+    const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), z);
+    let checked=0;
+    for(let x=minX; x<=maxX && checked<5; x++){
+      for(let y=minY; y<=maxY && checked<5; y++){
+        const r = await pm.getZxy(z, wrapX(x,z), y);
+        if(!r || !r.data) continue;
+        const vt = new window.__VT__(new window.__PBF__(r.data));
+        const lyr = vt.layers[layerName]; if(!lyr) continue;
+        const take = Math.min(lyr.length, 20);
+        for(let i=0;i<take;i++){
+          const p = lyr.feature(i).properties||{};
+          const keys = Object.keys(p);
+          if('year' in p){ caps.hasYear=true; const cy=canonYear(p.year); if(cy && +cy) caps.observedYears.add(+cy); }
+          if('month' in p) caps.hasMonth=true;
+          if('sex' in p || 'Sexo' in p) caps.hasSex=true;
+          if('development_stage' in p) caps.hasStage=true;
+          if('season' in p) caps.hasSeason=true;
+          if('turtle_id' in p || 'id' in p || 'uid' in p || 'individual_id' in p) caps.hasUID=true;
+          keys.forEach(k=>caps.sampleMetricKeys.add(k));
         }
-    }
-    
-    const tiles = await Promise.allSettled(jobs);
-    let firstFeatureProps = null;
-
-    for (const tileResult of tiles) {
-      if (tileResult.status !== 'fulfilled' || !tileResult.value?.data) continue;
-      const vt = new __VT__(new __PBF__(tileResult.value.data));
-      for (const layerName in vt.layers) {
-        const layer = vt.layers[layerName];
-        for (let i = 0; i < layer.length; i++) {
-          const f = layer.feature(i);
-          if (!predicate(f.properties)) continue;
-          
-          if (!firstFeatureProps) firstFeatureProps = f.properties;
-
-          const key = f.properties.h3_index ?? f.properties.h3 ?? f.properties.id;
-          if (!key) continue;
-
-          const uid = getUidCountFromProps(f.properties);
-          const entry = aggByHex.get(key) || { sum: 0, uidCount: 0 };
-          
-          entry.sum += Number(f.properties[metricField] || 0);
-          entry.uidCount += (uid !== null ? uid : 1); // Use UID if present, else count the row
-          
-          aggByHex.set(key, entry);
-        }
+        checked++;
       }
     }
-    
-    // Discover the metric field from the first valid feature
-    if (firstFeatureProps) {
-        const cands = {
-            weight: ['sum_val','weight'], new_weight: ['sum_val','new_weight'],
-            new_mortality_est_bf_mean: ['sum_val','new_mortality_est_bf_mean'],
-            new_mortality_est_bf_low: ['sum_val','new_mortality_est_bf_low'],
-            new_mortality_est_bf_high: ['sum_val','new_mortality_est_bf_high']
-        }[ct] || ['sum_val'];
-        metricField = cands.find(c => firstFeatureProps[c] !== undefined) || 'sum_val';
-    }
-
-    aggByHex.forEach(v => allValues.push(v.sum));
-
-  }catch(e){
-    console.warn('aggregateAndCollect failed', e);
-  }
-  return allValues;
+  }catch(e){ /* ignore */ }
+  return caps;
 }
 
-function computeSafeBreaks(values){
-  if(!stats) return [0,1,2,3,4,5];
-  const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
-  if(sorted.length < 5) return [0,1,2,3,4,5];
-  try {
-      let breaks = stats.jenks(sorted, 5);
-      // Ensure breaks are unique
-      breaks = [...new Set(breaks)];
-      while(breaks.length < 6) {
-          breaks = stats.quantile(sorted, [0, 0.2, 0.4, 0.6, 0.8, 1]);
-          breaks = [...new Set(breaks)];
-          if (breaks.length < 2) return [sorted[0], sorted[0]+1];
+/* ===== Detect layer name safely ===== */
+async function detectLayerName(pmFile){
+  try{
+    const pm = await getPM(pmFile);
+    header = await pm.getHeader();
+    const md = await pm.getMetadata();
+    if (md && md.json){
+      const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
+      if (j && j.vector_layers){
+        if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+        const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
       }
-      return breaks;
-  } catch {
-      return stats.quantile(sorted, [0, 0.2, 0.4, 0.6, 0.8, 1]);
-  }
+    }
+    if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available to probe tiles.');
+    const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
+    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+    for(let x=minX;x<=maxX;x++){
+      for(let y=minY;y<=maxY;y++){
+        const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
+        if(!r || !r.data) continue;
+        const vt = new window.__VT__(new window.__PBF__(r.data));
+        const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
+      }
+    }
+  }catch(e){ console.warn('Layer detect failed:', e); }
+  console.warn('Falling back to "hexgrid"');
+  return 'hexgrid';
 }
 
-/* ========= Legend, Style, Popups ========= */
-function computeBinIndex(breaks, v){
-  if(!Array.isArray(breaks) || breaks.length<2 || !Number.isFinite(v)) return -1;
-  const n=breaks.length-1;
-  if(v<=breaks[0]) return 0;
-  if(v>=breaks[n]) return n-1;
-  for(let i=1;i<breaks.length;i++){ if(v <= breaks[i]) return i-1; }
-  return n-1;
+/* ===== Metric detection (strict) ===== */
+const metricCandidates = {
+  weight: ['weight','sum_val'],
+  new_weight: ['new_weight','sum_val'],
+  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
+  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
+  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
+};
+function lockMetricField(sampleList, ct){
+  const cands = metricCandidates[ct] || ['sum_val'];
+  for(const k of cands){
+    let finiteSeen=0;
+    for(const p of sampleList){
+      const v = Number(p[k]);
+      if(Number.isFinite(v)) { finiteSeen++; if(finiteSeen>3) { metricField = k; return; } }
+    }
+  }
+  console.warn('Metric fallback to sum_val');
+  metricField = 'sum_val';
 }
 
-// ENHANCED: Interactive Legend
-function updateLegend(localBreaks, localRamp, cellValues=[]){
-  const el=$('legend');
-  const spSel=getMulti('speciesFilter');
-  const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
-  el.innerHTML=`<div class="leghdr"><span>${name}</span><span>${nf(cellValues.length)} cells</span></div>`;
+/* ===== Filters -> predicate (with capability awareness) ===== */
+function readFilterSelections(caps){
+  // Take checked values; empty array = no constraint
+  const sel = {
+    species: new Set(getChecked('species')),
+    development_stage: new Set(getChecked('stage')),
+    sex: new Set(getChecked('sex')),
+    season: new Set(getChecked('season')),
+    Fishing: new Set(getChecked('Fishing').map(v=>toCanon(v,'yesno'))),
+    Marine_Debris: new Set(getChecked('Marine_Debris').map(v=>toCanon(v,'yesno'))),
+    Aggression: new Set(getChecked('Aggression').map(v=>toCanon(v,'yesno'))),
+    Boat_collision: new Set(getChecked('Boat_collision').map(v=>toCanon(v,'yesno'))),
+    Dredging: new Set(getChecked('Dredging').map(v=>toCanon(v,'yesno'))),
+    Oil: new Set(getChecked('Oil').map(v=>toCanon(v,'yesno'))),
+    Petrol: new Set(getChecked('Petrol').map(v=>toCanon(v,'yesno'))),
+    decomposition_code: new Set(getChecked('decomposition_code')),
+    year: new Set(getChecked('year').map(canonYear)),
+    month: new Set(getChecked('month'))
+  };
 
-  if (!localBreaks || localBreaks.length < 2) {
-      el.insertAdjacentHTML('beforeend','<div>No data to classify.</div>');
-      return;
-  }
+  // If a field is absent in data, ignore user selection for that dimension (one-time toast per dimension)
+  const ignored = [];
+  if(!caps.hasYear && sel.year.size){ sel.year.clear(); ignored.push('Year'); }
+  if(!caps.hasMonth && sel.month.size){ sel.month.clear(); ignored.push('Month'); }
+  if(!caps.hasSex && sel.sex.size){ sel.sex.clear(); ignored.push('Sex'); }
+  if(!caps.hasStage && sel.development_stage.size){ sel.development_stage.clear(); ignored.push('Stage'); }
+  if(!caps.hasSeason && sel.season.size){ sel.season.clear(); ignored.push('Season'); }
+  if(ignored.length) showToast(ignored.join(', ')+' filter ignored for this dataset (field missing).');
 
-  const n=Math.min(localRamp.length, localBreaks.length-1);
-  const hist=new Array(n).fill(0);
-  cellValues.forEach(v=>{
-    const b=computeBinIndex(localBreaks,v);
-    if(b>=0 && b<hist.length) hist[b]++;
-  });
-  const maxH=Math.max(...hist,1);
-  el.insertAdjacentHTML('beforeend', `<div class="histogram">${hist.map(c=>`<div class="hist-bar" style="height:${Math.max(2,Math.round(c/maxH*22))}px" title="${nf(c)} cells"></div>`).join('')}</div>`);
-
-  for(let i=0;i<n;i++){
-    const a=localBreaks[i], b=localBreaks[i+1], iso=(isolatedBin===i)?' isolated':'';
-    el.insertAdjacentHTML('beforeend', `<div class="legend-row${iso}" data-bin="${i}" title="${nf(a)} – ${nf(b)}"><span class="swatch" style="background:${localRamp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
-  }
-  el.querySelectorAll('.legend-row[data-bin]').forEach(row=>{
-    row.addEventListener('click', e=>{
-      const bin=parseInt(e.currentTarget.dataset.bin,10);
-      isolatedBin=(isolatedBin===bin)?-1:bin;
-      buildLayer();
-    });
-  });
+  return sel;
 }
-
-function makeStyle(localBreaks, localRamp){
+function makePredicate(sel){
+  function pass(set, value){ if(!set.size) return true; return set.has(value); }
   return (props)=>{
-    const key = props.h3_index || props.h3 || props.id;
-    const agg = key ? aggByHex.get(key) : undefined;
-    const v = agg ? agg.sum : undefined;
-    if(!Number.isFinite(v) || v === 0){ return {opacity:0, fillOpacity:0, interactive:false}; }
-    const idx = computeBinIndex(localBreaks, v);
-    if(isolatedBin>=0 && idx!==isolatedBin){ return {opacity:0.1, color: '#aaa', weight: 0.5, fillOpacity:0}; }
-    const color = localRamp[Math.max(0,Math.min(idx, localRamp.length-1))] || localRamp[0];
-    return {fill:true, fillColor:color, fillOpacity:0.7, color, weight:0.8, interactive:true};
+    // Canonicalize per prop
+    const species = String(props.species||'').trim();
+    const stage = toCanon(props.development_stage,'stage');
+    const sex = toCanon(props.sex,'sex');
+    const season = toCanon(props.season,'season');
+    const year = canonYear(props.year);
+    const month = String(props.month||'').trim();
+
+    const human = {
+      Fishing: toCanon(props.Fishing,'yesno'),
+      Marine_Debris: toCanon(props.Marine_Debris,'yesno'),
+      Aggression: toCanon(props.Agression || props.Aggression,'yesno'),
+      Boat_collision: toCanon(props.Boat_collision,'yesno'),
+      Dredging: toCanon(props.Dredging,'yesno'),
+      Oil: toCanon(props.Oil,'yesno'),
+      Petrol: toCanon(props.Petrol,'yesno')
+    };
+
+    return pass(sel.species, species) &&
+      pass(sel.development_stage, stage) &&
+      pass(sel.sex, sex) &&
+      pass(sel.season, season) &&
+      pass(sel.year, year) &&
+      pass(sel.month, month) &&
+      pass(sel.decomposition_code, String(props.decomposition_code||'')) &&
+      pass(sel.Fishing, human.Fishing) &&
+      pass(sel.Marine_Debris, human.Marine_Debris) &&
+      pass(sel.Aggression, human.Aggression) &&
+      pass(sel.Boat_collision, human.Boat_collision) &&
+      pass(sel.Dredging, human.Dredging) &&
+      pass(sel.Oil, human.Oil) &&
+      pass(sel.Petrol, human.Petrol);
   };
 }
 
-function bindHoverPopups(layer){
-  layer.on('mouseover', e=>{
-    const p = e.layer?.properties||{};
-    const key = p.h3_index || p.h3 || p.id;
-    const agg = key ? aggByHex.get(key) : undefined;
-    if(!agg) return;
-    const html = `<div style="min-width:240px">
-        <div class="kv"><b>Sum (${metricField})</b><span>${nf(agg.sum)}</span></div>
-        <div class="kv"><b>Unique Turtles</b><span>${nf(agg.uidCount)}</span></div>
-        <hr/><small class="muted">H3: ${key}</small>
-      </div>`;
-    L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
-  });
-  layer.on('mouseout',()=>map.closePopup());
+/* ===== Aggregation + breaks ===== */
+const JENKS_CLASSES = 5;
+const EXACT_MAX = 3000;
+const SAMPLE_TARGET = 1500;
+const MAX_TILES_STATS = 90;
+const MAX_HEXES_STATS  = 3000;
+
+function prettyBreaks(min, max){
+  if (!isFinite(min) || !isFinite(max)) return null;
+  if (min===max) {
+    const eps = min===0 ? 1 : Math.abs(min)*0.1;
+    min -= eps; max += eps;
+  }
+  const step=(max-min)/JENKS_CLASSES, arr=[min];
+  for(let i=1;i<=JENKS_CLASSES;i++) arr.push(min+i*step);
+  return arr;
+}
+function quantileBreaks(values){
+  const sorted=values.slice().sort((a,b)=>a-b);
+  return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+}
+function tryJenks(values){
+  const n=values.length;
+  if(n<8) return null;
+  const arr = (n<=EXACT_MAX)? values : reservoir(values, SAMPLE_TARGET);
+  try {
+    const edges = ss.jenks(arr, JENKS_CLASSES);
+    const unique = Array.from(new Set(edges.map(x=>+x.toFixed(10))));
+    if(unique.length < JENKS_CLASSES+1) return null;
+    const min=Math.min(...values), max=Math.max(...values);
+    if(edges[0] > min) edges[0]=min;
+    if(edges[edges.length-1] < max) edges[edges.length-1]=max;
+    return edges;
+  }catch{ return null; }
+}
+function reservoir(values, k){
+  const out=[]; let i=0;
+  for(;i<values.length && i<k;i++) out[i]=values[i];
+  for(;i<values.length;i++){
+    const j = Math.floor(Math.random()*(i+1));
+    if(j<k) out[j]=values[i];
+  }
+  return out;
 }
 
-/* ========= Build / Rebuild Orchestrator ========= */
+/* Hardened binning using frozen breaks */
+function computeBinIndex(v, breaks){
+  if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
+  const n = breaks.length-1; if(n<=0) return -1;
+  if(v < breaks[0]) return 0;
+  if(v > breaks[n]) return n-1;
+  for(let i=0;i<n;i++){
+    const a=breaks[i], b=breaks[i+1];
+    if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
+    if (i===n-1){
+      if(v>=a && v<=b) return i;
+    } else if (v>=a && v<b) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/* ===== Aggregate tiles ===== */
+async function aggregateViewport(pmFile, layerName, predicate, ct){
+  aggByHex.clear();
+  const pm = await getPM(pmFile);
+  const hdr = header || await pm.getHeader();
+  const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
+  const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+
+  const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
+  let stride=1;
+  if(tilesX*tilesY>MAX_TILES_STATS){
+    const factor=Math.ceil(Math.sqrt((tilesX*tilesY)/MAX_TILES_STATS));
+    stride=Math.max(1,factor);
+  }
+
+  let discovered=false, sampleProps=[];
+  async function scan(withStride){
+    const jobs=[];
+    let tilesVisited=0;
+    outer:
+    for(let x=minX;x<=maxX;x+=withStride){
+      for(let y=minY;y<=maxY;y+=withStride){
+        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+          if(!resp || !resp.data) return;
+          const vt = new window.__VT__(new window.__PBF__(resp.data));
+          const lyr = vt.layers[layerName]; if(!lyr) return;
+          tilesVisited++;
+          for(let i=0;i<lyr.length;i++){
+            const f = lyr.feature(i), props = f.properties||{};
+            sampleProps.length<50 && sampleProps.push(props);
+            if(!discovered){ lockMetricField(sampleProps, ct); discovered=true; }
+            if(!predicate(props)) continue;
+            const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
+            const val = Number(props[metricField]);
+            const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
+            const sex = toCanon(props.sex,'sex');
+            const stage = toCanon(props.development_stage,'stage');
+            const season = toCanon(props.season,'season');
+            const year = canonYear(props.year);
+            const month = String(props.month||'').trim();
+
+            let entry = aggByHex.get(key);
+            if(!entry){
+              entry = { sum:0, uids:new Set(), counts:{ sex:{}, stage:{}, season:{}, year:{}, month:{} }, rowCount:0 };
+              aggByHex.set(key, entry);
+            }
+            if(Number.isFinite(val)) entry.sum += val;
+            if(uid) entry.uids.add(uid); else entry.rowCount++;
+            entry.counts.sex[sex] = (entry.counts.sex[sex]||0)+1;
+            entry.counts.stage[stage] = (entry.counts.stage[stage]||0)+1;
+            entry.counts.season[season] = (entry.counts.season[season]||0)+1;
+            if(year) entry.counts.year[year] = (entry.counts.year[year]||0)+1;
+            if(month) entry.counts.month[month] = (entry.counts.month[month]||0)+1;
+          }
+        }).catch(()=>{}));
+        if(aggByHex.size > MAX_HEXES_STATS) break outer;
+      }
+    }
+    await Promise.all(jobs);
+    return tilesVisited;
+  }
+
+  const tiles1 = await scan(stride);
+  if(aggByHex.size===0 && stride>1){
+    // Retry with stride=1 for reliability
+    await scan(1);
+  }
+  return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+}
+
+/* ===== Compute breaks + histogram + top10 ===== */
+function computeLegendCounts(values, breaks){
+  const counts=[0,0,0,0,0];
+  const n=breaks.length-1;
+  for(const v of values){
+    const idx = computeBinIndex(v, breaks);
+    if(idx>=0 && idx<n) counts[idx]++; 
+  }
+  return counts;
+}
+function p90(values){
+  const s=values.slice().sort((a,b)=>a-b);
+  const q=ss.quantileSorted(s,0.9);
+  return Number.isFinite(q)? q : null;
+}
+
+/* ===== Legend render ===== */
+function updateLegendFrozen(cfg){
+  const rows = $('legendRows'); rows.innerHTML='';
+  const brks = cfg.breaks, ramp = cfg.ramp;
+  const n = Math.min(ramp.length, brks.length-1);
+  for(let i=0;i<n;i++){
+    const a=brks[i], b=brks[i+1];
+    const row=document.createElement('div'); row.className='legend-row';
+    const sw=document.createElement('span'); sw.className='swatch'; sw.style.background=ramp[i];
+    sw.title=`${nf(a)} – ${nf(b)} (click to isolate)`;
+    sw.style.cursor='pointer';
+    sw.addEventListener('click',()=>{
+      isolatedBin = (isolatedBin===i ? -1 : i);
+      if(vtLayer) vtLayer.redraw();
+    });
+    const lab=document.createElement('span'); lab.textContent = `${nf(a)} – ${nf(b)}`;
+    row.appendChild(sw); row.appendChild(lab);
+    rows.appendChild(row);
+  }
+  // histogram
+  const hist=$('histogram'); hist.innerHTML='';
+  (cfg.histCounts||[]).forEach((c,i)=>{
+    const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px';
+    if(isolatedBin===i) bar.classList.add('active');
+    hist.appendChild(bar);
+  });
+}
+
+/* ===== Popup aggregation (Unknown excluded from % denominators) ===== */
+function percentParts(counts){
+  const totalKnown = Object.entries(counts).filter(([k])=>k!=='Unknown').reduce((a,[,v])=>a+v,0);
+  const uCount = counts['Unknown']||0;
+  const pct = (k)=> totalKnown>0 ? (100*(counts[k]||0)/totalKnown) : 0;
+  return { totalKnown, unknown:uCount, pct };
+}
+function topMode(countsObj, numeric=false){
+  let bestKey=null, bestCnt=-1;
+  for(const k in countsObj){
+    const cnt=countsObj[k];
+    if(cnt>bestCnt) { bestCnt=cnt; bestKey=k; }
+    else if(cnt===bestCnt){
+      if(numeric){
+        if(+k > +bestKey) bestKey=k;
+      } else {
+        if(String(k) > String(bestKey)) bestKey=k;
+      }
+    }
+  }
+  return { key:bestKey, count:bestCnt };
+}
+
+/* ===== Build / Rebuild ===== */
+function getSelectionsSummaryName(){
+  const sp=getChecked('species');
+  return (sp.length===1)? sp[0] : (sp.length>1? 'Multiple species' : 'All species');
+}
+
+function speciesRamp(){ return currentRamp(); }
+
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
   try{
     const res=$('resolution').value, ct=$('counttype').value;
-    const pmFile=fileFor(res, ct);
-    const predicate = makePredicate();
+    const pmFile = fileFor(res, ct);
 
-    const values = await aggregateAndCollect(pmFile, predicate, ct);
+    // Detect layer + capabilities
+    layerName = await detectLayerName(pmFile);
+    cachedCap = await capabilityProbe(pmFile, layerName);
 
-    if (values.length === 0) {
-      showToast('No data in view—zoom out or change filters.', 4000, 'info');
-      if (vtLayer) map.removeLayer(vtLayer);
-      updateLegend([],[],[]);
+    // Update Years UI range from observed (fallback to 2015–2024)
+    const years = Array.from(cachedCap.observedYears.values()).sort((a,b)=>a-b);
+    const minY = years.length? years[0] : 2015;
+    const maxY = years.length? years[years.length-1] : 2024;
+    yearMinEl.min=String(minY); yearMaxEl.min=String(minY);
+    yearMinEl.max=String(maxY); yearMaxEl.max=String(maxY);
+    if(parseInt(yearMinEl.value,10)<minY) yearMinEl.value=String(minY);
+    if(parseInt(yearMaxEl.value,10)>maxY) yearMaxEl.value=String(maxY);
+    updateYearRangeUI();
+    setYearCheckboxes(minY,maxY);
+    enableYearsWithinRange();
+
+    // Build predicate with capability awareness
+    const sel = readFilterSelections(cachedCap);
+    const predicate = makePredicate(sel);
+
+    // Aggregate viewport
+    const values = await aggregateViewport(pmFile, layerName, predicate, ct);
+
+    if(!values || values.length===0){
+      showToast('No data in view—zoom out or change filters.');
       hideSpinner();
-      return;
+      return; // keep last good layer
     }
 
-    const breaks = computeSafeBreaks(values);
-    const ramp = ramps[getMulti('speciesFilter').length === 1 ? getMulti('speciesFilter')[0] : 'multi'] || ramps['multi'];
+    // Compute breaks
+    let brks = tryJenks(values) || quantileBreaks(values);
+    if(!brks || !Array.isArray(brks) || brks.length<2){
+      const min=Math.min(...values), max=Math.max(...values);
+      brks = prettyBreaks(min, max);
+    }
+    if(!brks || brks.length<2){ showToast('Could not compute breaks. Keeping previous layer.'); hideSpinner(); return; }
 
-    updateLegend(breaks, ramp, values);
-    
+    activeRamp = speciesRamp();
+    jenksBreaks = brks.slice(); // for info only; do not read in renderer
+    histogramCounts = computeLegendCounts(values, brks);
+    top10Threshold = p90(values);
+
+    // Freeze render config to avoid races
+    const cfg = Object.freeze({
+      breaks: brks.slice(),
+      ramp: activeRamp.slice(),
+      opacity: parseFloat($('opacity').value),
+      highlightTop10: $('top10').checked,
+      top10Threshold: top10Threshold,
+      isolatedBin: isolatedBin
+    });
+
+    // Render or re-render layer
     if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+
     vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
       rendererFactory: L.canvas.tile,
-      vectorTileLayerStyles: { 'hexgrid': makeStyle(breaks, ramp) }, // Assumes layer name is 'hexgrid'
       interactive:true,
-      getFeatureId: f => f.properties.h3_index || f.properties.h3 || f.properties.id
+      vectorTileLayerStyles: {
+        [layerName]: (props)=>{
+          const key = props.h3_index || props.h3 || props.id;
+          const agg = key ? aggByHex.get(key) : undefined;
+          const v = agg ? agg.sum : undefined;
+          if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
+
+          const idx = computeBinIndex(v, cfg.breaks);
+          if(cfg.isolatedBin>=0 && idx!==cfg.isolatedBin){
+            return {opacity:0, fillOpacity:0, interactive:false};
+          }
+          const color = cfg.ramp[Math.min(Math.max(idx,0), cfg.ramp.length-1)];
+          let fillOpacity = cfg.opacity;
+          let weight = 0.5, strokeColor = color;
+
+          if(cfg.highlightTop10 && cfg.top10Threshold!=null && v>=cfg.top10Threshold){
+            weight = 1.2; fillOpacity = Math.min(1, cfg.opacity + 0.1);
+          }
+          return {fill:true, fillColor:color, fillOpacity, color:strokeColor, weight};
+        }
+      },
+      getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
     });
-    bindHoverPopups(vtLayer);
+
+    // Hover + click (lock)
+    let locked=false;
+    function showPopup(e){
+      const p = e.layer?.properties || {};
+      const key = p.h3_index || p.h3 || p.id;
+      const agg = key ? aggByHex.get(key) : undefined;
+      const sum = agg ? agg.sum : undefined;
+      const uidCount = agg ? (agg.uids.size || agg.rowCount) : 0;
+      const uidLabel = (agg && agg.uids.size>0) ? 'Unique turtle IDs' : 'Count (row fallback)';
+
+      // Distributions with Unknown excluded from % denom
+      const sSex = percentParts(agg ? agg.counts.sex : {});
+      const sStage = percentParts(agg ? agg.counts.stage : {});
+      const sSeason = percentParts(agg ? agg.counts.season : {});
+      const topYear = topMode(agg ? agg.counts.year : {}, true);
+      const topMonth = topMode(agg ? agg.counts.month : {}, true);
+
+      const spSel=getChecked('species');
+      const spLabel = (spSel.length===1)? spSel[0] : (spSel.length>1? 'Mixed' : 'All species');
+
+      const html = `
+      <div style="min-width:260px">
+        <div class="kv"><b>Species</b><span>${spLabel}</span></div>
+        <div class="kv"><b>Sum (${metricField})</b><span>${Number.isFinite(sum)? nf(sum) : '-'}</span></div>
+        <div class="kv"><b>${uidLabel}</b><span>${nf(uidCount)}</span></div>
+        <hr/>
+        <div class="kv"><b>Sex</b>
+          <span>${sSex.totalKnown? `${nf(sSex.pct('Female').toFixed(1))}% F · ${nf(sSex.pct('Male').toFixed(1))}% M` : '—'}${sSex.unknown? ` · Unknown ${nf(sSex.unknown)}`:''}</span></div>
+        <div class="kv"><b>Stage</b>
+          <span>${sStage.totalKnown? `${nf(sStage.pct('Adult').toFixed(1))}% A · ${nf(sStage.pct('Juvenile').toFixed(1))}% J · ${nf(sStage.pct('Hatchling').toFixed(1))}% H` : '—'}${sStage.unknown? ` · Unknown ${nf(sStage.unknown)}`:''}</span></div>
+        <div class="kv"><b>Season</b>
+          <span>${sSeason.totalKnown? `${nf(sSeason.pct('Summer').toFixed(1))}% Su · ${nf(sSeason.pct('Spring').toFixed(1))}% Sp · ${nf(sSeason.pct('Autumn').toFixed(1))}% Au · ${nf(sSeason.pct('Winter').toFixed(1))}% Wi` : '—'}${sSeason.unknown? ` · Unknown ${nf(sSeason.unknown)}`:''}</span></div>
+        <div class="kv"><b>Top year</b><span>${topYear.key ?? '—'}${topYear.count!=null? ` (${nf(topYear.count)})`:''}</span></div>
+        <div class="kv"><b>Top month</b><span>${topMonth.key ?? '—'}${topMonth.count!=null? ` (${nf(topMonth.count)})`:''}</span></div>
+        <hr/><small class="muted">h3: ${key ?? '-'}</small>
+      </div>`;
+      L.popup({autoPan:true,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+    }
+    vtLayer.on('mouseover', e=>{ if(!locked) showPopup(e); });
+    vtLayer.on('click', e=>{ locked=true; showPopup(e); });
+    map.on('click', ()=>{ locked=false; map.closePopup(); });
+    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ locked=false; map.closePopup(); } });
+
     vtLayer.addTo(map);
+    lastGoodLayer = vtLayer;
+
+    // Legend UI for this frozen cfg
+    updateLegendFrozen({ breaks: cfg.breaks, ramp: cfg.ramp, histCounts: histogramCounts });
 
   }catch(err){
-    console.error('buildLayer error:', err);
-    showToast('Failed to load layer. See console for details.',5000,'error');
+    console.error('buildLayer error', err);
+    showToast('Failed to load layer. Check console for details.');
   }finally{
     hideSpinner();
   }
 }
 
-/* ========= Controls & Initial Load ========= */
+/* ===== Apply / changes ===== */
 $('applyBtn').addEventListener('click',()=>buildLayer());
-$('resetBtn').addEventListener('click',()=>{
-  document.querySelectorAll('#panel select').forEach(s => {
-      if (s.multiple) {
-          Array.from(s.options).forEach(o => o.selected = (o.value === '__ALL__'));
-      } else {
-          s.selectedIndex = 0;
-      }
+$('resolution').addEventListener('change',()=>buildLayer());
+$('counttype').addEventListener('change',()=>buildLayer());
+$('opacity').addEventListener('input',()=>{ if(vtLayer) vtLayer.redraw(); });
+$('top10').addEventListener('change',()=>{ if(vtLayer) vtLayer.redraw(); });
+
+/* ===== Permalink ===== */
+function selectionsToObj(){
+  const obj={
+    z: map.getZoom().toFixed(2),
+    lat: map.getCenter().lat.toFixed(6),
+    lng: map.getCenter().lng.toFixed(6),
+    res: $('resolution').value,
+    ct: $('counttype').value,
+    opacity: $('opacity').value,
+    top10: $('top10').checked? '1':'0',
+    iso: String(isolatedBin),
+    yMin: $('yearMin').value,
+    yMax: $('yearMax').value
+  };
+  const groups=['species','stage','sex','season','year','month','Fishing','Marine_Debris','Aggression','Boat_collision','Dredging','Oil','Petrol','decomposition_code'];
+  groups.forEach(g=>{
+    const arr=getChecked(g);
+    if(arr.length) obj[g]=arr.join(',');
   });
-  document.querySelectorAll('.checkbox-group input[id*="_all"]').forEach(cb => cb.checked = true);
-  document.querySelectorAll('.checkbox-group input:not([id*="_all"])').forEach(cb => cb.checked = false);
-  isolatedBin = -1;
-  buildLayer();
+  return obj;
+}
+function writeHash(){
+  const o=selectionsToObj();
+  const h=new URLSearchParams(o).toString();
+  location.hash=h;
+}
+$('permalink').addEventListener('click',async()=>{
+  writeHash();
+  try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!'); }
+  catch{ showToast('Link updated in address bar.'); }
 });
+function restoreFromHash(){
+  const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get('z')&&h.get('lat')&&h.get('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
+  if(h.get('res')) $('resolution').value=h.get('res');
+  if(h.get('ct')) $('counttype').value=h.get('ct');
+  if(h.get('opacity')) $('opacity').value=h.get('opacity');
+  $('top10').checked = h.get('top10')==='1';
+  isolatedBin = parseInt(h.get('iso')||'-1',10);
+  if(h.get('yMin')) $('yearMin').value=h.get('yMin');
+  if(h.get('yMax')) $('yearMax').value=h.get('yMax');
 
+  function setChecks(group, valstr){
+    if(!valstr) return;
+    const vals=new Set(valstr.split(','));
+    const parentId = ({
+      species:'speciesGroup', stage:'stageGroup', sex:'sexGroup', season:'seasonGroup',
+      Fishing:'humanGroup', Marine_Debris:'humanGroup', Aggression:'humanGroup',
+      Boat_collision:'humanGroup', Dredging:'humanGroup', Oil:'humanGroup', Petrol:'humanGroup',
+      decomposition_code:'decompGroup', year:'yearGroup', month:'monthGroup'
+    }[group]);
+    const boxes = Array.from($(parentId).querySelectorAll(`input[type="checkbox"][data-group="${group}"]`));
+    boxes.forEach(b=>{ b.checked = vals.has(b.value); });
+    syncAllCheckbox($(parentId));
+  }
+  ['species','stage','sex','season','year','month','Fishing','Marine_Debris','Aggression','Boat_collision','Dredging','Oil','Petrol','decomposition_code'].forEach(g=>setChecks(g,h.get(g)||''));
+}
 
+/* ===== Init ===== */
 (function init(){
-  // A simple permalink reader could go here if needed
+  restoreFromHash();
+  updateYearRangeUI();
+  enableYearsWithinRange();
   buildLayer();
 })();
+
+/* ===== Save state on moveend (optional, not intrusive) ===== */
+map.on('moveend', ()=>{ writeHash(); });
+
 </script>
 </body>
 </html>
