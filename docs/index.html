@@ -9,9 +9,11 @@
 <link rel="stylesheet" href="./vendor/leaflet.css"/>
 <script src="./vendor/leaflet.js"></script>
 
-<!-- PMTiles / VectorGrid (bundled with pbf & vector-tile) / Simple-Statistics -->
+<!-- PMTiles / VectorGrid (bundled) / PBF / VectorTile / Simple-Statistics (all local) -->
 <script src="./vendor/pmtiles.js"></script>
 <script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
+<script src="./vendor/pbf.js"></script>
+<script src="./vendor/vector-tile.js"></script>
 <script src="./vendor/simple-statistics.min.js"></script>
 
 <style>
@@ -223,9 +225,11 @@ details .content{padding:10px 12px}
   if(!window.L) missing.push('leaflet.js');
   if(!window.pmtiles) missing.push('pmtiles.js');
   if(!L || !L.vectorGrid || !L.vectorGrid.protobuf) missing.push('Leaflet.VectorGrid.bundled.js');
+  if(!window.Pbf) missing.push('pbf.js');
+  if(!window.VectorTile) missing.push('vector-tile.js');
   if(!window.ss) missing.push('simple-statistics.min.js');
   if(missing.length){
-    alert('Missing vendor files: ' + missing.join(', ') + '\\nCheck docs/vendor/ paths and filenames.');
+    alert('Missing vendor files: ' + missing.join(', ') + '\nCheck docs/vendor/ paths and filenames.');
   }
 })();
 
@@ -369,8 +373,8 @@ function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles`; }
 
 /* ===== State ===== */
 let vtLayer=null, currentPMFile='', layerName='', header=null;
-const aggByHex = new Map();           // h3_index -> {sum, count}
-let metricField = 'sum_val';           // runtime discovery
+const aggByHex = new Map();
+let metricField = 'sum_val';
 
 /* ===== Detect layer name safely ===== */
 async function detectLayerName(pmFile){
@@ -445,7 +449,6 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
 
-  // Cap stats zoom to reduce tile count dramatically
   const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
   const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
 
@@ -478,7 +481,7 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
           aggByHex.set(key, entry);
         }
       }).catch(e=>console.warn('tile decode skipped',e)));
-      if(aggByHex.size > MAX_HEXES_STATS) break outer;   // early stop
+      if(aggByHex.size > MAX_HEXES_STATS) break outer;
     }
   }
   await Promise.all(jobs);
