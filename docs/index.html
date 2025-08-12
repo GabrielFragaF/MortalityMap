@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="./vendor/leaflet.css"/>
 <script src="./vendor/leaflet.js"></script>
 
-<!-- PMTiles / VectorGrid (bundled) / PBF / VectorTile / Simple-Statistics (all local) -->
+<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (all local, CSP-safe) -->
 <script src="./vendor/pmtiles.js"></script>
 <script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
 <script src="./vendor/pbf.js"></script>
@@ -219,43 +219,33 @@ details .content{padding:10px 12px}
 <div id="toast"></div>
 
 <script>
-/* ===== Vendor globals adapter (handles different builds) ===== */
-function getDecoders(){
-  // VectorTile: try common globals from different bundlers
-  const VT =
-    (window.VectorTile) ||
-    (window.vectorTile && window.vectorTile.VectorTile) ||
-    (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) ||
-    null;
+/* ========= Decoder shim (handles any build shape) ========= */
+(function ensureDecoders(){
+  // Try all the common global names
+  var VT = (window.VectorTile) ||
+           (window.vectorTile && window.vectorTile.VectorTile) ||
+           (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) ||
+           null;
 
-  // Pbf: UMD build usually exposes window.pbf.Pbf; some builds expose window.Pbf
-  const PBF =
-    (window.Pbf) ||
-    (window.pbf && window.pbf.Pbf) ||
-    null;
+  var PBF = (window.Pbf) ||
+            (window.pbf && window.pbf.Pbf) ||
+            null;
 
-  return { VT, PBF };
-}
+  // Expose shims so old code paths (that use VectorTile/Pbf directly) still work
+  if (!window.VectorTile && VT) window.VectorTile = VT;
+  if (!window.Pbf && PBF) window.Pbf = PBF;
 
-/* ===== Quick vendor self-check ===== */
-(function(){
-  const missing=[];
-  if(!window.L) missing.push('leaflet.js');
-  if(!window.pmtiles) missing.push('pmtiles.js');
-  if(!L || !L.vectorGrid || !L.vectorGrid.protobuf) missing.push('Leaflet.VectorGrid.bundled.js');
-  if(!window.ss) missing.push('simple-statistics.min.js');
+  // Save for deliberate use too
+  window.__VT__ = VT || window.VectorTile || null;
+  window.__PBF__ = PBF || window.Pbf || null;
 
-  const { VT, PBF } = getDecoders();
-  if(!VT) missing.push('vector-tile.js (VectorTile)');
-  if(!PBF) missing.push('pbf.js (Pbf)');
-
-  if(missing.length){
-    alert(
-      'Missing vendor files / globals: ' + missing.join(', ') +
-      '\n\nOpen these URLs to confirm 200 OK:\n' +
-      location.origin + location.pathname.replace(/[^/]+$/, '') + 'vendor/vector-tile.js\n' +
-      location.origin + location.pathname.replace(/[^/]+$/, '') + 'vendor/pbf.js'
-    );
+  // Quick visible hint if missing
+  if (!window.__VT__ || !window.__PBF__) {
+    var msg = [];
+    if (!window.__VT__) msg.push('vector-tile.js');
+    if (!window.__PBF__) msg.push('pbf.js');
+    console.warn('Decoder globals missing:', msg.join(', '));
+    // We'll also toast later when trying to aggregate.
   }
 })();
 
@@ -404,7 +394,6 @@ let metricField = 'sum_val';
 
 /* ===== Detect layer name safely ===== */
 async function detectLayerName(pmFile){
-  const { VT, PBF } = getDecoders();
   try{
     const pm = await getPM(pmFile);
     header = await pm.getHeader();
@@ -416,15 +405,15 @@ async function detectLayerName(pmFile){
         const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
       }
     }
-    // if decoders are unavailable, skip probing tiles (we'll fall back)
-    if(!VT || !PBF) throw new Error('VectorTile/Pbf globals not available to probe tiles.');
+    // Probe a visible tile, but only if decoders are present
+    if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf globals not available to probe tiles.');
     const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
     const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
     for(let x=minX;x<=maxX;x++){
       for(let y=minY;y<=maxY;y++){
         const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
         if(!r || !r.data) continue;
-        const vt = new VT(new PBF(r.data));
+        const vt = new window.__VT__(new window.__PBF__(r.data));
         const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
       }
     }
@@ -473,9 +462,8 @@ function discoverMetricField(sampleProps, ct){
   return 'sum_val';
 }
 async function aggregateAndCollect(pmFile, layerName, predicate, ct){
-  const { VT, PBF } = getDecoders();
-  if(!VT || !PBF){
-    showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks. Check docs/vendor/ files.');
+  if(!window.__VT__ || !window.__PBF__){
+    showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks. Verify docs/vendor/vector-tile.js & pbf.js.');
     return [];
   }
   aggByHex.clear();
@@ -499,7 +487,7 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
     for(let y=minY;y<=maxY;y+=stride){
       jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
         if(!resp || !resp.data) return;
-        const vt = new VT(new PBF(resp.data));
+        const vt = new window.__VT__(new window.__PBF__(resp.data));
         const lyr = vt.layers[layerName]; if(!lyr) return;
         for(let i=0;i<lyr.length;i++){
           const props = lyr.feature(i).properties||{};
@@ -589,19 +577,17 @@ function bindHoverPopups(layer){
 }
 
 /* ===== Build / Rebuild ===== */
-let predicate=null;
-
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
   try{
     const res=$('resolution').value, ct=$('counttype').value;
     const pmFile = fileFor(res, ct);
     layerName = await detectLayerName(pmFile);
-    predicate = makePredicate();
+    const predicate = makePredicate();
 
     const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
     if(!values.length){
-      showToast('No features matched the current view/filters (or decoders missing).');
+      showToast('No features matched the current view/filters (or vector-tile/pbf decoders missing).');
     }
     jenksBreaks = await computeBreaksFromAggregates(values);
     activeRamp = currentRamp();
