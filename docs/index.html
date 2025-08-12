@@ -8,89 +8,91 @@
 <!-- Prevent favicon 404 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
 
-<!-- Local vendor libs (CSP-safe; no CDNs / ESM) -->
-<link rel="stylesheet" href="./vendor/leaflet.css"/>
-<script src="./vendor/leaflet.js"></script>
-<script src="./vendor/pmtiles.js"></script>
-<script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
-<script src="./vendor/pbf.js"></script>
-<script src="./vendor/vector-tile.js"></script>
-<script src="./vendor/simple-statistics.min.js"></script>
+<!-- Leaflet (local, CSP-safe) -->
+<link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
+<script src="./vendor/leaflet.js?v=20250812"></script>
+
+<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local, CSP-safe) -->
+<script src="./vendor/pmtiles.js?v=20250812"></script>
+<script src="./vendor/Leaflet.VectorGrid.bundled.js?v=20250812"></script>
+<script src="./vendor/pbf.js?v=20250812"></script>
+<script src="./vendor/vector-tile.js?v=20250812"></script>
+<script src="./vendor/simple-statistics.min.js?v=20250812"></script>
 
 <style>
 :root{
-  --bg:#0b1220; --panel:#ffffff; --panel-weak:#f8fafc; --text:#0f172a; --muted:#64748b;
-  --ring:#93c5fd; --shadow:0 10px 30px rgba(2,6,23,.25); --accent:#0ea5e9; --warn:#e11d48;
+  --bg:#0b1220; --panel:#fff; --panel-weak:#f8fafc; --text:#0f172a; --muted:#64748b;
+  --ring:#93c5fd; --shadow:0 10px 30px rgba(2,6,23,.25); --primary:#0ea5e9; --danger:#e11d48;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
 #map{position:absolute;inset:0}
 
 /* Panel */
-#panel{position:absolute;top:14px;left:14px;z-index:1000;width:370px;max-height:90vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
+#panel{
+  position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:90vh;overflow:auto;
+  background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0
+}
 #panel.collapsed{height:46px;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak);position:sticky;top:0;z-index:2}
+.topbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
 .topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
 .iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
 .iconbtn:hover{filter:brightness(0.98)}
 .section{padding:10px 14px}
-.row{margin-bottom:10px}
-label{display:block;font-weight:700;margin:6px 0;font-size:13px}
-select,input[type="range"]{width:100%}
+.row{margin-bottom:12px}
+label{display:block;font-weight:700;margin:6px 0 6px;font-size:13px}
+select, input[type="range"]{width:100%}
 select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
-select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
-details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
-details+details{margin-top:10px}
-summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px;position:sticky;top:46px;z-index:1}
-summary::-webkit-details-marker{display:none}
-details .content{padding:10px 12px}
-.controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
-#resetBtn,#applyBtn{flex:1;border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
-#applyBtn{background:var(--accent)}
-#resetBtn{background:var(--warn)}
+select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.details{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin:10px 0}
+.details .sum{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px}
+.details .content{padding:6px 12px 10px}
+.controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:8px}
+#resetBtn,#applyBtn{flex:1;background:var(--primary);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn{background:var(--danger)}
 .help{font-size:12px;color:var(--muted);margin-top:4px}
 
-/* Legend bottom-right */
-#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px}
-.leghdr{font-weight:800;margin-bottom:6px}
-.legend-hint{color:var(--muted);font-size:11px;margin-top:4px}
-.legend-row{display:flex;align-items:center;margin:4px 0;gap:8px;cursor:pointer}
-.legend-row:hover .swatch{outline:2px solid #334155}
-.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8}
-.hist{display:flex;gap:3px;margin-top:6px;align-items:flex-end;height:32px}
-.hist div{flex:1;min-width:6px;background:#cbd5e1;border-radius:2px}
-.hist div.active{background:#94a3b8}
+/* Checkbox groups */
+.group{border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+.group + .group{margin-top:8px}
+.group .gtitle{font-weight:800;margin-bottom:4px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.opt{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:8px}
+.opt input{accent-color:var(--primary)}
+.smallgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.yeargrid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.mgrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
 
-/* Layer opacity + highlight controls */
-#layerControls{display:flex;gap:10px;align-items:center;margin-top:6px}
-small.muted{color:var(--muted);}
+/* Legend bottom-right */
+#legend{
+  position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);
+  border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px
+}
+.leghdr{font-weight:800;margin-bottom:8px}
+.legend-row{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+.swatch{width:26px;height:12px;border-radius:3px;border:1px solid #94a3b8;margin-right:8px;display:inline-block}
+.hist{display:flex;gap:4px;margin-top:8px;align-items:flex-end;height:42px}
+.hist .bar{flex:1;border-radius:4px;background:#cbd5e1}
+.hist .bar.active{outline:2px solid #0f172a}
+.legend-controls{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.legend-controls .row{margin:0}
 
 /* Spinner + toast */
 #spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
 #toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:320px}
 
-/* Popup & hover polish */
+/* Popup / hover */
 .leaflet-popup-content{margin:8px 12px}
 .kv{display:flex;justify-content:space-between;gap:10px}
 .kv b{color:#0f172a}
-.locked-outline{filter:drop-shadow(0 0 4px rgba(14,165,233,.9))}
-.hover-outline{filter:drop-shadow(0 0 3px rgba(2,6,23,.6))}
-
-/* Year range slider UI */
-.range-wrap{margin-top:6px}
-.range-labels{display:flex;justify-content:space-between;font-size:12px;color:#475569}
-.range-values{display:flex;justify-content:space-between;font-weight:700;margin-top:4px}
-.range-row{display:flex;gap:8px;align-items:center}
-.range-row input[type="range"]{accent-color:var(--accent)}
-.range-reset{margin-top:6px;display:flex;justify-content:flex-end}
-.range-reset button{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;cursor:pointer}
-
+small.muted{color:#64748b}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
-<!-- Panel -->
+<!-- Filter Panel -->
 <div id="panel">
   <div class="topbar">
     <h1>Sea Turtle Mortality</h1>
@@ -101,19 +103,20 @@ small.muted{color:var(--muted);}
   </div>
 
   <div class="section">
+    <!-- Resolution relabeled to grid size (values kept) -->
     <div class="row">
-      <label for="resolution">Resolution (H3)</label>
+      <label for="resolution">Grid cell size (H3)</label>
       <select id="resolution">
-        <option value="r3" selected>r3</option>
-        <option value="r4">r4</option>
-        <option value="r5">r5</option>
-        <option value="r6">r6</option>
+        <option value="r3" selected>≈ 60 km edge (r3)</option>
+        <option value="r4">≈ 22.6 km (r4)</option>
+        <option value="r5">≈ 8.6 km (r5)</option>
+        <option value="r6">≈ 3.2 km (r6)</option>
       </select>
-      <div class="help">Starts at r3 for speed; switch to r6 for detail.</div>
+      <div class="help">Starts at r3 for speed; r6 shows the finest details.</div>
     </div>
 
     <div class="row">
-      <label for="counttype">Count Type</label>
+      <label for="counttype">Count type</label>
       <select id="counttype">
         <option value="weight" selected>Mortality position (weight)</option>
         <option value="new_weight">Mortality position (new_weight)</option>
@@ -123,139 +126,75 @@ small.muted{color:var(--muted);}
       </select>
     </div>
 
-    <details open>
-      <summary>Species & Stage</summary>
+    <!-- Species / Stage / Sex -->
+    <div class="group" id="speciesGroup">
+      <div class="gtitle">Species</div>
+      <div class="opts" id="speciesOpts"></div>
+      <div class="hint">Pick any combination; “(All)” selects everything.</div>
+    </div>
+
+    <div class="group" id="stageGroup">
+      <div class="gtitle">Development stage</div>
+      <div class="opts smallgrid" id="stageOpts"></div>
+    </div>
+
+    <div class="group" id="sexGroup">
+      <div class="gtitle">Sex</div>
+      <div class="opts smallgrid" id="sexOpts"></div>
+    </div>
+
+    <!-- Human interactions -->
+    <div class="details">
+      <div class="sum"><span>Human interactions</span></div>
       <div class="content">
-        <div class="row">
-          <label for="speciesFilter">Species</label>
-          <select id="speciesFilter" multiple size="6">
-            <option value="__ALL__" selected>(All)</option>
-            <option value="Caretta caretta">Caretta caretta</option>
-            <option value="Chelonia mydas">Chelonia mydas</option>
-            <option value="Dermochelys coriacea">Dermochelys coriacea</option>
-            <option value="Eretmochelys imbricata">Eretmochelys imbricata</option>
-            <option value="Lepidochelys olivacea">Lepidochelys olivacea</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="stageFilter">Development stage</label>
-          <select id="stageFilter" multiple size="6">
-            <option value="__ALL__" selected>(All)</option>
-            <option value="Adult">Adult</option>
-            <option value="Juvenile">Juvenile</option>
-            <option value="Hatchling">Hatchling</option>
-            <option value="Unknown">Unknown</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="sexFilter">Sex</label>
-          <select id="sexFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option>
-            <option value="Female">Female</option>
-            <option value="Male">Male</option>
-            <option value="Unknown">Unknown</option>
-          </select>
-        </div>
+        <div class="group" id="FishingGroup"><div class="gtitle">Fishing</div><div class="opts smallgrid" id="FishingOpts"></div></div>
+        <div class="group" id="Marine_DebrisGroup"><div class="gtitle">Marine debris</div><div class="opts smallgrid" id="Marine_DebrisOpts"></div></div>
+        <div class="group" id="AgressionGroup"><div class="gtitle">Aggression</div><div class="opts smallgrid" id="AgressionOpts"></div></div>
+        <div class="group" id="Boat_collisionGroup"><div class="gtitle">Boat collision</div><div class="opts smallgrid" id="Boat_collisionOpts"></div></div>
+        <div class="group" id="DredgingGroup"><div class="gtitle">Dredging</div><div class="opts smallgrid" id="DredgingOpts"></div></div>
+        <div class="group" id="OilGroup"><div class="gtitle">Oil</div><div class="opts smallgrid" id="OilOpts"></div></div>
+        <div class="group" id="PetrolGroup"><div class="gtitle">Petrol</div><div class="opts smallgrid" id="PetrolOpts"></div></div>
       </div>
-    </details>
+    </div>
 
-    <details>
-      <summary>Human interactions</summary>
+    <!-- Environment & time -->
+    <div class="details">
+      <div class="sum"><span>Environment & time</span></div>
       <div class="content">
-        <!-- Keeping canonical Yes/No only; internal predicate maps PT variants -->
-        <div class="row"><label for="FishingFilter">Fishing</label>
-          <select id="FishingFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-        <div class="row"><label for="Marine_DebrisFilter">Marine Debris</label>
-          <select id="Marine_DebrisFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-        <div class="row"><label for="AgressionFilter">Aggression</label>
-          <select id="AgressionFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-        <div class="row"><label for="Boat_collisionFilter">Boat collision</label>
-          <select id="Boat_collisionFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-        <div class="row"><label for="DredgingFilter">Dredging</label>
-          <select id="DredgingFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-        <div class="row"><label for="OilFilter">Oil</label>
-          <select id="OilFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-        <div class="row"><label for="PetrolFilter">Petrol</label>
-          <select id="PetrolFilter" multiple size="3">
-            <option value="__ALL__" selected>(All)</option><option>Yes</option><option>No</option>
-          </select>
-        </div>
-      </div>
-    </details>
-
-    <details>
-      <summary>Environment & time</summary>
-      <div class="content">
-        <div class="row">
-          <label for="decompFilter">Decomposition code</label>
-          <select id="decompFilter" multiple size="6">
-            <option value="__ALL__" selected>(All)</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-          </select>
+        <div class="group" id="seasonGroup">
+          <div class="gtitle">Season</div>
+          <div class="opts smallgrid" id="seasonOpts"></div>
         </div>
 
-        <div class="row">
-          <label for="seasonFilter">Season</label>
-          <select id="seasonFilter" multiple size="5">
-            <option value="__ALL__" selected>(All)</option>
-            <option>Autumn</option><option>Spring</option><option>Summer</option><option>Winter</option>
-          </select>
+        <div class="group" id="decompGroup">
+          <div class="gtitle">Decomposition code</div>
+          <div class="opts smallgrid" id="decompOpts"></div>
         </div>
 
-        <div class="row">
-          <label>Year range</label>
-          <div class="range-wrap">
-            <div class="range-row">
-              <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
-              <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
-            </div>
-            <div class="range-values"><span id="yearMinLabel">2015</span><span id="yearMaxLabel">2024</span></div>
-            <div class="range-reset"><button id="yearReset" type="button">Reset range</button></div>
-            <div class="help">Range only disables years outside; it won’t remove them.</div>
+        <!-- Year slider + checkboxes -->
+        <div class="group">
+          <div class="gtitle">Year range</div>
+          <div class="row" style="display:flex;gap:8px;align-items:center">
+            <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1" />
+            <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1" />
+          </div>
+          <div id="yearLabel" class="hint">2015 – 2024</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button id="resetYearBtn" class="iconbtn" type="button">Reset range</button>
           </div>
         </div>
 
-        <div class="row">
-          <label for="yearFilter">Year</label>
-          <select id="yearFilter" multiple size="10">
-            <option value="__ALL__" selected>(All)</option>
-            <option>2015</option><option>2016</option><option>2017</option><option>2018</option><option>2019</option>
-            <option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option>
-          </select>
+        <div class="group" id="yearGroup">
+          <div class="gtitle">Year</div>
+          <div class="opts yeargrid" id="yearOpts"></div>
+          <div class="hint">Years outside the slider range are disabled automatically.</div>
         </div>
 
-        <div class="row">
-          <label for="monthFilter">Month</label>
-          <select id="monthFilter" multiple size="13">
-            <option value="__ALL__" selected>(All)</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-            <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
-          </select>
+        <div class="group" id="monthGroup">
+          <div class="gtitle">Month</div>
+          <div class="opts mgrid" id="monthOpts"></div>
         </div>
       </div>
-    </details>
-
-    <div id="layerControls" class="row">
-      <label style="flex:1">Opacity <input id="opacitySlider" type="range" min="0.30" max="0.90" step="0.01" value="0.65"></label>
-      <label style="display:flex;align-items:center;gap:6px"><input id="top10Toggle" type="checkbox"> Top 10%</label>
     </div>
 
     <div class="controls-footer">
@@ -267,762 +206,873 @@ small.muted{color:var(--muted);}
 
 <!-- Legend -->
 <div id="legend"></div>
-
-<!-- Overlays -->
 <div id="spinner">Loading…</div>
 <div id="toast"></div>
 
 <script>
-/* ========= Decoder shim (handles any build shape) ========= */
-(function ensureDecoders(){
-  var VT = (window.VectorTile) ||
-           (window.vectorTile && window.vectorTile.VectorTile) ||
-           (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) || null;
+(function(){
+  "use strict";
 
-  var PBF = (window.Pbf) ||
-            (window.pbf && window.pbf.Pbf) || null;
+  /* ===== Decoder shim (works with browserified/UMD builds) ===== */
+  (function ensureDecoders(){
+    var VT = (window.VectorTile) ||
+             (window.vectorTile && window.vectorTile.VectorTile) ||
+             (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) || null;
+    var PBF = (window.Pbf) || (window.pbf && window.pbf.Pbf) || null;
+    if (!window.VectorTile && VT) window.VectorTile = VT;
+    if (!window.Pbf && PBF) window.Pbf = PBF;
+    window.__VT__ = VT || window.VectorTile || null;
+    window.__PBF__ = PBF || window.Pbf || null;
+    if (!window.__VT__ || !window.__PBF__) {
+      console.warn('Decoder globals missing:',
+        (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
+      );
+    }
+  })();
 
-  if (!window.VectorTile && VT) window.VectorTile = VT;
-  if (!window.Pbf && PBF) window.Pbf = PBF;
+  /* ===== Map ===== */
+  const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-  window.__VT__ = VT || window.VectorTile || null;
-  window.__PBF__ = PBF || window.Pbf || null;
+  /* ===== UI helpers ===== */
+  const $ = id => document.getElementById(id);
+  const panel = $('panel');
+  const spinner=$('spinner'), toast=$('toast'), legendEl=$('legend');
+  const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
+  const hideSpinner = () => { spinner.style.display='none'; };
+  const showToast=(m,ms=5000)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
+  $('collapseBtn').addEventListener('click',()=>panel.classList.toggle('collapsed'));
+  // Mobile nicety: first map tap collapses panel
+  let collapsedOnce=false;
+  map.on('click',()=>{ if(window.innerWidth<768 && !collapsedOnce){ panel.classList.add('collapsed'); collapsedOnce=true; }});
 
-  if (!window.__VT__ || !window.__PBF__) {
-    console.warn('Decoder globals missing:',
-      (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
-    );
+  // Always hide spinner even if unexpected error bubbles up
+  window.addEventListener('error',()=>hideSpinner());
+  window.addEventListener('unhandledrejection',()=>hideSpinner());
+
+  /* ===== Constants / color ramps ===== */
+  const CACHE_BUSTER = '20250812'; // helps avoid Chrome range-cache errors
+  const MIN_YEAR = 2015, MAX_YEAR = 2024;
+
+  const ramps={
+    'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
+    'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
+    'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
+    'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
+    'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
+    'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
+  };
+
+  const metricCandidatesByCT = {
+    weight: ['weight','sum_val'],
+    new_weight: ['new_weight','sum_val'],
+    new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
+    new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
+    new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
+  };
+
+  const idCandidates = ['turtle_id','individual_id','uid','id'];
+
+  /* ===== pmtiles:// fetch shim + PM cache ===== */
+  const origFetch = window.fetch.bind(window);
+  const pmCache = new Map();
+  async function getPM(archive){
+    const u = new URL(archive, new URL('.', location.href)).toString();
+    if(pmCache.has(u)) return pmCache.get(u);
+    const inst = new pmtiles.PMTiles(u);
+    pmCache.set(u, inst);
+    return inst;
   }
-})();
+  window.fetch = async (input, init) => {
+    if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+      const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+      if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
+      const [_, archive, z, x, y] = m;
+      try{
+        const pm = await getPM(archive);
+        const t  = await pm.getZxy(+z,+x,+y);
+        if(!t || !t.data){ return new Response(null,{status:204}); }
+        return new Response(t.data);
+      }catch(e){
+        console.warn('Tile fetch failed for', archive, z, x, y, e);
+        return new Response(null,{status:204});
+      }
+    }
+    return origFetch(input, init);
+  };
 
-/* ===== Map ===== */
-const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
+  /* ===== Helpers ===== */
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+  function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+  function tileRangeForBounds(b,z){
+    const nw=b.getNorthWest(), se=b.getSouthEast();
+    let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+    let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+    if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+    const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+    return {minX,maxX,minY,maxY};
+  }
+  const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+  function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles?v=${CACHE_BUSTER}`; }
+  const nf=(v)=>{ if(!isFinite(v)) return '-'; if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
-/* ===== UI helpers ===== */
-const $ = id => document.getElementById(id);
-const spinner=$('spinner'), toast=$('toast');
-const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
-const hideSpinner = () => { spinner.style.display='none'; };
-const showToast=(m,ms=4500)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
-$('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('collapsed'));
-window.addEventListener('error',()=>hideSpinner());
-window.addEventListener('unhandledrejection',()=>hideSpinner());
+  /* ===== Canonicalization ===== */
+  const deaccent = s => (s==null?'':String(s)).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const lower = s => deaccent(s).toLowerCase().trim();
 
-/* Collapse panel on map tap (mobile nicety) */
-map.on('click', ()=>{ if(!$('panel').classList.contains('collapsed')) $('panel').classList.add('collapsed'); });
+  function canonSeason(v){
+    const x=lower(v);
+    if(!x) return 'Unknown';
+    if(x==='outono') return 'Autumn';
+    if(x==='primavera') return 'Spring';
+    if(x==='verao' || x==='verão') return 'Summer';
+    if(x==='inverno') return 'Winter';
+    if(['autumn','spring','summer','winter'].includes(x)) return x[0].toUpperCase()+x.slice(1);
+    return 'Unknown';
+  }
+  function canonSex(v){
+    const x=lower(v);
+    if(!x || x==='indefinido' || x==='unknown') return 'Unknown';
+    if(x==='femea' || x==='female') return 'Female';
+    if(x==='macho' || x==='male') return 'Male';
+    return 'Unknown';
+  }
+  function canonStage(v){
+    const x=lower(v);
+    if(!x || x==='indeterminado' || x==='unknown') return 'Unknown';
+    if(x==='adulto' || x==='adult') return 'Adult';
+    if(x==='juvenil' || x==='juvenile') return 'Juvenile';
+    if(x==='filhote' || x==='hatchling') return 'Hatchling';
+    return 'Unknown';
+  }
+  function canonYesNo(v){
+    const x=lower(v);
+    if(x==='sim' || x==='yes') return 'Yes';
+    if(x==='nao' || x==='não' || x==='no') return 'No';
+    return ''; // treat unknown/empty as not set
+  }
+  function canonYear(v){
+    if(v==null) return NaN;
+    const n = Number(String(v).replace(/\.0$/,''));
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function canonMonth(v){
+    const n = Number(v);
+    return (Number.isFinite(n) && n>=1 && n<=12) ? n : NaN;
+  }
 
-/* (All) enforcement for multi-selects */
-function enforceAllOption(e){
-  const sel=e.target; if(!sel.multiple) return;
-  const all = Array.from(sel.options).find(o=>o.value==='__ALL__');
-  const chosen = Array.from(sel.selectedOptions).map(o=>o.value);
-  if(chosen.length===0){ all.selected=true; }
-  else if(chosen.includes('__ALL__') && chosen.length>1){
-    Array.from(sel.options).forEach(o=>o.selected=false); all.selected=true;
-  }else if(!chosen.includes('__ALL__') && all.selected){ all.selected=false; }
-}
-document.querySelectorAll('#panel select[multiple]').forEach(s=>s.addEventListener('change',enforceAllOption));
+  /* ===== Checkbox UI builders ===== */
+  function makeGroup(containerId, name, values, defaults){ // values: [{label,value}], defaults Set of values initially checked
+    const cont = $(containerId);
+    const optsDiv = cont.querySelector('.opts') || cont;
+    optsDiv.innerHTML='';
+    // "(All)" master
+    const allId = `${name}__ALL__`;
+    const wrapAll = document.createElement('label'); wrapAll.className='opt';
+    wrapAll.innerHTML = `<input type="checkbox" id="${allId}" data-name="${name}" value="__ALL__" checked><span>(All)</span>`;
+    optsDiv.appendChild(wrapAll);
 
-/* Option helpers */
-const getMulti = id => {
-  const vals = Array.from($(id).selectedOptions||[]).map(o=>o.value);
-  return (vals.length===0 || vals.includes('__ALL__')) ? [] : vals;
-};
-const clearAllSelects = ()=>{
-  document.querySelectorAll('#panel select').forEach(s=>{
-    if(s.multiple){
-      Array.from(s.options).forEach(o=>o.selected=false);
-      const all = Array.from(s.options).find(o=>o.value==='__ALL__'); if(all) all.selected=true;
-    }else s.selectedIndex=0;
+    values.forEach((o,i)=>{
+      const id=`${name}_${i}`;
+      const el = document.createElement('label'); el.className='opt';
+      const checked = defaults ? defaults.has(o.value) : false;
+      el.innerHTML = `<input type="checkbox" id="${id}" data-name="${name}" value="${o.value}" ${checked?'checked':''}><span>${o.label}</span>`;
+      optsDiv.appendChild(el);
+    });
+
+    // All-logic: if All checked => check all; if any specific toggled => uncheck All (unless none selected)
+    optsDiv.addEventListener('change', (e)=>{
+      const t = e.target; if(t.tagName!=='INPUT') return;
+      const groupInputs = Array.from(optsDiv.querySelectorAll(`input[data-name="${name}"]`));
+      const allBox = optsDiv.querySelector(`#${allId}`);
+      if(t.value==='__ALL__'){
+        const on = allBox.checked;
+        groupInputs.forEach(inp=>{ if(inp!==allBox){ inp.checked = on; inp.disabled=false; } });
+      }else{
+        if(allBox.checked){ allBox.checked=false; }
+        const anyChecked = groupInputs.some(inp=> inp!==null && inp.value!=='__ALL__' && inp.checked);
+        if(!anyChecked) allBox.checked=true; // revert to All if none
+      }
+    });
+  }
+  function getChecked(name){
+    const inputs = Array.from(document.querySelectorAll(`input[data-name="${name}"]`));
+    const vals = inputs.filter(i=>i.checked && i.value!=='__ALL__').map(i=>i.value);
+    return vals; // [] => treat as All
+  }
+  function setChecked(name, values){
+    const set = new Set(values);
+    const inputs = Array.from(document.querySelectorAll(`input[data-name="${name}"]`));
+    let any=false;
+    inputs.forEach(i=>{
+      if(i.value==='__ALL__') return;
+      i.checked = set.has(i.value);
+      if(i.checked) any=true;
+    });
+    const allBox = inputs.find(i=>i.value==='__ALL__');
+    if(allBox) allBox.checked = !any;
+  }
+
+  // Build groups
+  const speciesVals = [
+    {label:'Caretta caretta', value:'Caretta caretta'},
+    {label:'Chelonia mydas', value:'Chelonia mydas'},
+    {label:'Dermochelys coriacea', value:'Dermochelys coriacea'},
+    {label:'Eretmochelys imbricata', value:'Eretmochelys imbricata'},
+    {label:'Lepidochelys olivacea', value:'Lepidochelys olivacea'}
+  ];
+  makeGroup('speciesOpts','species',speciesVals);
+
+  const stageVals = [
+    {label:'Adult', value:'Adult'},
+    {label:'Juvenile', value:'Juvenile'},
+    {label:'Hatchling', value:'Hatchling'},
+    {label:'Unknown', value:'Unknown'}
+  ];
+  makeGroup('stageOpts','stage',stageVals);
+
+  const sexVals = [
+    {label:'Female', value:'Female'},
+    {label:'Male', value:'Male'},
+    {label:'Unknown', value:'Unknown'}
+  ];
+  makeGroup('sexOpts','sex',sexVals);
+
+  const seasonVals = [
+    {label:'Autumn', value:'Autumn'},
+    {label:'Spring', value:'Spring'},
+    {label:'Summer', value:'Summer'},
+    {label:'Winter', value:'Winter'}
+  ];
+  makeGroup('seasonOpts','season',seasonVals);
+
+  const yesNoVals = [{label:'Yes', value:'Yes'},{label:'No', value:'No'}];
+  ['Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol'].forEach(k=>{
+    makeGroup(`${k}Opts`,k,yesNoVals);
   });
-  $('yearMin').value='2015'; $('yearMax').value='2024';
-  $('yearMinLabel').textContent='2015'; $('yearMaxLabel').textContent='2024';
-  updateYearDisabled();
-};
-const nf=(v)=>{
-  if(!Number.isFinite(v)) return '-';
-  if(v===0) return '0';
-  const abs=Math.abs(v);
-  const digits=abs<1?4:abs<10?3:2;
-  return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v);
-};
 
-/* ===== Color ramps ===== */
-const ramps={
-  'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
-  'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
-  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
-  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
-  'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
-  'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
-};
-function currentRamp(){
-  const sp=getMulti('speciesFilter');
-  return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi'];
-}
+  const decompVals = ['1','2','3','4','5'].map(x=>({label:x,value:x}));
+  makeGroup('decompOpts','decomposition_code',decompVals);
 
-/* ===== Canonicalization ===== */
-const PT2EN = {
-  // Season
-  'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter',
-  // Sex
-  'femea':'Female','fêmea':'Female','macho':'Male','indefinido':'Unknown','unknown':'Unknown',
-  // Stage
-  'adulto':'Adult','juvenil':'Juvenile','filhote':'Hatchling','indeterminado':'Unknown'
-};
-function canonSeason(v){ if(v==null) return ''; const s=String(v).trim().toLowerCase(); return PT2EN[s] || capitalize(s); }
-function canonSex(v){ if(v==null) return ''; const s=String(v).trim().toLowerCase(); return PT2EN[s] || capitalize(s); }
-function canonStage(v){ if(v==null) return ''; const s=String(v).trim().toLowerCase(); return PT2EN[s] || capitalize(s); }
-function canonYesNo(v){
-  if(v==null) return ''; const s=String(v).trim().toLowerCase();
-  if(s==='sim' || s==='yes' || s==='y' || s==='true' || s==='1') return 'Yes';
-  if(s==='nao' || s==='não' || s==='no' || s==='n' || s==='false' || s==='0') return 'No';
-  return capitalize(s);
-}
-function canonYear(v){
-  if(v==null) return ''; const s=String(v).trim();
-  const t = s.endsWith('.0') ? s.slice(0,-2) : s;
-  const n = parseInt(t,10);
-  return Number.isFinite(n) ? String(n) : s;
-}
-function canonMonth(v){
-  const n = parseInt(v,10); return Number.isFinite(n) ? String(n) : '';
-}
-function capitalize(s){ if(!s) return s; return s.charAt(0).toUpperCase()+s.slice(1); }
+  // Year checkboxes (2015..2024)
+  const yearVals = [];
+  for(let y=MIN_YEAR;y<=MAX_YEAR;y++) yearVals.push({label:String(y), value:String(y)});
+  makeGroup('yearOpts','year',yearVals);
+  // Month 1..12
+  const monVals = [];
+  for(let m=1;m<=12;m++) monVals.push({label:String(m), value:String(m)});
+  makeGroup('monthOpts','month',monVals);
 
-/* ===== Filters -> predicate ===== */
-function makePredicate(){
-  const sel={
-    species:new Set(getMulti('speciesFilter').map(String)),
-    development_stage:new Set(getMulti('stageFilter').map(String)),
-    sex:new Set(getMulti('sexFilter').map(String)),
-    Fishing:new Set(getMulti('FishingFilter').map(String)),
-    Marine_Debris:new Set(getMulti('Marine_DebrisFilter').map(String)),
-    Agression:new Set(getMulti('AgressionFilter').map(String)),
-    Boat_collision:new Set(getMulti('Boat_collisionFilter').map(String)),
-    Dredging:new Set(getMulti('DredgingFilter').map(String)),
-    Oil:new Set(getMulti('OilFilter').map(String)),
-    Petrol:new Set(getMulti('PetrolFilter').map(String)),
-    decomposition_code:new Set(getMulti('decompFilter').map(String)),
-    season:new Set(getMulti('seasonFilter').map(String)),
-    year:new Set(getMulti('yearFilter').map(String)),
-    month:new Set(getMulti('monthFilter').map(String))
-  };
-  const yMin = parseInt($('yearMin').value,10);
-  const yMax = parseInt($('yearMax').value,10);
-
-  function test(set, val, canonFn){
-    if(!set.size) return true;
-    const c = canonFn ? canonFn(val) : String(val ?? '');
-    return set.has(c);
+  // Year range slider
+  const yearMinEl=$('yearMin'), yearMaxEl=$('yearMax'), yearLabel=$('yearLabel');
+  function syncYearSlider(){
+    let a=Number(yearMinEl.value), b=Number(yearMaxEl.value);
+    if(a>b){ const t=a; a=b; b=t; }
+    yearMinEl.value=a; yearMaxEl.value=b;
+    yearLabel.textContent = `${a} – ${b}`;
+    // Disable out-of-range year checkboxes + deselect them
+    const inputs = Array.from(document.querySelectorAll('input[data-name="year"]'));
+    inputs.forEach(inp=>{
+      if(inp.value==='__ALL__') return;
+      const val = Number(inp.value);
+      const inRange = val>=a && val<=b;
+      inp.disabled = !inRange;
+      if(!inRange) inp.checked = false;
+    });
+    // If none selected and All is unchecked (due to earlier), re-check All
+    const anyChecked = inputs.some(i=>i.value!=='__ALL__' && i.checked);
+    const allBox = inputs.find(i=>i.value==='__ALL__');
+    if(allBox) allBox.checked = !anyChecked;
   }
-  function testYear(val){
-    const y = parseInt(canonYear(val),10);
-    if(Number.isFinite(y)){
-      if(y<yMin || y>yMax) return false;
+  yearMinEl.addEventListener('input',syncYearSlider);
+  yearMaxEl.addEventListener('input',syncYearSlider);
+  $('resetYearBtn').addEventListener('click',()=>{ yearMinEl.value=String(MIN_YEAR); yearMaxEl.value=String(MAX_YEAR); syncYearSlider(); });
+
+  /* ===== Legend & layer UI controls ===== */
+  let opacityVal = 0.65;
+  let highlightTop10 = false;
+  let isolatedBin = -1; // -1 => none
+
+  // Legend UI scaffold
+  function renderLegendUI(cfg, counts){
+    const ramp = cfg.ramp; const brks = cfg.breaks;
+    const n = Math.min(ramp.length, brks.length-1);
+    const spSel = getChecked('species');
+    const name = (spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
+
+    let html = `<div class="leghdr">${name}</div>`;
+    for(let i=0;i<n;i++){
+      const a=brks[i], b=brks[i+1];
+      const active = (i===isolatedBin) ? ' style="font-weight:700"' : '';
+      html += `<div class="legend-row" data-bin="${i}">
+        <span><span class="swatch" title="${nf(a)} – ${nf(b)}" style="background:${ramp[i]}"></span><span${active}>${nf(a)} – ${nf(b)}</span></span>
+        <span>${counts? (counts[i]||0) : ''}</span>
+      </div>`;
     }
-    if(!sel.year.size) return true;
-    return sel.year.has(String(y));
-  }
-  return (p)=>{
-    return (
-      (!sel.species.size || sel.species.has(String(p.species||''))) &&
-      (!sel.development_stage.size || sel.development_stage.has(canonStage(p.development_stage))) &&
-      (!sel.sex.size || sel.sex.has(canonSex(p.sex))) &&
-      (!sel.Fishing.size || sel.Fishing.has(canonYesNo(p.Fishing))) &&
-      (!sel.Marine_Debris.size || sel.Marine_Debris.has(canonYesNo(p.Marine_Debris))) &&
-      (!sel.Agression.size || sel.Agression.has(canonYesNo(p.Agression))) &&
-      (!sel.Boat_collision.size || sel.Boat_collision.has(canonYesNo(p.Boat_collision))) &&
-      (!sel.Dredging.size || sel.Dredging.has(canonYesNo(p.Dredging))) &&
-      (!sel.Oil.size || sel.Oil.has(canonYesNo(p.Oil))) &&
-      (!sel.Petrol.size || sel.Petrol.has(canonYesNo(p.Petrol))) &&
-      (!sel.decomposition_code.size || sel.decomposition_code.has(String(p.decomposition_code ?? ''))) &&
-      (!sel.season.size || sel.season.has(canonSeason(p.season))) &&
-      testYear(p.year) &&
-      (!sel.month.size || sel.month.has(canonMonth(p.month)))
-    );
-  };
-}
+    html += `<div class="hist">`;
+    const maxc = counts ? Math.max(1,...counts) : 1;
+    for(let i=0;i<n;i++){
+      const h = counts? Math.max(2, Math.round(40*(counts[i]/maxc))) : 2;
+      const active = (i===isolatedBin) ? 'active' : '';
+      html += `<div class="bar ${active}" data-bin="${i}" style="height:${h}px" title="Bin ${i+1}"></div>`;
+    }
+    html += `</div>`;
 
-/* ===== pmtiles:// fetch shim + cache ===== */
-const origFetch = window.fetch.bind(window);
-const pmCache = new Map();
-async function getPM(archive){
-  const u = new URL(archive, new URL('.', location.href)).toString();
-  if(pmCache.has(u)) return pmCache.get(u);
-  const inst = new pmtiles.PMTiles(u);
-  pmCache.set(u, inst);
-  return inst;
-}
-window.fetch = async (input, init) => {
-  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
-    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
-    const [_, archive, z, x, y] = m;
+    html += `<div class="legend-controls">
+      <div class="row" style="display:flex;align-items:center;gap:6px">
+        <input id="highlightTop10" type="checkbox" ${highlightTop10?'checked':''}/>
+        <label for="highlightTop10" title="Emphasize top decile">Highlight top 10%</label>
+      </div>
+      <div class="row" style="display:flex;align-items:center;gap:6px">
+        <label for="opacitySlider">Opacity</label>
+        <input id="opacitySlider" type="range" min="0.30" max="0.90" step="0.01" value="${opacityVal.toFixed(2)}" style="width:120px"/>
+      </div>
+      <div class="hint">Breaks based on visible, filtered hexes.</div>
+    </div>`;
+
+    legendEl.innerHTML = html;
+
+    // Interactions
+    legendEl.querySelectorAll('.legend-row,.bar').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const bin = Number(el.getAttribute('data-bin'));
+        isolatedBin = (isolatedBin===bin)? -1 : bin;
+        // rebuild layer with same data, new style
+        if(lastConfig) rebuildLayerWithConfig(lastConfig);
+      });
+    });
+    $('highlightTop10').addEventListener('change',(e)=>{
+      highlightTop10 = e.target.checked;
+      if(lastConfig) rebuildLayerWithConfig(lastConfig);
+    });
+    $('opacitySlider').addEventListener('input',(e)=>{
+      opacityVal = Number(e.target.value);
+      if(lastConfig) rebuildLayerWithConfig(lastConfig);
+    });
+  }
+
+  /* ===== State ===== */
+  let vtLayer=null, layerName='', header=null, lastGoodLayerOptions=null;
+  const aggByHex = new Map(); // key -> {sum, ids:Set, sex:Map, stage:Map, season:Map, year:Map, month:Map, species:Map, rows:number}
+  let metricField = 'sum_val';
+  let lastConfig = null; // frozen per-render style config
+
+  /* ===== Detection: vector layer name ===== */
+  async function detectLayerName(pmFile){
     try{
-      const pm = await getPM(archive);
-      const t  = await pm.getZxy(+z,+x,+y);
-      if(!t || !t.data){ return new Response(null,{status:204}); }
-      return new Response(t.data);
-    }catch(e){
-      console.error('Tile fetch failed for', archive, z, x, y, e);
-      return new Response(null,{status:204});
-    }
-  }
-  return origFetch(input, init);
-};
-
-/* ===== Helpers for tiles/bounds ===== */
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
-function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
-function tileRangeForBounds(b,z){
-  const nw=b.getNorthWest(), se=b.getSouthEast();
-  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
-  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
-  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
-  return {minX,maxX,minY,maxY};
-}
-const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
-function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles`; }
-
-/* ===== State ===== */
-let vtLayer=null, layerName='', header=null;
-const aggByHex = new Map(); // h3_index -> aggregator
-let metricField='sum_val';
-let layerOpacity = 0.65;
-let highlightTop10 = false;
-let topDecileThreshold = null;
-let isolatedBinIndex = -1;
-
-/* Metric detection */
-const fieldCandidatesByCT = {
-  weight: ['weight','sum_val'],
-  new_weight: ['new_weight','sum_val'],
-  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
-  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
-  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
-};
-function discoverMetricField(sampleProps, ct){
-  const cands = fieldCandidatesByCT[ct] || ['sum_val'];
-  for(const k of cands){ if(k in sampleProps && Number.isFinite(Number(sampleProps[k]))) return k; }
-  if('sum_val' in sampleProps) return 'sum_val';
-  for(const k of Object.keys(sampleProps)){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
-  console.warn('No numeric metric field found; falling back to sum_val');
-  return 'sum_val';
-}
-
-/* ===== Detect layer name safely ===== */
-async function detectLayerName(pmFile){
-  try{
-    const pm = await getPM(pmFile);
-    header = await pm.getHeader();
-    const md = await pm.getMetadata();
-    if (md && md.json){
-      const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
-      if (j && j.vector_layers){
-        if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
-        const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
-      }
-    }
-    if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available.');
-    const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
-    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
-    for(let x=minX;x<=maxX;x++){
-      for(let y=minY;y<=maxY;y++){
-        const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
-        if(!r || !r.data) continue;
-        const vt = new window.__VT__(new window.__PBF__(r.data));
-        const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
-      }
-    }
-  }catch(e){ console.warn('Layer detect failed:', e); }
-  console.warn('Falling back to "hexgrid"');
-  return 'hexgrid';
-}
-
-/* ===== Aggregation + breaks ===== */
-/* Aggregator shape per hex:
-{
-  sum: number,
-  rowCount: number,
-  uidSet: Set|string[]|null,
-  sex: {Female: n, Male: n, Unknown: n},
-  stage: {Adult: n, Juvenile: n, Hatchling: n, Unknown: n},
-  season: {Autumn:n, Spring:n, Summer:n, Winter:n, Unknown:n},
-  year: Map(year->count),
-  month: Map(month->count)
-}
-*/
-const JENKS_CLASSES = 5;
-const EXACT_MAX = 2500;          // jenks exact upper bound before sampling
-const SAMPLE_TARGET = 1200;      // jenks sample size
-const MAX_TILES_STATS = 120;     // cap tiles when computing breaks
-const MAX_HEXES_STATS  = 4000;   // early stop guard
-
-const ID_KEYS = ['turtle_id','id','uid','individual_id'];
-
-function ensureAggEntry(map, key){
-  let entry = map.get(key);
-  if(!entry){
-    entry = {
-      sum:0, rowCount:0, uidSet:null,
-      sex:{Female:0,Male:0,Unknown:0},
-      stage:{Adult:0,Juvenile:0,Hatchling:0,Unknown:0},
-      season:{Autumn:0,Spring:0,Summer:0,Winter:0,Unknown:0},
-      year:new Map(), month:new Map()
-    };
-    map.set(key, entry);
-  }
-  return entry;
-}
-
-function addToCounts(map, k){
-  if(k==null) return;
-  const v = String(k);
-  map.set(v, (map.get(v)||0)+1);
-}
-
-function reservoirSample(values, k){
-  const out=[]; for(let i=0;i<values.length;i++){
-    if(i<k) out[i]=values[i];
-    else{ const j = Math.floor(Math.random()*(i+1)); if(j<k) out[j]=values[i]; }
-  } return out;
-}
-function prettyBreaks(min, max){
-  if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
-  if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
-  const step=(max-min)/JENKS_CLASSES, arr=[min];
-  for(let i=1;i<=JENKS_CLASSES;i++) arr.push(min+i*step);
-  return arr;
-}
-
-function valuesFromAgg(map){
-  const out=[]; map.forEach(v=>{ if(Number.isFinite(v.sum)) out.push(v.sum); }); return out;
-}
-
-function computeQuantileBreaks(values){
-  const sorted = values.slice().sort((a,b)=>a-b);
-  return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
-}
-
-async function computeBreaks(values){
-  const n=values.length;
-  if(!n) return null;
-  if(n<8){ const min=Math.min(...values), max=Math.max(...values); return prettyBreaks(min,max); }
-  try{
-    const arr = (n<=EXACT_MAX)? values : reservoirSample(values, SAMPLE_TARGET);
-    let edges = ss.jenks(arr, JENKS_CLASSES);
-    const uniq = Array.from(new Set(edges.map(x=>+x.toFixed(10))));
-    const min=Math.min(...values), max=Math.max(...values);
-    if(uniq.length < JENKS_CLASSES+1 || !isFinite(min) || !isFinite(max) || min===max){
-      return computeQuantileBreaks(values);
-    }
-    // Ensure min/max included
-    if(edges[0] > min) edges[0]=min;
-    if(edges[edges.length-1] < max) edges[edges.length-1]=max;
-    return edges;
-  }catch{
-    return computeQuantileBreaks(values);
-  }
-}
-
-/* Compute robust bin index with frozen breaks */
-function computeBinIndex(v, breaks){
-  if(!Number.isFinite(v) || !breaks || breaks.length<2) return -1;
-  const n = breaks.length-1;
-  if(v <= breaks[0]) return 0;
-  if(v >= breaks[n]) return n-1;
-  for(let i=0;i<n;i++){
-    const a=breaks[i], b=breaks[i+1];
-    if(v>=a && v<b) return i;
-  }
-  // exact max edge
-  return n-1;
-}
-
-/* ===== Aggregation pass =====
-   We do ONE full pass for current view to build aggByHex (no stride for styling correctness),
-   and a LIGHTER sampled pass just for breaks if needed. For simplicity + correctness,
-   we’ll do one pass at the current display-ish zoom, but cap tiles if absurd.
-*/
-async function aggregateView(pmFile, layerName, predicate, ct){
-  aggByHex.clear();
-  if(!window.__VT__ || !window.__PBF__){
-    showToast('vector-tile.js / pbf.js not loaded — cannot compute aggregates.');
-    return;
-  }
-  const pm = await getPM(pmFile);
-  const hdr = header || await pm.getHeader();
-  const zView = clamp(Math.floor(map.getZoom()), hdr.minZoom, hdr.maxZoom);
-  const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
-
-  const tiles = [];
-  for(let x=minX;x<=maxX;x++){
-    for(let y=minY;y<=maxY;y++){
-      tiles.push([wrapX(x,zView), y]);
-    }
-  }
-  // Hard cap (still better correctness than stride-race)
-  const MAX_TILES_ABS = 400;
-  let used = tiles;
-  if(tiles.length>MAX_TILES_ABS){
-    // sample evenly
-    const step = Math.ceil(tiles.length / MAX_TILES_ABS);
-    used = tiles.filter((_,i)=> i%step===0);
-  }
-
-  let discovered=false;
-  for(const [x,y] of used){
-    const resp = await pm.getZxy(zView, x, y).catch(()=>null);
-    if(!resp || !resp.data) continue;
-    const vt = new window.__VT__(new window.__PBF__(resp.data));
-    const lyr = vt.layers[layerName]; if(!lyr) continue;
-    for(let i=0;i<lyr.length;i++){
-      const feat = lyr.feature(i);
-      const props = feat.properties||{};
-      if(!discovered){ metricField=discoverMetricField(props, ct); discovered=true; }
-      if(!predicate(props)) continue;
-      const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
-      const entry = ensureAggEntry(aggByHex, key);
-
-      const val = Number(props[metricField]);
-      if(Number.isFinite(val)) entry.sum += val;
-      entry.rowCount += 1;
-
-      // Unique ID if available
-      for(const k of ID_KEYS){
-        if(props[k]!=null){
-          if(!entry.uidSet) entry.uidSet = new Set();
-          entry.uidSet.add(String(props[k]));
-          break;
+      const pm = await getPM(pmFile);
+      header = await pm.getHeader();
+      const md = await pm.getMetadata();
+      if (md && md.json){
+        const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
+        if (j && j.vector_layers){
+          if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+          const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
         }
       }
-
-      // Distributions (canonical)
-      const sex = canonSex(props.sex||'Unknown') || 'Unknown';
-      const stage = canonStage(props.development_stage||'Unknown') || 'Unknown';
-      const season = canonSeason(props.season||'Unknown') || 'Unknown';
-      entry.sex[sex] = (entry.sex[sex]||0)+1;
-      entry.stage[stage] = (entry.stage[stage]||0)+1;
-      entry.season[season] = (entry.season[season]||0)+1;
-
-      const cy = canonYear(props.year); if(cy) addToCounts(entry.year, cy);
-      const cm = canonMonth(props.month); if(cm) addToCounts(entry.month, cm);
-    }
-    if(aggByHex.size > MAX_HEXES_STATS) break;
-  }
-}
-
-/* ===== Legend + histogram ===== */
-function renderLegendUI(cfg, legendCounts){
-  const el=$('legend');
-  const speciesSel=getMulti('speciesFilter');
-  const name=(speciesSel.length===1)?speciesSel[0]:(speciesSel.length>1?'Multiple species':'All species');
-
-  el.innerHTML = '';
-  const hdr = document.createElement('div'); hdr.className='leghdr'; hdr.textContent = name;
-  el.appendChild(hdr);
-
-  // Rows
-  const n = Math.min(cfg.ramp.length, cfg.breaks.length-1);
-  for(let i=0;i<n;i++){
-    const a=cfg.breaks[i], b=cfg.breaks[i+1];
-    const row = document.createElement('div');
-    row.className='legend-row';
-    row.title = nf(a)+' – '+nf(b);
-    row.dataset.bin = String(i);
-    if(i === isolatedBinIndex) row.style.outline='2px solid #0ea5e9';
-
-    const sw = document.createElement('span'); sw.className='swatch'; sw.style.background = cfg.ramp[i];
-    const label = document.createElement('span'); label.textContent = nf(a)+' – '+nf(b);
-    row.appendChild(sw); row.appendChild(label);
-    row.addEventListener('click', ()=>{
-      isolatedBinIndex = (isolatedBinIndex===i ? -1 : i);
-      // Refresh style only
-      if(vtLayer && vtLayer.setStyle){
-        vtLayer.setStyle({[layerName]: styleFactory(cfg)});
+      if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available for probing.');
+      const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
+      const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+      for(let x=minX;x<=maxX;x++){
+        for(let y=minY;y<=maxY;y++){
+          const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
+          if(!r || !r.data) continue;
+          const vt = new window.__VT__(new window.__PBF__(r.data));
+          const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
+        }
       }
-      writeStateToHash();
-      renderLegendUI(cfg, legendCounts);
-    });
-    el.appendChild(row);
+    }catch(e){ console.warn('Layer detect failed:', e); }
+    console.warn('Falling back to "hexgrid"');
+    return 'hexgrid';
   }
 
-  // Histogram
-  if(legendCounts && legendCounts.length){
-    const hist = document.createElement('div'); hist.className='hist';
-    const max = Math.max(...legendCounts, 1);
-    for(let i=0;i<legendCounts.length;i++){
-      const bar = document.createElement('div');
-      bar.style.height = Math.max(2, Math.round(legendCounts[i]/max*100)/3)+'px';
-      if(isolatedBinIndex===i) bar.className='active';
-      hist.appendChild(bar);
-    }
-    el.appendChild(hist);
+  /* ===== Filters / predicate ===== */
+  function getFilterState(){
+    // Read checkboxes
+    const species     = new Set(getChecked('species'));
+    const stage       = new Set(getChecked('stage'));
+    const sex         = new Set(getChecked('sex'));
+    const season      = new Set(getChecked('season'));
+    const Fishing     = new Set(getChecked('Fishing'));
+    const Marine_Debris = new Set(getChecked('Marine_Debris'));
+    const Agression   = new Set(getChecked('Agression'));
+    const Boat_collision = new Set(getChecked('Boat_collision'));
+    const Dredging    = new Set(getChecked('Dredging'));
+    const Oil         = new Set(getChecked('Oil'));
+    const Petrol      = new Set(getChecked('Petrol'));
+    const decomp      = new Set(getChecked('decomposition_code'));
+    const yearSel     = new Set(getChecked('year').map(y=>Number(y)));
+    const monthSel    = new Set(getChecked('month').map(m=>Number(m)));
+
+    const yMin = Number(yearMinEl.value), yMax = Number(yearMaxEl.value);
+
+    return {species, stage, sex, season, Fishing, Marine_Debris, Agression, Boat_collision, Dredging, Oil, Petrol, decomp, yearSel, monthSel, yMin, yMax};
   }
 
-  const hint = document.createElement('div'); hint.className='legend-hint'; hint.textContent = 'Breaks based on visible, filtered hexes';
-  el.appendChild(hint);
-}
-
-function computeLegendCounts(values, breaks){
-  if(!breaks || breaks.length<2) return [];
-  const n = breaks.length-1;
-  const counts = new Array(n).fill(0);
-  for(const v of values){
-    const idx = computeBinIndex(v, breaks);
-    if(idx>=0) counts[idx] += 1;
-  }
-  return counts;
-}
-
-/* ===== Style factory (freeze config to avoid races) ===== */
-function styleFactory(cfg){
-  const opacity = layerOpacity; // current global opacity is safe to read
-  return (props)=>{
-    const key = props.h3_index || props.h3 || props.id;
-    const agg = key ? aggByHex.get(key) : undefined;
-    const v = agg ? agg.sum : Number(props[metricField]); // fallback to prop value if aggregate missing
-    if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
-
-    const bin = computeBinIndex(v, cfg.breaks);
-    if(bin<0) return {opacity:0, fillOpacity:0, interactive:false};
-    if(isolatedBinIndex>=0 && bin!==isolatedBinIndex){
-      return {opacity:0, fillOpacity:0, interactive:false};
-    }
-
-    const color = cfg.ramp[Math.min(bin, cfg.ramp.length-1)];
-    let w=0.5, fo=opacity;
-    if(highlightTop10 && Number.isFinite(topDecileThreshold) && v>=topDecileThreshold){ w=1.2; fo=Math.min(0.95, opacity+0.1); }
-
-    return {
-      fill:true, fillColor:color, fillOpacity:fo,
-      color, weight:w
+  function makePredicate(state){
+    const t = state;
+    const testSet = (set, val) => {
+      if(set.size===0) return true;
+      return set.has(val);
     };
-  };
-}
+    return (raw) => {
+      // Canonicalize feature props
+      const species = raw.species || raw.Species;
+      const stage   = canonStage(raw.development_stage || raw.stage);
+      const sex     = canonSex(raw.sex);
+      const season  = canonSeason(raw.season);
+      const fish    = canonYesNo(raw.Fishing);
+      const debris  = canonYesNo(raw.Marine_Debris);
+      const aggr    = canonYesNo(raw.Agression);
+      const boat    = canonYesNo(raw.Boat_collision);
+      const dred    = canonYesNo(raw.Dredging);
+      const oil     = canonYesNo(raw.Oil);
+      const petrol  = canonYesNo(raw.Petrol);
+      const decomp  = String(raw.decomposition_code ?? '').replace(/\.0$/,'');
+      const year    = canonYear(raw.year);
+      const month   = canonMonth(raw.month);
 
-/* ===== Popup aggregation -> text ===== */
-function percentExcludingUnknown(counts){
-  const known = (counts.Female||0)+(counts.Male||0);
-  const totalKnown = known; // exclude Unknown from denominator
-  const unk = (counts.Unknown||0);
-  const f = totalKnown ? (counts.Female||0)/totalKnown*100 : 0;
-  const m = totalKnown ? (counts.Male||0)/totalKnown*100 : 0;
-  return {f, m, unk};
-}
-function modeFromMap(mp){
-  let bestK=null, bestV=-1;
-  mp.forEach((v,k)=>{ if(v>bestV || (v===bestV && (parseInt(k,10)>parseInt(bestK||'-9999',10)))){ bestV=v; bestK=k; }});
-  return {key:bestK, count:bestV};
-}
-function bindHoverPopups(layer){
-  let locked=false;
-  layer.on('mouseover', e=>{
-    if(locked) return;
-    const p = e.layer?.properties || {};
-    const key = p.h3_index || p.h3 || p.id;
-    const agg = key ? aggByHex.get(key) : undefined;
-    const sum = agg ? agg.sum : Number(p[metricField]);
-    const uidCount = agg ? (agg.uidSet ? agg.uidSet.size : null) : null;
-    const rows = agg ? agg.rowCount : null;
-    const idText = (uidCount!=null) ? `${nf(uidCount)} unique IDs` : `${nf(rows)} rows (ID missing)`;
-    const sexP = agg ? percentExcludingUnknown(agg.sex) : {f:0,m:0,unk:0};
-    const stage = agg ? agg.stage : {Adult:0,Juvenile:0,Hatchling:0,Unknown:0};
-    const season = agg ? agg.season : {Autumn:0,Spring:0,Summer:0,Winter:0,Unknown:0};
-    const bestY = agg ? modeFromMap(agg.year) : {key:'-',count:0};
-    const bestM = agg ? modeFromMap(agg.month) : {key:'-',count:0};
+      if (t.species.size>0 && !t.species.has(species)) return false;
+      if (!testSet(t.stage, stage)) return false;
+      if (!testSet(t.sex,   sex)) return false;
+      if (!testSet(t.season,season)) return false;
+      if (!testSet(t.Fishing,fish)) return false;
+      if (!testSet(t.Marine_Debris,debris)) return false;
+      if (!testSet(t.Agression,aggr)) return false;
+      if (!testSet(t.Boat_collision,boat)) return false;
+      if (!testSet(t.Dredging,dred)) return false;
+      if (!testSet(t.Oil,oil)) return false;
+      if (!testSet(t.Petrol,petrol)) return false;
+      if (t.decomp.size>0 && !t.decomp.has(decomp)) return false;
 
-    const speciesSel=getMulti('speciesFilter');
-    const spLabel = (speciesSel.length===1)?speciesSel[0]:(speciesSel.length>1?'Mixed':'Mixed');
+      // Year rule: if year checkboxes have explicit selections, enforce them (and slider keeps them in-range).
+      // Else, use slider range only.
+      if (t.yearSel.size>0) {
+        if (!t.yearSel.has(year)) return false;
+      } else {
+        if (!(year>=t.yMin && year<=t.yMax)) return false;
+      }
 
-    const html = `
+      if (t.monthSel.size>0 && !t.monthSel.has(month)) return false;
+
+      return true;
+    };
+  }
+
+  /* ===== Aggregation ===== */
+  function ensureAgg(key){
+    let a = aggByHex.get(key);
+    if(!a){
+      a = {sum:0, ids:new Set(), sex:new Map(), stage:new Map(), season:new Map(),
+           year:new Map(), month:new Map(), species:new Map(), rows:0 };
+      aggByHex.set(key,a);
+    }
+    return a;
+  }
+  function bump(map, k){ if(!k && k!==0) return; map.set(k, (map.get(k)||0)+1); }
+
+  function discoverMetric(sampleProps, ct){
+    const cands = metricCandidatesByCT[ct] || ['sum_val'];
+    for(const k of cands){ const v = Number(sampleProps[k]); if(Number.isFinite(v)) return k; }
+    if ('sum_val' in sampleProps && Number.isFinite(Number(sampleProps.sum_val))) return 'sum_val';
+    for(const k of Object.keys(sampleProps)){ if(Number.isFinite(Number(sampleProps[k]))) return k; }
+    console.warn('Metric field fallback to sum_val');
+    return 'sum_val';
+  }
+
+  async function aggregateViewport(pmFile, layerName, predicate, ct, forStatsOnly=false){
+    aggByHex.clear();
+    if(!window.__VT__ || !window.__PBF__){
+      showToast('vector-tile.js / pbf.js not loaded — cannot compute.');
+      return [];
+    }
+    const pm = await getPM(pmFile);
+    const hdr = header || await pm.getHeader();
+
+    // choose a modest decode zoom to limit tile count
+    const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
+    const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+
+    let discovered=false;
+    const jobs=[];
+    for(let x=minX;x<=maxX;x++){
+      for(let y=minY;y<=maxY;y++){
+        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+          if(!resp || !resp.data) return;
+          const vt = new window.__VT__(new window.__PBF__(resp.data));
+          const lyr = vt.layers[layerName]; if(!lyr) return;
+          for(let i=0;i<lyr.length;i++){
+            const f = lyr.feature(i);
+            const p = f.properties || {};
+            if(!discovered){ metricField=discoverMetric(p, ct); discovered=true; }
+            if(!predicate(p)) continue;
+
+            const key = p.h3_index ?? p.h3 ?? p.id; if(!key) continue;
+            const val = Number(p[metricField]);
+            const idKey = idCandidates.find(k=> p[k]!=null );
+            const uid = idKey ? String(p[idKey]) : null;
+
+            const a = ensureAgg(key);
+            if(Number.isFinite(val)) a.sum += val;
+            if(uid) a.ids.add(uid); else a.rows++;
+
+            bump(a.sex,    canonSex(p.sex));
+            bump(a.stage,  canonStage(p.development_stage || p.stage));
+            bump(a.season, canonSeason(p.season));
+            bump(a.year,   canonYear(p.year));
+            bump(a.month,  canonMonth(p.month));
+            bump(a.species, p.species || p.Species);
+          }
+        }).catch(e=>console.warn('tile decode skipped',e)));
+      }
+    }
+    await Promise.all(jobs);
+    // return aggregated sums for stats/breaks
+    return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+  }
+
+  /* ===== Breaks (Jenks → quantiles fallback) ===== */
+  const JENKS_K = 5;
+  function widenIfFlat(min,max){
+    if(min===max){
+      const eps = (min===0)? 1 : Math.abs(min)*0.1;
+      return [min-eps, max+eps];
+    }
+    return [min,max];
+  }
+  function computeBreaks(values){
+    if(!values || values.length===0) return null;
+    if(values.length<8){
+      const min = Math.min(...values), max=Math.max(...values);
+      const [a,b]=widenIfFlat(min,max);
+      const step=(b-a)/JENKS_K, arr=[a];
+      for(let i=1;i<=JENKS_K;i++) arr.push(a+i*step);
+      return arr;
+    }
+    try{
+      const edges = ss.jenks(values, JENKS_K);
+      // Normalize edges; ensure unique ascending; fallback if too few
+      const uniq = Array.from(new Set(edges.map(x=>+x)));
+      if(uniq.length>=JENKS_K+1){
+        // ensure min/max cover data
+        const min = Math.min(...values), max=Math.max(...values);
+        if(uniq[0] > min) uniq[0]=min;
+        if(uniq[uniq.length-1] < max) uniq[uniq.length-1]=max;
+        return uniq;
+      }
+    }catch{}
+    // Quantiles fallback
+    const sorted = values.slice().sort((a,b)=>a-b);
+    return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+  }
+
+  function computeBinIndex(breaks, v){
+    if(!Array.isArray(breaks) || breaks.length<2 || !Number.isFinite(v)) return -1;
+    // clamp to range
+    if(v<=breaks[0]) return 0;
+    for(let i=0;i<breaks.length-1;i++){
+      const a=breaks[i], b=breaks[i+1];
+      if(b<=a){ continue; } // skip degenerate
+      if(v>=a && v<=b) return i;
+    }
+    return breaks.length-2; // >= last edge
+  }
+
+  function computeLegendCounts(breaks){
+    if(!Array.isArray(breaks) || breaks.length<2) return null;
+    const counts = new Array(breaks.length-1).fill(0);
+    for(const a of aggByHex.values()){
+      const v = a.sum;
+      const bin = computeBinIndex(breaks, v);
+      if(bin>=0) counts[bin]++;
+    }
+    return counts;
+  }
+
+  /* ===== Style + popups ===== */
+  function styleFactory(cfg){
+    const ramp = cfg.ramp, breaks = cfg.breaks, top10 = cfg.top10, iso = cfg.isolatedBin, opacity=cfg.opacity;
+    return (props) => {
+      const key = props.h3_index || props.h3 || props.id;
+      const a = key ? aggByHex.get(key) : undefined;
+      const v = a ? a.sum : undefined;
+      const bin = computeBinIndex(breaks, v);
+      if(bin<0) return {opacity:0, fillOpacity:0, interactive:false};
+      if(iso>=0 && bin!==iso) return {opacity:0, fillOpacity:0, interactive:false};
+
+      const color = ramp[Math.min(bin, ramp.length-1)];
+      const base = {fill:true, fillColor:color, fillOpacity:opacity, color, weight:0.5, opacity:1};
+
+      if(top10 && Number.isFinite(v) && v>=cfg.top10Threshold){
+        base.weight = 1.5;
+        base.fillOpacity = Math.min(0.95, opacity+0.15);
+        base.color = '#111827';
+      }
+      return base;
+    };
+  }
+
+  function aggregatedPopupHTML(a, speciesLabel){
+    if(!a) return '<div>No data</div>';
+    const sum = a.sum;
+    const uniqueCount = a.ids.size || a.rows;
+
+    // helper to pct excluding Unknown
+    function pct(map, keyGood){
+      const unknown = map.get('Unknown')||0;
+      let total = 0;
+      for(const [k,v] of map.entries()) if(k!=='Unknown' && Number.isFinite(v)) total += v;
+      const good = map.get(keyGood)||0;
+      const perc = (total>0) ? (100*good/total) : 0;
+      return {perc, total, unknown};
+    }
+    function pctAll(map, keys){
+      const unknown = map.get('Unknown')||0;
+      let total = 0;
+      for(const [k,v] of map.entries()) if(k!=='Unknown' && Number.isFinite(v)) total += v;
+      const out = {};
+      keys.forEach(k=>{
+        const v = map.get(k)||0;
+        out[k] = {v, p: (total>0? (100*v/total):0)};
+      });
+      return {out, total, unknown};
+    }
+    function topMode(map, isMonth=false){
+      // highest count; ties => newest (largest key)
+      let bestK=null, bestV=-1;
+      for(const [k,v] of map.entries()){
+        if(!Number.isFinite(v)) continue;
+        if(v>bestV || (v===bestV && Number(k)>Number(bestK))) { bestV=v; bestK=k; }
+      }
+      return isMonth ? {k:bestK, v:bestV} : {k:bestK, v:bestV};
+    }
+
+    const sexes = pctAll(a.sex, ['Female','Male']);
+    const stages = pctAll(a.stage, ['Adult','Juvenile','Hatchling']);
+    const seasons = pctAll(a.season, ['Autumn','Spring','Summer','Winter']);
+    const topY = topMode(a.year, false);
+    const topM = topMode(a.month, true);
+
+    const idNote = (a.ids.size>0) ? '' : '<div class="hint">(Counting rows — no unique turtle IDs in data)</div>';
+
+    return `
       <div style="min-width:260px">
-        <div class="kv"><b>Species</b><span>${spLabel}</span></div>
+        <div class="kv"><b>Species</b><span>${speciesLabel}</span></div>
         <div class="kv"><b>Sum (${metricField})</b><span>${nf(sum)}</span></div>
-        <div class="kv"><b>Count</b><span>${idText}</span></div>
+        <div class="kv"><b>Count (unique IDs)</b><span>${nf(a.ids.size||a.rows)}</span></div>
+        ${idNote}
         <hr/>
-        <div class="kv"><b>Sex</b><span>♀ ${nf(sexP.f)}% / ♂ ${nf(sexP.m)}% (Unknown ${nf(sexP.unk)})</span></div>
-        <div class="kv"><b>Stage</b><span>A ${stage.Adult||0} · J ${stage.Juvenile||0} · H ${stage.Hatchling||0} (U ${stage.Unknown||0})</span></div>
-        <div class="kv"><b>Season</b><span>Su ${season.Summer||0} · Sp ${season.Spring||0} · Au ${season.Autumn||0} · Wi ${season.Winter||0}</span></div>
-        <div class="kv"><b>Top year</b><span>${bestY.key ?? '-'} (${nf(bestY.count||0)})</span></div>
-        <div class="kv"><b>Top month</b><span>${bestM.key ?? '-'} (${nf(bestM.count||0)})</span></div>
-        <hr/>
-        <small class="muted">h3: ${key ?? '-'}</small>
-      </div>`;
-    L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+        <div class="kv"><b>Sex</b>
+          <span>♀ ${nf(sexes.out.Female.v)} (${sexes.out.Female.p.toFixed(1)}%) · ♂ ${nf(sexes.out.Male.v)} (${sexes.out.Male.p.toFixed(1)}%) · Unknown ${nf(a.sex.get('Unknown')||0)}</span>
+        </div>
+        <div class="kv"><b>Stage</b>
+          <span>Adult ${stages.out.Adult.p.toFixed(1)}% · Juvenile ${stages.out.Juvenile.p.toFixed(1)}% · Hatchling ${stages.out.Hatchling.p.toFixed(1)}% · Unknown ${nf(a.stage.get('Unknown')||0)}</span>
+        </div>
+        <div class="kv"><b>Season</b>
+          <span>Aut ${seasons.out.Autumn.p.toFixed(1)}% · Spr ${seasons.out.Spring.p.toFixed(1)}% · Sum ${seasons.out.Summer.p.toFixed(1)}% · Win ${seasons.out.Winter.p.toFixed(1)}% · Unknown ${nf(a.season.get('Unknown')||0)}</span>
+        </div>
+        <div class="kv"><b>Top year</b><span>${topY.k ?? '-' } (${nf(topY.v||0)})</span></div>
+        <div class="kv"><b>Top month</b><span>${topM.k ?? '-' } (${nf(topM.v||0)})</span></div>
+      </div>
+    `;
+  }
 
-    // subtle glow
-    try{ e.layer._path && e.layer._path.classList && e.layer._path.classList.add('hover-outline'); }catch{}
-  });
-  layer.on('mouseout', ()=>{
-    if(!locked){ map.closePopup(); }
-  });
-  map.on('click', ()=>{ locked=false; map.closePopup(); });
-  map.on('keypress', (ev)=>{ if(ev.originalEvent && ev.originalEvent.key==='Escape'){ locked=false; map.closePopup(); }});
-  layer.on('click', ()=>{ locked=true; });
-}
+  let hoverLocked=false, highlightedId=null;
+  function bindInteractions(layer, cfg, speciesLabel){
+    layer.on('mouseover', e=>{
+      if(hoverLocked) return;
+      const id = e.layer && e.layer.properties && (e.layer.properties.h3_index || e.layer.properties.h3 || e.layer.properties.id);
+      if(id!=null){
+        try{ layer.setFeatureStyle(id, {...styleFactory(cfg)(e.layer.properties), weight:2, color:'#111827'}); highlightedId=id; }catch{}
+      }
+      const key = id;
+      const a = aggByHex.get(key);
+      const html = aggregatedPopupHTML(a, speciesLabel);
+      L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+    });
+    layer.on('mouseout', e=>{
+      if(hoverLocked) return;
+      if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId); }catch{} highlightedId=null; }
+      map.closePopup();
+    });
+    layer.on('click', e=>{
+      hoverLocked = !hoverLocked;
+      if(!hoverLocked){
+        if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId); }catch{} highlightedId=null; }
+        map.closePopup();
+      }else{
+        const id = e.layer && e.layer.properties && (e.layer.properties.h3_index || e.layer.properties.h3 || e.layer.properties.id);
+        const key = id;
+        const a = aggByHex.get(key);
+        const spSel = getChecked('species');
+        const speciesLabel = (spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'Mixed');
+        const html = aggregatedPopupHTML(a, speciesLabel);
+        L.popup({autoPan:true,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
+      }
+    });
+    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ hoverLocked=false; if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId); }catch{} highlightedId=null; } map.closePopup(); }});
+  }
 
-/* ===== Year range slider behavior ===== */
-function updateYearDisabled(){
-  const min = parseInt($('yearMin').value,10);
-  const max = parseInt($('yearMax').value,10);
-  const sel = $('yearFilter');
-  Array.from(sel.options).forEach(o=>{
-    if(o.value==='__ALL__') return;
-    const y = parseInt(o.value,10);
-    o.disabled = !(y>=min && y<=max);
-  });
-}
-function clampYearSliders(){
-  const min = parseInt($('yearMin').value,10);
-  const max = parseInt($('yearMax').value,10);
-  if(min>max){ $('yearMin').value=String(max); }
-  $('yearMinLabel').textContent=$('yearMin').value;
-  $('yearMaxLabel').textContent=$('yearMax').value;
-  updateYearDisabled();
-}
-$('yearMin').addEventListener('input', clampYearSliders);
-$('yearMax').addEventListener('input', clampYearSliders);
-$('yearReset').addEventListener('click', ()=>{ $('yearMin').value='2015'; $('yearMax').value='2024'; clampYearSliders(); });
+  /* ===== Build / Rebuild ===== */
+  function currentRamp(){
+    const sp=getChecked('species');
+    return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi'];
+  }
 
-/* ===== Build / Rebuild ===== */
-function valuesDecile(values, q){
-  if(!values || values.length===0) return null;
-  const sorted = values.slice().sort((a,b)=>a-b);
-  const idx = Math.min(sorted.length-1, Math.max(0, Math.round(q*(sorted.length-1))));
-  return sorted[idx];
-}
+  function validBreaks(b){ return Array.isArray(b) && b.length>=2 && b.every(x=>Number.isFinite(x)); }
 
-async function buildLayer(){
-  showSpinner('Loading & aggregating…');
+  async function buildLayer(){
+    showSpinner('Aggregating & computing breaks…');
+    try{
+      const res=$('resolution').value, ct=$('counttype').value;
+      const pmFile = fileFor(res, ct);
+      layerName = await detectLayerName(pmFile);
 
-  try{
-    const res=$('resolution').value, ct=$('counttype').value;
-    const pmFile = fileFor(res, ct);
-    layerName = await detectLayerName(pmFile);
-    const predicate = makePredicate();
+      const state = getFilterState();
+      const predicate = makePredicate(state);
 
-    await aggregateView(pmFile, layerName, predicate, ct);
-    const values = valuesFromAgg(aggByHex);
+      // Aggregate ALL tiles at chosen analysis zoom for styling + popup + breaks
+      const values = await aggregateViewport(pmFile, layerName, predicate, ct);
+      if(!values || values.length===0){
+        showToast('No data in view — zoom out or change filters.');
+        hideSpinner();
+        return; // keep current layer (non-regression)
+      }
 
-    if(!values.length){
-      showToast('No data in view—zoom out or change filters');
-      // Do not replace the existing layer to avoid blank map
+      // Breaks
+      let brks = computeBreaks(values);
+      if(!validBreaks(brks)){
+        showToast('Could not compute breaks; keeping current layer.');
+        hideSpinner();
+        return;
+      }
+      // Top-10% threshold (decile)
+      const sorted = values.slice().sort((a,b)=>a-b);
+      const top10Threshold = ss.quantileSorted(sorted, 0.9);
+
+      // Frozen config object (avoid races)
+      const cfg = Object.freeze({
+        breaks: brks.slice(),
+        ramp: currentRamp().slice(),
+        top10: highlightTop10,
+        top10Threshold,
+        isolatedBin: isolatedBin,
+        opacity: opacityVal
+      });
+      lastConfig = cfg;
+
+      // Legend (counts per bin)
+      const counts = computeLegendCounts(cfg.breaks);
+      renderLegendUI(cfg, counts);
+
+      // Build new vector layer with frozen style closure
+      const style = styleFactory(cfg);
+      const getId = f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id);
+
+      // Remove previous layer
+      if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+      vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: { [layerName]: style },
+        interactive:true,
+        getFeatureId: getId
+      });
+      const spSel = getChecked('species');
+      const speciesLabel = (spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'Mixed');
+      bindInteractions(vtLayer, cfg, speciesLabel);
+      vtLayer.addTo(map);
+      lastGoodLayerOptions = {pmFile, layerName}; // for future rebuilds with style-only changes
+    }catch(err){
+      console.error('buildLayer error', err);
+      showToast('Failed to load layer. Check console for details.');
+    }finally{
       hideSpinner();
-      return;
     }
+  }
 
-    // Compute breaks (Jenks or quantiles)
-    let breaks = await computeBreaks(values);
-    if(!breaks || breaks.length<2){
-      // All equal? widen a bit
-      const v = values[0] || 0;
-      breaks = prettyBreaks(v, v);
-    }
-
-    // Compute legend histogram + top decile threshold
-    const legendCounts = computeLegendCounts(values, breaks);
-    topDecileThreshold = valuesDecile(values, 0.9);
-
-    // Freeze config for this layer render to avoid races
-    const ramp = currentRamp().slice();
-    const cfg = Object.freeze({breaks: breaks.slice(), ramp});
-
-    // Render legend with frozen config
-    renderLegendUI(cfg, legendCounts);
-
-    // Build/refresh layer with frozen style
+  function rebuildLayerWithConfig(cfg){
+    if(!lastGoodLayerOptions) return;
+    const {pmFile, layerName} = lastGoodLayerOptions;
     if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+    const style = styleFactory(cfg);
+    const getId = f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id);
     vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
       rendererFactory: L.canvas.tile,
-      vectorTileLayerStyles: { [layerName]: styleFactory(cfg) },
+      vectorTileLayerStyles: { [layerName]: style },
       interactive:true,
-      getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+      getFeatureId: getId
     });
-    bindHoverPopups(vtLayer);
+    const spSel = getChecked('species');
+    const speciesLabel = (spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'Mixed');
+    bindInteractions(vtLayer, cfg, speciesLabel);
     vtLayer.addTo(map);
-  }catch(err){
-    console.error('buildLayer error', err);
-    showToast('Failed to load layer. Check console for details.');
-  }finally{
-    hideSpinner();
   }
-}
 
-/* ===== Controls / interactions ===== */
-$('applyBtn').addEventListener('click',()=>{ writeStateToHash(); buildLayer(); });
-$('resolution').addEventListener('change',()=>{ writeStateToHash(); buildLayer(); });
-$('counttype').addEventListener('change',()=>{ writeStateToHash(); buildLayer(); });
-$('resetBtn').addEventListener('click',()=>{ clearAllSelects(); isolatedBinIndex=-1; writeStateToHash(); buildLayer(); });
+  /* ===== Apply / changes ===== */
+  $('applyBtn').addEventListener('click',()=>{ writeStateToHash(); buildLayer(); });
+  $('resolution').addEventListener('change',()=>{ writeStateToHash(); buildLayer(); });
+  $('counttype').addEventListener('change',()=>{ writeStateToHash(); buildLayer(); });
+  $('resetBtn').addEventListener('click',()=>{
+    // Reset all groups to (All)
+    ['species','stage','sex','season','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','year','month']
+      .forEach(name=> setChecked(name, []) );
+    yearMinEl.value=String(MIN_YEAR); yearMaxEl.value=String(MAX_YEAR); syncYearSlider();
+    isolatedBin = -1; highlightTop10=false; opacityVal=0.65;
+    writeStateToHash(); buildLayer();
+  });
 
-$('opacitySlider').addEventListener('input', (e)=>{
-  layerOpacity = parseFloat(e.target.value);
-  if(vtLayer && vtLayer.setStyle){ vtLayer.setStyle({[layerName]: styleFactory({breaks:[0,1], ramp:[ '#000' ]})}); } // noop to refresh
-  if(vtLayer && vtLayer.setStyle){ vtLayer.setStyle({[layerName]: styleFactory({breaks:[0,1], ramp:[ '#000' ]})}); } // double tick (Leaflet quirk)
-  // Actually rebuild style using last frozen cfg: easiest is just re-run Apply quickly (cheap)
-});
-$('top10Toggle').addEventListener('change', (e)=>{
-  highlightTop10 = !!e.target.checked;
-  if(vtLayer && vtLayer.setStyle){ vtLayer.setStyle({[layerName]: styleFactory({breaks:[0,1], ramp:[ '#000' ]})}); }
-});
-
-/* ===== Permalink ===== */
-function readStateFromHash(){
-  const h=new URLSearchParams(location.hash.slice(1));
-  if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
-  if(h.has('res')) $('resolution').value=h.get('res');
-  if(h.has('ct')) $('counttype').value=h.get('ct');
-
-  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
-  for(const id of ids){
-    const val=h.get(id); if(!val) continue;
-    const wanted=new Set(val.split('|'));
-    Array.from($(id).options).forEach(o=>o.selected=wanted.has(o.value));
+  /* ===== Permalink ===== */
+  function writeStateToHash(){
+    const c=map.getCenter(); const h=new URLSearchParams();
+    h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
+    h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
+    // selections
+    const names=['species','stage','sex','season','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','year','month'];
+    for(const n of names){ const vals=getChecked(n); if(vals.length) h.set(n, vals.join('|')); }
+    // year range
+    h.set('ymin',yearMinEl.value); h.set('ymax',yearMaxEl.value);
+    // layer options
+    h.set('op',opacityVal.toFixed(2));
+    h.set('t10',highlightTop10?'1':'0');
+    if(isolatedBin>=0) h.set('bin',String(isolatedBin)); else h.delete('bin');
+    location.hash=h.toString();
   }
-  if(h.has('ymin')) $('yearMin').value = h.get('ymin');
-  if(h.has('ymax')) $('yearMax').value = h.get('ymax');
-  $('yearMinLabel').textContent=$('yearMin').value;
-  $('yearMaxLabel').textContent=$('yearMax').value;
-  updateYearDisabled();
+  function readStateFromHash(){
+    const h=new URLSearchParams(location.hash.slice(1));
+    if(h.has('z')&&h.has('lat')&&h.has('lng')) map.setView([+h.get('lat'),+h.get('lng')], +h.get('z'));
+    if(h.has('res')) $('resolution').value=h.get('res');
+    if(h.has('ct')) $('counttype').value=h.get('ct');
+    const names=['species','stage','sex','season','Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol','decomposition_code','year','month'];
+    for(const n of names){ const v=h.get(n); if(!v) continue; setChecked(n, v.split('|')); }
+    if(h.has('ymin')) yearMinEl.value=h.get('ymin');
+    if(h.has('ymax')) yearMaxEl.value=h.get('ymax');
+    syncYearSlider();
+    if(h.has('op')) opacityVal = Number(h.get('op'))||opacityVal;
+    if(h.has('t10')) highlightTop10 = h.get('t10')==='1';
+    if(h.has('bin')) isolatedBin = Number(h.get('bin')); else isolatedBin = -1;
+  }
+  $('permalink').addEventListener('click',async()=>{
+    writeStateToHash();
+    try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!'); }
+    catch{ showToast('Link updated in address bar.'); }
+  });
 
-  if(h.has('op')) { layerOpacity = Math.max(0.3, Math.min(0.9, parseFloat(h.get('op')))); $('opacitySlider').value=String(layerOpacity); }
-  if(h.has('hi')) { highlightTop10 = h.get('hi')==='1'; $('top10Toggle').checked=highlightTop10; }
-  if(h.has('bin')) { isolatedBinIndex = parseInt(h.get('bin'),10); if(!Number.isFinite(isolatedBinIndex)) isolatedBinIndex=-1; }
-}
-function writeStateToHash(){
-  const h=new URLSearchParams(), c=map.getCenter();
-  h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
-  h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
-  const ids=['speciesFilter','stageFilter','sexFilter','FishingFilter','Marine_DebrisFilter','AgressionFilter','Boat_collisionFilter','DredgingFilter','OilFilter','PetrolFilter','decompFilter','seasonFilter','yearFilter','monthFilter'];
-  for(const id of ids){ const vals=getMulti(id); if(vals.length) h.set(id, vals.join('|')); }
-  h.set('ymin',$('yearMin').value); h.set('ymax',$('yearMax').value);
-  h.set('op',String(layerOpacity));
-  h.set('hi', highlightTop10 ? '1':'0');
-  if(isolatedBinIndex>=0) h.set('bin', String(isolatedBinIndex));
-  location.hash = h.toString();
-}
-$('permalink').addEventListener('click', async ()=>{
-  writeStateToHash();
-  try{ await navigator.clipboard.writeText(location.href); showToast('Link copied to clipboard!'); }
-  catch{ showToast('Link updated in address bar.'); }
-});
+  /* ===== Boot ===== */
+  (function init(){
+    // details toggles
+    document.querySelectorAll('.details .sum').forEach(s=>{
+      s.addEventListener('click',()=>{ const c=s.parentElement.querySelector('.content'); if(c) c.style.display = (c.style.display==='none'?'':'none'); });
+    });
+    // initial year slider sync
+    syncYearSlider();
+    readStateFromHash();
+    buildLayer();
+  })();
 
-/* ===== Boot ===== */
-(function init(){
-  // Default year range (adjust labels)
-  $('yearMinLabel').textContent=$('yearMin').value;
-  $('yearMaxLabel').textContent=$('yearMax').value;
-  updateYearDisabled();
-
-  readStateFromHash();
-  buildLayer();
-})();
+})(); // IIFE
 </script>
 </body>
 </html>
