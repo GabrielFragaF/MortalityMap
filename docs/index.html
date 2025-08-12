@@ -5,6 +5,9 @@
 <title>Sea Turtle Mortality Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+<!-- Stop favicon 404 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
+
 <!-- Leaflet (local, CSP-safe) -->
 <link rel="stylesheet" href="./vendor/leaflet.css"/>
 <script src="./vendor/leaflet.js"></script>
@@ -294,20 +297,27 @@ const ramps={
 let jenksBreaks=[0,1,2,3,4,5];
 let activeRamp=ramps['multi'];
 
+/* Solid defensive legend */
 function updateLegend(){
-  // Defensive defaults to avoid "reading '0'"
-  if (!Array.isArray(activeRamp) || activeRamp.length===0) activeRamp = ramps['multi'];
-  if (!Array.isArray(jenksBreaks) || jenksBreaks.length < 2) jenksBreaks = [0,1,2,3,4,5];
-
   const el=$('legend');
+
+  // pull safe local copies so a race can’t flip globals mid-render
+  const ramp = (Array.isArray(activeRamp) && activeRamp.length) ? activeRamp.slice() : ramps['multi'].slice();
+  const brks = (Array.isArray(jenksBreaks) && jenksBreaks.length>1) ? jenksBreaks.slice() : [0,1,2,3,4,5];
+
   const spSel=getMulti('speciesFilter');
   const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
   el.innerHTML=`<div class="leghdr">${name}</div>`;
-  const n = Math.min(activeRamp.length, jenksBreaks.length-1);
+
+  const n = Math.min(ramp.length, brks.length-1);
+  if (n <= 0) {
+    el.insertAdjacentHTML('beforeend', `<div class="legend-row"><span>No data in view</span></div>`);
+    return;
+  }
   for(let i=0;i<n;i++){
-    const a=jenksBreaks[i], b=jenksBreaks[i+1];
+    const a=brks[i], b=brks[i+1];
     el.insertAdjacentHTML('beforeend',
-      `<div class="legend-row"><span class="swatch" style="background:${activeRamp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
+      `<div class="legend-row"><span class="swatch" style="background:${ramp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
   }
 }
 const currentRamp=()=>{ const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi']; };
@@ -390,7 +400,7 @@ const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
 function fileFor(res, ct){ return `hexgrid_${res}_${ct}.pmtiles`; }
 
 /* ===== State ===== */
-let vtLayer=null, currentPMFile='', layerName='', header=null;
+let vtLayer=null, layerName='', header=null;
 const aggByHex = new Map();
 let metricField = 'sum_val';
 
@@ -548,7 +558,8 @@ function makeStyle(){
     for(let i=0;i<jenksBreaks.length-1;i++){
       if(v>=jenksBreaks[i] && v<=jenksBreaks[i+1]) { idx=i; break; }
     }
-    const color = activeRamp[Math.min(idx,activeRamp.length-1)];
+    const ramp=(Array.isArray(activeRamp)&&activeRamp.length)?activeRamp:ramps['multi'];
+    const color = ramp[Math.min(idx,ramp.length-1)];
     return {fill:true, fillColor:color, fillOpacity:0.65, color, weight:0.5};
   };
 }
@@ -588,7 +599,7 @@ async function buildLayer(){
 
     const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
 
-    // Defensive defaults to keep legend stable even when no values
+    // Always produce safe breaks
     if(!Array.isArray(values)) {
       jenksBreaks = [0,1,2,3,4,5];
     } else {
