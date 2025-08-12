@@ -747,7 +747,7 @@ function reservoir(values, k){
   return out;
 }
 
-/* === Robust, zero-aware breaks (winsorized + optional log) === */
+/* === Balanced, zero-aware breaks (winsorized + optional log + tail caps) === */
 function robustBreaks(values){
   const finite = (values||[]).filter(Number.isFinite);
   if (finite.length < 8) {
@@ -755,58 +755,59 @@ function robustBreaks(values){
     return prettyBreaks(min, max);
   }
 
-  const zeros = finite.filter(v => v <= 0).length;
-  const nzVals = finite.filter(v => v > 0);
+  const sortedAll = finite.slice().sort((a,b)=>a-b);
+  const minAll = sortedAll[0], maxAll = sortedAll[sortedAll.length-1];
 
-  const q = (sorted, p) => ss.quantileSorted(sorted, p);
+  const zeroCount = sortedAll.filter(v => v <= 0).length;
+  const zeroRatio = zeroCount / sortedAll.length;
+
+  const pos = sortedAll.filter(v => v > 0);
+  if (!pos.length) return prettyBreaks(minAll, maxAll);
+
+  // Winsorize (less aggressive to be "halfway")
+  const p02 = ss.quantileSorted(sortedAll, 0.02);
+  const p98 = ss.quantileSorted(sortedAll, 0.98);
+  const clip = v => Math.min(Math.max(v, p02), p98);
+
+  const posClipped = pos.map(clip);
+  const spread = p98 / Math.max(1e-9, p02);
+  const useLog = spread >= 12; // slightly less aggressive than before
+
+  const transform = v => useLog ? Math.log1p(v) : v;
+  const inv = v => useLog ? Math.expm1(v) : v;
+
+  const tPos = posClipped.map(transform).sort((a,b)=>a-b);
+
+  // Helper to get transformed quantiles and map back
+  const tq = p => inv(ss.quantileSorted(tPos, p));
+
+  // Ensure strict increase of edges
   const strictlyIncrease = (edges) => {
-    for (let i=1; i<edges.length; i++){
-      if (!(edges[i] > edges[i-1])) edges[i] = edges[i-1] + 1e-9;
+    for (let i=1;i<edges.length;i++){
+      if (!(edges[i] > edges[i-1])) edges[i] = edges[i-1] + Math.max(1e-9, Math.abs(edges[i-1])*1e-9);
     }
     return edges;
   };
 
-  if (nzVals.length && zeros / finite.length >= 0.4) {
-    const s = nzVals.slice().sort((a,b)=>a-b);
-    const p99 = q(s, 0.99);
-    const clipped = s.map(v => Math.min(v, p99));
-    const spread = p99 / Math.max(1e-9, clipped[0]);
-    const useLog = spread >= 20;
-
-    const t = useLog ? clipped.map(v => Math.log1p(v)) : clipped.slice();
-    let edgesT = null;
-    try { if (t.length >= 20 && ss.jenks) edgesT = ss.jenks(t, 4); } catch{}
-    if (!edgesT || new Set(edgesT).size < 5) {
-      const ts = t.slice().sort((a,b)=>a-b);
-      edgesT = ss.quantileSorted(ts, [0,0.25,0.5,0.75,1]);
-    }
-    let nzEdges = useLog ? edgesT.map(e => Math.expm1(e)) : edgesT;
-    const eps = Math.max(1e-9, nzEdges[0]*0.5);
-    const edges = [0, eps, ...nzEdges.slice(1)];
+  if (zeroRatio >= 0.25) {
+    // Many zeros -> dedicate first bin to zero, then balanced quantiles on positives
+    const q25 = tq(0.25);
+    const q60 = tq(0.60);
+    const q85 = tq(0.85);
+    const eps = Math.max(1e-9, q25*0.5); // thin non-zero low bin
+    const edges = [0, eps, q25, q60, q85, Math.max(maxAll, tq(1))];
     return strictlyIncrease(edges);
   }
 
-  const sAll = finite.slice().sort((a,b)=>a-b);
-  const min = sAll[0], max = sAll[sAll.length-1];
-  const p01 = q(sAll, 0.01);
-  const p99 = q(sAll, 0.99);
+  // No heavy zero problem -> anchor tails: ~15% low, ~10-15% high
+  const q15 = tq(0.15);
+  const q45 = tq(0.45);
+  const q70 = tq(0.70);
+  const q90 = tq(0.90);
 
-  const clipped = sAll.map(v => Math.min(Math.max(v, p01), p99));
-  const spread = p99 / Math.max(1e-9, p01);
-  const useLog = spread >= 20;
-
-  const t = useLog ? clipped.map(v => Math.log1p(v)) : clipped;
-  let edgesT = null;
-  try { if (t.length >= 20 && ss.jenks) edgesT = ss.jenks(t, 5); } catch {}
-  if (!edgesT || new Set(edgesT).size < 6) {
-    const ts = t.slice().sort((a,b)=>a-b);
-    edgesT = ss.quantileSorted(ts, [0,0.2,0.4,0.6,0.8,1]);
-  }
-  let edges = useLog ? edgesT.map(e => Math.expm1(e)) : edgesT;
-
-  edges[0] = Math.min(edges[0], min);
-  edges[edges.length-1] = Math.max(edges[edges.length-1], p99);
-  return strictlyIncrease(edges);
+  let edges = [Math.min(minAll, q15), q15, q45, q70, q90, Math.max(maxAll, q90)];
+  edges = strictlyIncrease(edges);
+  return edges;
 }
 
 /* Hardened binning using frozen breaks */
@@ -1008,7 +1009,7 @@ async function buildLayer(){
       return; // keep last good layer
     }
 
-    // Compute breaks (robust, zero-aware)
+    // Compute breaks (balanced)
     let brks = robustBreaks(values);
     if(!brks || !Array.isArray(brks) || brks.length<2){
       const min=Math.min(...values), max=Math.max(...values);
