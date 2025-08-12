@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="./vendor/leaflet.css"/>
 <script src="./vendor/leaflet.js"></script>
 
-<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (all local, CSP-safe) -->
+<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local, CSP-safe) -->
 <script src="./vendor/pmtiles.js"></script>
 <script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
 <script src="./vendor/pbf.js"></script>
@@ -221,7 +221,6 @@ details .content{padding:10px 12px}
 <script>
 /* ========= Decoder shim (handles any build shape) ========= */
 (function ensureDecoders(){
-  // Try all the common global names
   var VT = (window.VectorTile) ||
            (window.vectorTile && window.vectorTile.VectorTile) ||
            (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) ||
@@ -231,21 +230,16 @@ details .content{padding:10px 12px}
             (window.pbf && window.pbf.Pbf) ||
             null;
 
-  // Expose shims so old code paths (that use VectorTile/Pbf directly) still work
   if (!window.VectorTile && VT) window.VectorTile = VT;
   if (!window.Pbf && PBF) window.Pbf = PBF;
 
-  // Save for deliberate use too
   window.__VT__ = VT || window.VectorTile || null;
   window.__PBF__ = PBF || window.Pbf || null;
 
-  // Quick visible hint if missing
   if (!window.__VT__ || !window.__PBF__) {
-    var msg = [];
-    if (!window.__VT__) msg.push('vector-tile.js');
-    if (!window.__PBF__) msg.push('pbf.js');
-    console.warn('Decoder globals missing:', msg.join(', '));
-    // We'll also toast later when trying to aggregate.
+    console.warn('Decoder globals missing:',
+      (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':'')
+    );
   }
 })();
 
@@ -297,15 +291,23 @@ const ramps={
   'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
   'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
-let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'];
+let jenksBreaks=[0,1,2,3,4,5];
+let activeRamp=ramps['multi'];
+
 function updateLegend(){
+  // Defensive defaults to avoid "reading '0'"
+  if (!Array.isArray(activeRamp) || activeRamp.length===0) activeRamp = ramps['multi'];
+  if (!Array.isArray(jenksBreaks) || jenksBreaks.length < 2) jenksBreaks = [0,1,2,3,4,5];
+
   const el=$('legend');
   const spSel=getMulti('speciesFilter');
   const name=(spSel.length===1)?spSel[0]:(spSel.length>1?'Multiple species':'All species');
   el.innerHTML=`<div class="leghdr">${name}</div>`;
-  for(let i=0;i<activeRamp.length;i++){
-    const a=jenksBreaks[i], b=jenksBreaks[i+1]; if(b==null) break;
-    el.insertAdjacentHTML('beforeend',`<div class="legend-row"><span class="swatch" style="background:${activeRamp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
+  const n = Math.min(activeRamp.length, jenksBreaks.length-1);
+  for(let i=0;i<n;i++){
+    const a=jenksBreaks[i], b=jenksBreaks[i+1];
+    el.insertAdjacentHTML('beforeend',
+      `<div class="legend-row"><span class="swatch" style="background:${activeRamp[i]}"></span><span>${nf(a)} – ${nf(b)}</span></div>`);
   }
 }
 const currentRamp=()=>{ const sp=getMulti('speciesFilter'); return (sp.length===1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi']; };
@@ -405,7 +407,6 @@ async function detectLayerName(pmFile){
         const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
       }
     }
-    // Probe a visible tile, but only if decoders are present
     if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf globals not available to probe tiles.');
     const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
     const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
@@ -463,7 +464,7 @@ function discoverMetricField(sampleProps, ct){
 }
 async function aggregateAndCollect(pmFile, layerName, predicate, ct){
   if(!window.__VT__ || !window.__PBF__){
-    showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks. Verify docs/vendor/vector-tile.js & pbf.js.');
+    showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks. Verify docs/vendor files.');
     return [];
   }
   aggByHex.clear();
@@ -586,10 +587,15 @@ async function buildLayer(){
     const predicate = makePredicate();
 
     const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
-    if(!values.length){
-      showToast('No features matched the current view/filters (or vector-tile/pbf decoders missing).');
+
+    // Defensive defaults to keep legend stable even when no values
+    if(!Array.isArray(values)) {
+      jenksBreaks = [0,1,2,3,4,5];
+    } else {
+      jenksBreaks = await computeBreaksFromAggregates(values);
+      if(!Array.isArray(jenksBreaks) || jenksBreaks.length < 2) jenksBreaks = [0,1,2,3,4,5];
     }
-    jenksBreaks = await computeBreaksFromAggregates(values);
+
     activeRamp = currentRamp();
     updateLegend();
 
