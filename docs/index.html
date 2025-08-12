@@ -80,7 +80,12 @@ details .content{padding:10px 12px}
 #toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:360px}
 #toast.info{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
 #toast.warn{background:#fef3c7;color:#92400e;border-color:#fde68a}
-.leaflet-popup-content{margin:8px 12px}.kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}small.muted{color:#64748b}
+
+/* Popup / hover */
+.leaflet-popup-content{margin:8px 12px}
+.kv{display:flex;justify-content:space-between;gap:10px}
+.kv b{color:#0f172a}
+small.muted{color:#64748b}
 </style>
 </head>
 <body>
@@ -177,7 +182,8 @@ details .content{padding:10px 12px}
           <div class="checkbox-group" id="marineDebrisGroup" role="group" aria-label="Marine Debris">
             <div class="checkbox-row all"><input type="checkbox" id="debris_all" checked><label for="debris_all">(All)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="debris_yes"><label for="debris_yes">Yes</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="debris_no"><label for="deris_no">No</label></div>
+            <!-- fixed "for" typo here -->
+            <div class="checkbox-row"><input type="checkbox" id="debris_no"><label for="debris_no">No</label></div>
           </div>
         </div>
         <div class="row">
@@ -495,13 +501,15 @@ const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
 function fileFor(res, ct){ const v='20250812'; return `hexgrid_${res}_${ct}.pmtiles?v=${v}`; }
 
 /* ========= State ========= */
-let vtLayer=null, layerName='', header=null;
+let vtLayer=null, layerNames=[], header=null;
 const aggByHex=new Map();
 let metricField='sum_val';
 const stats = (window.ss || window.simpleStatistics || null);
+let lastStyleFn=null; // for hover highlight
 
-/* ========= Safe layer name ========= */
-async function detectLayerName(pmFile){
+/* ========= Detect ALL layer names (more robust for r5 etc.) ========= */
+async function detectLayerNames(pmFile){
+  const names = new Set();
   try{
     const pm = await getPM(pmFile);
     header = await pm.getHeader();
@@ -509,23 +517,35 @@ async function detectLayerName(pmFile){
     if(md && md.json){
       const j=(typeof md.json==='string')?JSON.parse(md.json):md.json;
       if(j && j.vector_layers){
-        if(Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
-        const keys=Object.keys(j.vector_layers); if(keys.length) return keys[0];
+        if(Array.isArray(j.vector_layers)){
+          j.vector_layers.forEach(vl=>{ if(vl && vl.id) names.add(vl.id); });
+        }else{
+          Object.keys(j.vector_layers).forEach(k=>names.add(k));
+        }
       }
+      if(names.size) return Array.from(names);
     }
     if(!window.__VT__ || !window.__PBF__) throw new Error('VectorTile/Pbf not available for probing');
-    const z=clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
-    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
-    for(let x=minX;x<=maxX;x++){
-      for(let y=minY;y<=maxY;y++){
-        const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
-        if(!r || !r.data) continue;
-        const vt=new window.__VT__(new window.__PBF__(r.data));
-        const names=Object.keys(vt.layers||{}); if(names.length) return names[0];
+    const zCandidates = Array.from(new Set([
+      Math.floor(map.getZoom()),
+      6, header.minZoom, header.maxZoom
+    ].filter(n=>Number.isFinite(n)))).sort((a,b)=>a-b);
+    for(const z0 of zCandidates){
+      const z=clamp(z0, header.minZoom, header.maxZoom);
+      const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+      for(let x=minX;x<=maxX;x++){
+        for(let y=minY;y<=maxY;y++){
+          const r = await (await getPM(pmFile)).getZxy(z, wrapX(x,z), y);
+          if(!r || !r.data) continue;
+          const vt=new window.__VT__(new window.__PBF__(r.data));
+          Object.keys(vt.layers||{}).forEach(k=>names.add(k));
+        }
       }
+      if(names.size) break;
     }
   }catch(e){ console.warn('Layer detect failed:', e); }
-  console.warn('Falling back to "hexgrid"'); return 'hexgrid';
+  if(!names.size){ console.warn('Falling back to ["hexgrid"]'); return ['hexgrid']; }
+  return Array.from(names);
 }
 
 /* ========= Metric detection (strict) ========= */
@@ -537,7 +557,6 @@ const metricCandidatesByCT = {
   new_mortality_est_bf_high: ['sum_val','new_mortality_est_bf_high']
 };
 function chooseMetricFieldAcrossFeatures(observedPropsArr, ct){
-  // require multiple finite hits before committing; else fallback sum_val
   const priority = metricCandidatesByCT[ct] || ['sum_val'];
   for(const k of priority){
     let hits=0;
@@ -546,9 +565,7 @@ function chooseMetricFieldAcrossFeatures(observedPropsArr, ct){
       if(Number.isFinite(v)){ hits++; if(hits>=3) return k; }
     }
   }
-  // fallback: sum_val if seen finite at least once
-  let sumHits=0;
-  for(const p of observedPropsArr){ if(Number.isFinite(Number(p.sum_val))) sumHits++; if(sumHits>=1) return 'sum_val'; }
+  for(const p of observedPropsArr){ if(Number.isFinite(Number(p.sum_val))) return 'sum_val'; }
   console.warn('[metric] Falling back to sum_val');
   return 'sum_val';
 }
@@ -558,13 +575,9 @@ function hexKey(p){
   return p.h3_index ?? p.h3 ?? p.hex_id ?? p.index ?? p.id ?? null;
 }
 
-/* ========= Category helpers (flexible props) ========= */
-function lowerPropMap(obj){
-  const out={}; for(const k in obj){ out[k.toLowerCase()]=obj[k]; } return out;
-}
-function increment(mapObj, key, by){
-  if(!key) return; const k=String(key); mapObj[k]=(mapObj[k]||0)+(Number(by)||0);
-}
+/* ========= Category helpers ========= */
+function lowerPropMap(obj){ const out={}; for(const k in obj){ out[k.toLowerCase()]=obj[k]; } return out; }
+function increment(mapObj, key, by){ if(!key) return; const k=String(key); mapObj[k]=(mapObj[k]||0)+(Number(by)||0); }
 function pctParts(countMap){
   if(!countMap) return {parts:[], unknownCount:0, totalLabelled:0};
   const unknown = Number(countMap.Unknown || countMap.unknown || 0);
@@ -574,13 +587,13 @@ function pctParts(countMap){
   return { parts: entries.map(([k,v])=>[k, pct(v)]), unknownCount: unknown, totalLabelled };
 }
 
-/* ========= Aggregation + sampling with stride-retry ========= */
+/* ========= Aggregation + stride-retry ========= */
 const MAX_TILES_STATS=90;
 const MAX_HEXES_STATS=1800;
 
-async function aggregateAndCollect(pmFile, layerName, predicate, ct){
+async function aggregateAndCollect(pmFile, layerNames, predicate, ct){
   aggByHex.clear();
-  const sums=[]; // returnable array, always
+  const sums=[]; // always array
   try{
     if(!window.__VT__ || !window.__PBF__){
       showToast('Decoders not loaded (vector-tile/pbf).',4000,'warn');
@@ -609,94 +622,82 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
           jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
             if(!resp || !resp.data) return;
             const vt = new window.__VT__(new window.__PBF__(resp.data));
-            const lyr = vt.layers[layerName]; if(!lyr) return;
-            for(let i=0;i<lyr.length;i++){
-              const f = lyr.feature(i);
-              const props = f.properties || {};
-              if(!predicate(props)) continue;
+            const candidateLayers = layerNames && layerNames.length ? layerNames : Object.keys(vt.layers||{});
+            for(const lname of candidateLayers){
+              const lyr = vt.layers[lname]; if(!lyr) continue;
+              for(let i=0;i<lyr.length;i++){
+                const f = lyr.feature(i);
+                const props = f.properties || {};
+                const key = hexKey(props); if(!key) continue; // ensure hex layer
+                if(!predicate(props)) continue;
 
-              if(observedForMetric.length<12) observedForMetric.push(props);
+                if(observedForMetric.length<16) observedForMetric.push(props);
 
-              const key = hexKey(props); if(!key) continue;
+                const entry = aggByHex.get(key) || {
+                  sum:0,
+                  maxUid: null, rowCount: 0,
+                  sexCounts: Object.create(null),
+                  stageCounts: Object.create(null),
+                  seasonCounts: Object.create(null),
+                  yearCounts: Object.create(null),
+                  monthCounts: Object.create(null),
+                  species: props.species || null
+                };
 
-              // init entry
-              const entry = aggByHex.get(key) || {
-                sum:0,
-                // unique IDs: prefer a per-cell uid_count; keep MAX across features; fallback rowCount
-                maxUid: null,
-                rowCount: 0,
-                sexCounts: Object.create(null),
-                stageCounts: Object.create(null),
-                seasonCounts: Object.create(null),
-                yearCounts: Object.create(null),
-                monthCounts: Object.create(null),
-                species: props.species || null
-              };
+                entry._vals = entry._vals || [];
+                entry._vals.push(props);
 
-              // value
-              // metricField chosen later after sampling -> we still can add once chosen
-              // so collect raw numeric candidates per feature
-              entry._vals = entry._vals || [];
-              entry._vals.push(props);
+                const l = lowerPropMap(props);
+                const uidc = Number(l['uid_count'] ?? l['unique_ids'] ?? l['unique_turtle_ids'] ?? l['turtle_id_count']);
+                if(Number.isFinite(uidc)){
+                  entry.maxUid = (entry.maxUid==null)?uidc:Math.max(entry.maxUid, uidc);
+                }else{
+                  const rc = Number(props.count);
+                  entry.rowCount += Number.isFinite(rc) ? rc : 1;
+                }
 
-              // uid_count (per cell). If present, keep MAX; else use rowCount fallback (count or 1)
-              const l = lowerPropMap(props);
-              const uidc = Number(l['uid_count'] ?? l['unique_ids'] ?? l['unique_turtle_ids'] ?? l['turtle_id_count']);
-              if(Number.isFinite(uidc)){
-                entry.maxUid = (entry.maxUid==null)?uidc:Math.max(entry.maxUid, uidc);
-              }else{
-                const rc = Number(props.count);
-                entry.rowCount += Number.isFinite(rc) ? rc : 1;
+                // Sex
+                const sf = Number(l['sex_female']), sm = Number(l['sex_male']), su = Number(l['sex_unknown']);
+                if(Number.isFinite(sf)||Number.isFinite(sm)||Number.isFinite(su)){
+                  if(Number.isFinite(sf)) increment(entry.sexCounts,'Female',sf);
+                  if(Number.isFinite(sm)) increment(entry.sexCounts,'Male',sm);
+                  if(Number.isFinite(su)) increment(entry.sexCounts,'Unknown',su);
+                }else if(l['sex']){
+                  increment(entry.sexCounts, canon.sex(l['sex']), Number(props.count)||1);
+                }
+                // Stage
+                const sad=Number(l['stage_adult']), sjv=Number(l['stage_juvenile']), sha=Number(l['stage_hatchling']), su2=Number(l['stage_unknown']);
+                if(Number.isFinite(sad)||Number.isFinite(sjv)||Number.isFinite(sha)||Number.isFinite(su2)){
+                  if(Number.isFinite(sad)) increment(entry.stageCounts,'Adult',sad);
+                  if(Number.isFinite(sjv)) increment(entry.stageCounts,'Juvenile',sjv);
+                  if(Number.isFinite(sha)) increment(entry.stageCounts,'Hatchling',sha);
+                  if(Number.isFinite(su2)) increment(entry.stageCounts,'Unknown',su2);
+                }else if(l['development_stage']||l['stage']){
+                  increment(entry.stageCounts, canon.stage(l['development_stage']||l['stage']), Number(props.count)||1);
+                }
+                // Season
+                const sao=Number(l['season_autumn']), ssp=Number(l['season_spring']), ssu=Number(l['season_summer']), swi=Number(l['season_winter']), sun=Number(l['season_unknown']);
+                if(Number.isFinite(sao)||Number.isFinite(ssp)||Number.isFinite(ssu)||Number.isFinite(swi)||Number.isFinite(sun)){
+                  if(Number.isFinite(sao)) increment(entry.seasonCounts,'Autumn',sao);
+                  if(Number.isFinite(ssp)) increment(entry.seasonCounts,'Spring',ssp);
+                  if(Number.isFinite(ssu)) increment(entry.seasonCounts,'Summer',ssu);
+                  if(Number.isFinite(swi)) increment(entry.seasonCounts,'Winter',swi);
+                  if(Number.isFinite(sun)) increment(entry.seasonCounts,'Unknown',sun);
+                }else if(l['season']){
+                  increment(entry.seasonCounts, canon.season(l['season']), Number(props.count)||1);
+                }
+
+                if(props.year!=null){
+                  const y=canon.year(props.year); if(y) increment(entry.yearCounts,y, Number(props.count)||1);
+                }
+                if(props.month!=null){
+                  const m=asIntString(props.month); if(m) increment(entry.monthCounts,m, Number(props.count)||1);
+                }
+
+                aggByHex.set(key,entry);
+                cells++;
+                if(cells>MAX_HEXES_STATS) break;
               }
-
-              // categorical counts — prefer aggregated columns; otherwise category+count
-              // Sex
-              const sf = Number(l['sex_female']); const sm = Number(l['sex_male']); const su = Number(l['sex_unknown']);
-              if(Number.isFinite(sf)||Number.isFinite(sm)||Number.isFinite(su)){
-                if(Number.isFinite(sf)) increment(entry.sexCounts,'Female',sf);
-                if(Number.isFinite(sm)) increment(entry.sexCounts,'Male',sm);
-                if(Number.isFinite(su)) increment(entry.sexCounts,'Unknown',su);
-              }else if(l['sex']){
-                const label = canon.sex(l['sex']);
-                increment(entry.sexCounts,label, Number(props.count)||1);
-              }
-
-              // Stage
-              const sad = Number(l['stage_adult']); const sjv = Number(l['stage_juvenile']); const sha = Number(l['stage_hatchling']); const su2 = Number(l['stage_unknown']);
-              if(Number.isFinite(sad)||Number.isFinite(sjv)||Number.isFinite(sha)||Number.isFinite(su2)){
-                if(Number.isFinite(sad)) increment(entry.stageCounts,'Adult',sad);
-                if(Number.isFinite(sjv)) increment(entry.stageCounts,'Juvenile',sjv);
-                if(Number.isFinite(sha)) increment(entry.stageCounts,'Hatchling',sha);
-                if(Number.isFinite(su2)) increment(entry.stageCounts,'Unknown',su2);
-              }else if(l['development_stage']||l['stage']){
-                const label = canon.stage(l['development_stage']||l['stage']);
-                increment(entry.stageCounts,label, Number(props.count)||1);
-              }
-
-              // Season
-              const sao = Number(l['season_autumn']); const ssp = Number(l['season_spring']); const ssu = Number(l['season_summer']); const swi = Number(l['season_winter']); const sun = Number(l['season_unknown']);
-              if(Number.isFinite(sao)||Number.isFinite(ssp)||Number.isFinite(ssu)||Number.isFinite(swi)||Number.isFinite(sun)){
-                if(Number.isFinite(sao)) increment(entry.seasonCounts,'Autumn',sao);
-                if(Number.isFinite(ssp)) increment(entry.seasonCounts,'Spring',ssp);
-                if(Number.isFinite(ssu)) increment(entry.seasonCounts,'Summer',ssu);
-                if(Number.isFinite(swi)) increment(entry.seasonCounts,'Winter',swi);
-                if(Number.isFinite(sun)) increment(entry.seasonCounts,'Unknown',sun);
-              }else if(l['season']){
-                const label = canon.season(l['season']);
-                increment(entry.seasonCounts,label, Number(props.count)||1);
-              }
-
-              // Year / Month modes (weighted by count if present)
-              if(props.year!=null){
-                const y=canon.year(props.year); if(y) increment(entry.yearCounts,y, Number(props.count)||1);
-              }
-              if(props.month!=null){
-                const m=asIntString(props.month); if(m) increment(entry.monthCounts,m, Number(props.count)||1);
-              }
-
-              aggByHex.set(key,entry);
-              cells++;
-              if(cells>MAX_HEXES_STATS) break;
             }
           }).catch(e=>console.warn('tile decode skipped',e)));
           if(aggByHex.size>MAX_HEXES_STATS) break outer;
@@ -706,22 +707,18 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
       return cells;
     };
 
-    // first pass with stride
     let cells = await process(stride);
-    // if we saw nothing, retry with stride=1 (stats only)
     if(cells===0 && stride>1){
       console.info('Stats retry with stride=1');
       cells = await process(1);
     }
 
-    // Decide metricField using sampled props
     metricField = chooseMetricFieldAcrossFeatures(
       Array.from(aggByHex.values()).flatMap(e=>e._vals||[]).slice(0,36),
       ct
     );
 
-    // Finalize sums now that metricField is known
-    aggByHex.forEach((entry,key)=>{
+    aggByHex.forEach((entry)=>{
       let sum=0;
       if(Array.isArray(entry._vals)){
         for(const p of entry._vals){
@@ -733,12 +730,11 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct){
       delete entry._vals;
     });
 
-    // Build return values (finite only)
     aggByHex.forEach(v=>{ if(Number.isFinite(v.sum)) sums.push(v.sum); });
 
   }catch(e){
     console.warn('aggregateAndCollect failed', e);
-    return []; // always array
+    return [];
   }
   return sums;
 }
@@ -785,7 +781,6 @@ function computeSafeBreaks(values){
     const probs=[0,0.2,0.4,0.6,0.8,1];
     edges = (stats && stats.quantileSorted) ? stats.quantileSorted(sorted, probs) : manualQuantilesSorted(sorted, probs);
   }
-  // strictly increasing
   for(let i=1;i<edges.length;i++){ if(!(edges[i]>edges[i-1])) edges[i]=edges[i-1]+1e-9; }
   return edges;
 }
@@ -798,50 +793,67 @@ function makeStyle(localBreaks, localRamp){
     const v = agg ? agg.sum : undefined;
     if(!Number.isFinite(v) && v!==0){ return {opacity:0, fillOpacity:0, interactive:false}; }
     const idx = computeBinIndex(localBreaks, v);
-    if(isolatedBin>=0 && idx!==isolatedBin){ return {opacity:0.1, fillOpacity:0.05, interactive:false}; }
+    if(isolatedBin>=0 && idx!==isolatedBin){ return {opacity:0, fillOpacity:0, interactive:false}; }
     const color = localRamp[Math.max(0,Math.min(idx, localRamp.length-1))] || localRamp[0];
     return {fill:true, fillColor:color, fillOpacity:0.65, color, weight:0.6, interactive:true};
   };
 }
 
-function modeFromCounts(obj){
-  const entries = Object.entries(obj||{});
-  if(!entries.length) return ['–',0];
-  entries.sort((a,b)=>{
-    if(b[1]!==a[1]) return b[1]-a[1];
-    const an=+a[0], bn=+b[0];
-    if(Number.isFinite(bn) && Number.isFinite(an)) return bn-an;
-    return String(b[0]).localeCompare(String(a[0]));
+// Helpers for popup with symbols and percentages
+function computePctMap(obj){
+  const o=obj||{};
+  const F=Number(o.Female||0), M=Number(o.Male||0), U=Number(o.Unknown||0);
+  const totalLabelled = F+M;
+  const pf = totalLabelled? (100*F/totalLabelled):0;
+  const pm = totalLabelled? (100*M/totalLabelled):0;
+  return {F, M, U, pf, pm};
+}
+function computePct4(obj, keys){
+  const o=obj||{};
+  let total=0; keys.forEach(k=>{ total += Number(o[k]||0); });
+  const out={}; keys.forEach(k=>{
+    const v=Number(o[k]||0); out[k]={v, p: total? (100*v/total):0};
   });
-  return entries[0];
+  const unknown=Number(o.Unknown||0);
+  return {out, unknown};
 }
 
-function bindHoverPopups(layer){
-  let locked=false;
-  const keydown=(e)=>{ if(e.key==='Escape'){ locked=false; map.closePopup(); } };
+let hoverLocked=false, highlightedId=null;
+function bindHoverPopups(layer, styleFn){
+  const keydown=(e)=>{ if(e.key==='Escape'){ hoverLocked=false; if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId);}catch{} highlightedId=null; } map.closePopup(); } };
   document.addEventListener('keydown',keydown);
-  map.on('click',()=>{ if(!locked) map.closePopup(); });
+  map.on('click',()=>{ if(!hoverLocked) map.closePopup(); });
 
   layer.on('mouseover', e=>{
-    if(locked) return;
+    if(hoverLocked) return;
     const p = e.layer?.properties||{};
-    const key = hexKey(p);
-    const agg = key? aggByHex.get(key): undefined;
-    if(!agg) return;
+    const id = hexKey(p);
+    if(id==null) return;
+    const agg = aggByHex.get(id); if(!agg) return;
+
+    // highlight this hex (same idea you liked earlier)
+    try{
+      const base = styleFn(p);
+      layer.setFeatureStyle(id, Object.assign({}, base, {weight:2, color:'#111827', fillOpacity:Math.min(0.95,(base.fillOpacity||0.65)+0.1)}));
+      highlightedId=id;
+    }catch{}
 
     const sum = Number.isFinite(agg.sum)?agg.sum:0;
     const uid = (agg.maxUid!=null)?agg.maxUid:agg.rowCount;
 
-    const sexP = pctParts(agg.sexCounts);
-    const stageP = pctParts(agg.stageCounts);
-    const seasonP = pctParts(agg.seasonCounts);
-    const [topYear,yc] = modeFromCounts(agg.yearCounts);
-    const [topMonth,mc] = modeFromCounts(agg.monthCounts);
+    const sex = computePctMap(agg.sexCounts);
+    const stage = computePct4(agg.stageCounts, ['Adult','Juvenile','Hatchling']);
+    const season = computePct4(agg.seasonCounts, ['Autumn','Spring','Summer','Winter']);
+
+    const years = agg.yearCounts||{};
+    const months = agg.monthCounts||{};
+    const topYear = Object.entries(years).sort((a,b)=> (b[1]||0)-(a[1]||0) || (Number(b[0]) - Number(a[0])) )[0]?.[0] ?? '–';
+    const topYearC = years[topYear]||0;
+    const topMonth = Object.entries(months).sort((a,b)=> (b[1]||0)-(a[1]||0) || (Number(b[0]) - Number(a[0])) )[0]?.[0] ?? '–';
+    const topMonthC = months[topMonth]||0;
 
     const spSel=getCheckboxValues('speciesGroup');
     const spLabel=(spSel.length===1)?spSel[0]:(spSel.length>1?'Mixed':'All');
-
-    const partsToHTML=(x)=> x.parts.length ? x.parts.map(([k,v])=>`${k} ${nf(v)}%`).join(' · ') + (x.unknownCount?` · Unknown ${nf(x.unknownCount)}`:'') : '—';
 
     const html = `
       <div style="min-width:280px">
@@ -849,18 +861,28 @@ function bindHoverPopups(layer){
         <div class="kv"><b>Sum (${metricField})</b><span>${nf(sum)}</span></div>
         <div class="kv"><b>Unique turtle IDs</b><span>${(agg.maxUid!=null)?nf(uid):nf(uid)+' (row-count fallback)'}</span></div>
         <hr/>
-        <div class="kv"><b>Sex</b><span style="font-size:11px">${partsToHTML(sexP)}</span></div>
-        <div class="kv"><b>Stage</b><span style="font-size:11px">${partsToHTML(stageP)}</span></div>
-        <div class="kv"><b>Season</b><span style="font-size:11px">${partsToHTML(seasonP)}</span></div>
-        <div class="kv"><b>Top year</b><span>${topYear} (${nf(yc)})</span></div>
-        <div class="kv"><b>Top month</b><span>${topMonth} (${nf(mc)})</span></div>
+        <div class="kv"><b>Sex</b>
+          <span style="font-size:11px">♀ ${nf(sex.F)} (${sex.pf.toFixed(1)}%) · ♂ ${nf(sex.M)} (${sex.pm.toFixed(1)}%) · Unknown ${nf(sex.U)}</span>
+        </div>
+        <div class="kv"><b>Stage</b>
+          <span style="font-size:11px">Adult ${stage.out.Adult.p.toFixed(1)}% · Juvenile ${stage.out.Juvenile.p.toFixed(1)}% · Hatchling ${stage.out.Hatchling.p.toFixed(1)}% · Unknown ${nf(stage.unknown)}</span>
+        </div>
+        <div class="kv"><b>Season</b>
+          <span style="font-size:11px">Aut ${season.out.Autumn.p.toFixed(1)}% · Spr ${season.out.Spring.p.toFixed(1)}% · Sum ${season.out.Summer.p.toFixed(1)}% · Win ${season.out.Winter.p.toFixed(1)}% · Unknown ${nf(season.unknown)}</span>
+        </div>
+        <div class="kv"><b>Top year</b><span>${topYear} (${nf(topYearC)})</span></div>
+        <div class="kv"><b>Top month</b><span>${topMonth} (${nf(topMonthC)})</span></div>
         <hr/>
-        <small class="muted">H3: ${key??'–'}</small>
+        <small class="muted">H3: ${id}</small>
       </div>`;
     L.popup({autoPan:false,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
   });
-  layer.on('mouseout',()=>{ if(!locked) map.closePopup(); });
-  layer.on('click',()=>{ locked=!locked; });
+  layer.on('mouseout',()=>{
+    if(hoverLocked) return;
+    if(highlightedId!=null){ try{ layer.resetFeatureStyle(highlightedId);}catch{} highlightedId=null; }
+    map.closePopup();
+  });
+  layer.on('click',()=>{ hoverLocked=!hoverLocked; });
   layer.on('remove',()=>document.removeEventListener('keydown',keydown));
 }
 
@@ -896,7 +918,8 @@ function makePredicate(){
     else if(k==='month' || k==='decomposition_code') pv=asIntString(v);
     return set.has(pv);
   };
-  return p=>(
+  return p=>( // include only features with a key to avoid non-hex layers
+    hexKey(p)!=null &&
     test('species',p.species) &&
     test('development_stage',p.development_stage) &&
     test('sex',p.sex) &&
@@ -918,12 +941,11 @@ async function buildLayer(){
   try{
     const res=$('resolution').value, ct=$('counttype').value;
     const pmFile=fileFor(res, ct);
-    layerName = await detectLayerName(pmFile);
+    layerNames = await detectLayerNames(pmFile); // robust: style all found layers
 
     const predicate = makePredicate();
-    const values = await aggregateAndCollect(pmFile, layerName, predicate, ct); // ALWAYS array
+    const values = await aggregateAndCollect(pmFile, layerNames, predicate, ct); // ALWAYS array
 
-    // If no finite values, keep previous layer and toast
     const finiteVals = values.filter(Number.isFinite);
     if(finiteVals.length===0){
       showToast('No data in view — zoom out or change filters.', 4000, 'info');
@@ -941,14 +963,19 @@ async function buildLayer(){
     activeRamp=currentRamp();
     updateLegend(edges, activeRamp, finiteVals);
 
+    // build style mapping for ALL detected layers
+    lastStyleFn = makeStyle(edges, activeRamp);
+    const styleMap = {};
+    layerNames.forEach(n=> styleMap[n]=lastStyleFn );
+
     if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
     vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
       rendererFactory: L.canvas.tile,
-      vectorTileLayerStyles: { [layerName]: makeStyle(edges, activeRamp) },
+      vectorTileLayerStyles: styleMap,
       interactive:true,
       getFeatureId: f => hexKey(f.properties || {}) // unified
     });
-    bindHoverPopups(vtLayer);
+    bindHoverPopups(vtLayer, lastStyleFn);
     vtLayer.addTo(map);
   }catch(err){
     console.error('buildLayer error:', err);
@@ -963,12 +990,10 @@ $('applyBtn').addEventListener('click',()=>buildLayer());
 $('resolution').addEventListener('change',()=>buildLayer());
 $('counttype').addEventListener('change',()=>buildLayer());
 $('resetBtn').addEventListener('click',()=>{
-  // reset checkboxes
   document.querySelectorAll('.checkbox-group').forEach(g=>{
     const all=g.querySelector('.all input'); if(all){ all.checked=true; }
     g.querySelectorAll(':scope input:not(.all input)').forEach(cb=>cb.checked=false);
   });
-  // reset selects
   document.querySelectorAll('#panel select').forEach(s=>{
     if(s.multiple){
       Array.from(s.options).forEach(o=>o.selected=false);
@@ -984,7 +1009,6 @@ function writeStateToHash(){
   const h=new URLSearchParams(), c=map.getCenter();
   h.set('z',map.getZoom().toFixed(2)); h.set('lat',c.lat.toFixed(6)); h.set('lng',c.lng.toFixed(6));
   h.set('res',$('resolution').value); h.set('ct',$('counttype').value);
-  // groups
   const groups={
     sp:'speciesGroup', st:'stageGroup', sx:'sexGroup', fish:'fishingGroup', debris:'marineDebrisGroup',
     boat:'boatGroup', dredge:'dredgingGroup', oil:'oilGroup', petrol:'petrolGroup', season:'seasonGroup'
@@ -993,7 +1017,6 @@ function writeStateToHash(){
     const vals=getCheckboxValues(gid);
     h.set(key, vals.length?vals.join('|'):'all');
   });
-  // selects
   const yearVals=getMulti('yearFilter'); if(yearVals.length) h.set('year',yearVals.join('|'));
   const monVals=getMulti('monthFilter'); if(monVals.length) h.set('month',monVals.join('|'));
   const decVals=getMulti('decompFilter'); if(decVals.length) h.set('decomp',decVals.join('|'));
@@ -1016,7 +1039,6 @@ function readStateFromHash(){
     const g=$(gid);
     const all=g.querySelector('.all input');
     const rest=Array.from(g.querySelectorAll(':scope input:not(.all input)'));
-    // reset
     if(all) all.checked=false;
     rest.forEach(cb=>cb.checked=false);
     if(val==='all'){ if(all) all.checked=true; return; }
