@@ -363,7 +363,7 @@ details .content{padding:16px 20px}
 /* Enhanced Popup */
 .leaflet-popup-content{
   margin:12px 16px;font-size:13px;
-  min-width:280px;
+  min-width:300px;
 }
 .kv{
   display:flex;justify-content:space-between;
@@ -420,7 +420,7 @@ small.muted{color:#64748b;font-size:11px}
 
   <div class="section">
     <div class="row">
-      <label for="resolution">Resolution</label>
+      <label for="resolution">Grid cell size (H3)</label>
       <select id="resolution">
         <option value="r3" selected>Grid cell size ≈ 60 km edge</option>
         <option value="r4">≈ 22.6 km</option>
@@ -448,8 +448,7 @@ small.muted{color:#64748b;font-size:11px}
       <label>Species</label>
       <div class="checkbox-group" id="speciesGroup">
         <div class="checkbox-row all">
-          <input type="checkbox" id="species_all" checked>
-          <label for="species_all">(All)</label>
+          <input type="checkbox" id="species_all" checked><label for="species_all">(All)</label>
         </div>
         <div class="checkbox-row"><input type="checkbox" id="species_caretta"><label for="species_caretta">Caretta caretta</label></div>
         <div class="checkbox-row"><input type="checkbox" id="species_chelonia"><label for="species_chelonia">Chelonia mydas</label></div>
@@ -463,8 +462,7 @@ small.muted{color:#64748b;font-size:11px}
       <label>Development Stage</label>
       <div class="checkbox-group" id="stageGroup">
         <div class="checkbox-row all">
-          <input type="checkbox" id="stage_all" checked>
-          <label for="stage_all">(All)</label>
+          <input type="checkbox" id="stage_all" checked><label for="stage_all">(All)</label>
         </div>
         <div class="checkbox-row"><input type="checkbox" id="stage_adult"><label for="stage_adult">Adult</label></div>
         <div class="checkbox-row"><input type="checkbox" id="stage_juvenile"><label for="stage_juvenile">Juvenile</label></div>
@@ -477,8 +475,7 @@ small.muted{color:#64748b;font-size:11px}
       <label>Sex</label>
       <div class="checkbox-group" id="sexGroup">
         <div class="checkbox-row all">
-          <input type="checkbox" id="sex_all" checked>
-          <label for="sex_all">(All)</label>
+          <input type="checkbox" id="sex_all" checked><label for="sex_all">(All)</label>
         </div>
         <div class="checkbox-row"><input type="checkbox" id="sex_female"><label for="sex_female">Female</label></div>
         <div class="checkbox-row"><input type="checkbox" id="sex_male"><label for="sex_male">Male</label></div>
@@ -578,6 +575,19 @@ small.muted{color:#64748b;font-size:11px}
     </div>
 
     <div class="row">
+      <label>Decomposition code</label>
+      <div class="checkbox-group" id="decompGroup">
+        <div class="checkbox-row all"><input type="checkbox" id="decomp_all" checked><label for="decomp_all">(All)</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="decomp_1"><label for="decomp_1">1</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="decomp_2"><label for="decomp_2">2</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="decomp_3"><label for="decomp_3">3</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="decomp_4"><label for="decomp_4">4</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="decomp_5"><label for="decomp_5">5</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="decomp_unknown"><label for="decomp_unknown">Unknown</label></div>
+      </div>
+    </div>
+
+    <div class="row">
       <label>Year Range</label>
       <div class="range-container">
         <div class="range-group">
@@ -629,7 +639,7 @@ small.muted{color:#64748b;font-size:11px}
 <div id="toast"></div>
 
 <script>
-/* ======== FIXED: Decoder shim (works with any UMD/browserified build) ======== */
+/* ======== Decoder shim (works with any UMD/browserified build) ======== */
 (function ensureDecoders(){
   var VT = (window.VectorTile)
         || (window.vectorTile && window.vectorTile.VectorTile)
@@ -672,7 +682,7 @@ const hideSpinner = () => {
   spinner.classList.remove('loading');
 };
 
-// FIXED: Enhanced toast system with types
+// Toast with types: error | warning | info | success
 const showToast = (m, ms=4500, type='error') => { 
   toast.textContent = m; 
   toast.className = type;
@@ -680,7 +690,7 @@ const showToast = (m, ms=4500, type='error') => {
   setTimeout(() => toast.style.display = 'none', ms); 
 };
 
-// FIXED: Mobile panel auto-collapse on first map tap
+// Mobile panel auto-collapse on first tapped map
 let mobileCollapsed = false;
 map.on('click', () => {
   if (window.innerWidth <= 768 && !mobileCollapsed) {
@@ -689,7 +699,7 @@ map.on('click', () => {
   }
 });
 
-// Enhanced panel collapse
+// Panel collapse
 $('collapseBtn').addEventListener('click', () => {
   const panel = $('panel');
   panel.classList.toggle('collapsed');
@@ -699,53 +709,49 @@ $('collapseBtn').addEventListener('click', () => {
 window.addEventListener('error', () => hideSpinner());
 window.addEventListener('unhandledrejection', () => hideSpinner());
 
-/* ===== FIXED: Enhanced Checkbox Group Management ===== */
+/* ===== Checkbox Group Management (FIXED) ===== */
 function setupCheckboxGroup(groupId) {
-  const group = $(groupId);
-  const allCheckbox = group.querySelector('.all input');
-  const otherCheckboxes = Array.from(group.querySelectorAll('input:not(.all input)'));
-  
-  allCheckbox.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      otherCheckboxes.forEach(cb => cb.checked = false);
-    }
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  const allCB = group.querySelector('.all input');
+  const allInputs = Array.from(group.querySelectorAll('input'));
+  const others = allInputs.filter(cb => cb !== allCB);
+
+  allCB.addEventListener('change', (e) => {
+    if (e.target.checked) others.forEach(cb => (cb.checked = false));
   });
-  
-  otherCheckboxes.forEach(cb => {
-    cb.addEventListener('change', (e) => {
-      if (e.target.checked) {
-        allCheckbox.checked = false;
-      } else if (otherCheckboxes.every(cb => !cb.checked)) {
-        allCheckbox.checked = true;
-      }
+
+  others.forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) allCB.checked = false;
+      if (others.every(x => !x.checked)) allCB.checked = true;
     });
   });
 }
 
-// Setup all checkbox groups
-['speciesGroup','stageGroup','sexGroup','fishingGroup','marineDebrisGroup',
- 'aggressionGroup','boatGroup','dredgingGroup','oilGroup','petrolGroup','seasonGroup']
-  .forEach(setupCheckboxGroup);
-
 function getCheckboxValues(groupId) {
-  const group = $(groupId);
+  const group = document.getElementById(groupId);
   if (!group) return [];
-  
-  const allChecked = group.querySelector('.all input')?.checked;
-  if (allChecked) return [];
-  
-  const checked = Array.from(group.querySelectorAll('input:not(.all input):checked'));
-  return checked.map(cb => cb.labels[0]?.textContent).filter(Boolean);
+  const allCB = group.querySelector('.all input');
+  const allInputs = Array.from(group.querySelectorAll('input'));
+  const others = allInputs.filter(cb => cb !== allCB);
+  if (allCB && allCB.checked) return []; // (All) => no constraint
+  return others
+    .filter(cb => cb.checked)
+    .map(cb => (cb.labels && cb.labels[0] ? cb.labels[0].textContent.trim() : ''))
+    .filter(Boolean);
 }
 
-// FIXED: Multi-select handler for remaining selects
+['speciesGroup','stageGroup','sexGroup','fishingGroup','marineDebrisGroup',
+ 'aggressionGroup','boatGroup','dredgingGroup','oilGroup','petrolGroup','seasonGroup','decompGroup']
+  .forEach(setupCheckboxGroup);
+
+// Multi-select helper for Month
 function enforceAllOption(e) {
   const sel = e.target; 
   if (!sel.multiple) return;
-  
   const all = Array.from(sel.options).find(o => o.value === '__ALL__');
   const chosen = Array.from(sel.selectedOptions).map(o => o.value);
-  
   if (chosen.length === 0) { 
     all.selected = true; 
   } else if (chosen.includes('__ALL__') && chosen.length > 1) {
@@ -755,7 +761,6 @@ function enforceAllOption(e) {
     all.selected = false; 
   }
 }
-
 document.querySelectorAll('#panel select[multiple]').forEach(s => 
   s.addEventListener('change', enforceAllOption)
 );
@@ -765,40 +770,33 @@ const getMulti = id => {
   return (vals.length === 0 || vals.includes('__ALL__')) ? [] : vals;
 };
 
-/* ===== FIXED: Year Range Slider Functionality ===== */
+/* ===== Year Range (FIXED) ===== */
 function updateYearLabels() {
-  const minVal = $('yearRangeMin').value;
-  const maxVal = $('yearRangeMax').value;
-  $('yearMinLabel').textContent = minVal;
-  $('yearMaxLabel').textContent = maxVal;
-  
-  // Ensure min <= max
-  if (parseInt(minVal) > parseInt(maxVal)) {
-    if (event.target.id === 'yearRangeMin') {
-      $('yearRangeMax').value = minVal;
-    } else {
-      $('yearRangeMin').value = maxVal;
-    }
-    updateYearLabels();
+  let minVal = +$('yearRangeMin').value;
+  let maxVal = +$('yearRangeMax').value;
+  if (minVal > maxVal) {
+    const t = minVal; minVal = maxVal; maxVal = t;
+    $('yearRangeMin').value = String(minVal);
+    $('yearRangeMax').value = String(maxVal);
   }
+  $('yearMinLabel').textContent = String(minVal);
+  $('yearMaxLabel').textContent = String(maxVal);
 }
-
-function resetYearRange() {
-  $('yearRangeMin').value = 2015;
-  $('yearRangeMax').value = 2024;
-  updateYearLabels();
-}
-
 $('yearRangeMin').addEventListener('input', updateYearLabels);
 $('yearRangeMax').addEventListener('input', updateYearLabels);
 
-// FIXED: Opacity slider functionality
+function resetYearRange() {
+  $('yearRangeMin').value = '2015';
+  $('yearRangeMax').value = '2024';
+  updateYearLabels();
+}
+
+/* ===== Opacity readout ===== */
 $('opacitySlider').addEventListener('input', (e) => {
-  const val = e.target.value;
-  $('opacityValue').textContent = (val / 100).toFixed(2);
+  $('opacityValue').textContent = (e.target.value / 100).toFixed(2);
 });
 
-// FIXED: Debounced rebuild for performance
+/* ===== Debounced rebuild ===== */
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -812,13 +810,15 @@ function debounce(func, wait) {
 }
 const debouncedRebuild = debounce(buildLayer, 300);
 
-// Enhanced clear all filters
+/* ===== Clear all ===== */
 const clearAllFilters = () => {
   // Reset checkboxes
   document.querySelectorAll('.checkbox-group .all input').forEach(cb => cb.checked = true);
-  document.querySelectorAll('.checkbox-group input:not(.all input)').forEach(cb => cb.checked = false);
-  
-  // Reset multiselects
+  document.querySelectorAll('.checkbox-group input').forEach(cb => {
+    const row = cb.closest('.checkbox-row');
+    if (row && !row.classList.contains('all')) cb.checked = false;
+  });
+  // Reset selects
   document.querySelectorAll('#panel select').forEach(s => {
     if (s.multiple) {
       Array.from(s.options).forEach(o => o.selected = false);
@@ -828,7 +828,6 @@ const clearAllFilters = () => {
       s.selectedIndex = 0;
     }
   });
-  
   // Reset controls
   resetYearRange();
   $('opacitySlider').value = 65;
@@ -837,7 +836,7 @@ const clearAllFilters = () => {
   isolatedBin = -1;
 };
 
-// Enhanced number formatting
+/* ===== Number formatting ===== */
 const nf = (v) => {
   if (v === 0) return '0';
   const abs = Math.abs(v);
@@ -845,7 +844,7 @@ const nf = (v) => {
   return new Intl.NumberFormat(undefined, {maximumFractionDigits: digits}).format(v);
 };
 
-/* ===== Color Ramps & State ===== */
+/* ===== Color ramps & state ===== */
 const ramps = {
   'Caretta caretta': ['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
   'Chelonia mydas': ['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
@@ -854,17 +853,28 @@ const ramps = {
   'Lepidochelys olivacea': ['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
   'multi': ['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
-
 let jenksBreaks = [0,1,2,3,4,5];
 let activeRamp = ramps['multi'];
-let isolatedBin = -1; // -1 = none isolated
+let isolatedBin = -1;
 
 const currentRamp = () => {
   const sp = getCheckboxValues('speciesGroup');
   return (sp.length === 1 && ramps[sp[0]]) ? ramps[sp[0]] : ramps['multi'];
 };
 
-/* ===== FIXED: Enhanced Legend with Histogram and Interactions ===== */
+/* ===== Legend with histogram & isolation ===== */
+function computeBinIndex(breaks, v) {
+  const EPS = 1e-9;
+  if (!Array.isArray(breaks) || breaks.length < 2 || !Number.isFinite(v)) return -1;
+  const last = breaks.length - 1;
+  if (v <= breaks[0]) return 0;
+  if (v >= breaks[last]) return last - 1;
+  for (let i = 1; i < breaks.length; i++) {
+    if (v < breaks[i] || Math.abs(v - breaks[i]) <= EPS) return i - 1;
+  }
+  return last - 1;
+}
+
 function updateLegend(localBreaks, localRamp, cellValues = []) {
   const el = $('legend');
   const ramp = (Array.isArray(localRamp) && localRamp.length) ? localRamp.slice() : ramps['multi'].slice();
@@ -884,50 +894,42 @@ function updateLegend(localBreaks, localRamp, cellValues = []) {
     return;
   }
 
-  // FIXED: Mini-histogram generation
+  // Mini histogram
   const histogram = new Array(n).fill(0);
   const validValues = cellValues.filter(Number.isFinite);
-  
   validValues.forEach(val => {
     const binIdx = computeBinIndex(brks, val);
-    if (binIdx >= 0 && binIdx < histogram.length) {
-      histogram[binIdx]++;
-    }
+    if (binIdx >= 0 && binIdx < histogram.length) histogram[binIdx]++;
   });
-  
   const maxCount = Math.max(...histogram, 1);
   const histogramHTML = histogram.map((count, i) => {
     const height = Math.max(2, Math.round((count / maxCount) * 20));
     return `<div class="hist-bar" style="height:${height}px" title="Bin ${i+1}: ${nf(count)} cells"></div>`;
   }).join('');
-  
   el.insertAdjacentHTML('beforeend', `<div class="histogram">${histogramHTML}</div>`);
 
-  // FIXED: Legend swatches with click-to-isolate
+  // Swatches + click-to-isolate
   for (let i = 0; i < n; i++) {
     const a = brks[i], b = brks[i+1];
     const title = `${nf(a)} – ${nf(b)} (${nf(histogram[i])} cells)`;
-    const isolated = isolatedBin === i ? 'isolated' : '';
-    
+    const isoClass = isolatedBin === i ? 'isolated' : '';
     el.insertAdjacentHTML('beforeend',
-      `<div class="legend-row ${isolated}" data-bin="${i}" title="${title}">
+      `<div class="legend-row ${isoClass}" data-bin="${i}" title="${title}">
         <span class="swatch" style="background:${ramp[i]}"></span>
         <span>${nf(a)} – ${nf(b)}</span>
       </div>`
     );
   }
-
-  // FIXED: Add click handlers for bin isolation
   el.querySelectorAll('.legend-row[data-bin]').forEach(row => {
     row.addEventListener('click', (e) => {
       const binIdx = parseInt(e.currentTarget.dataset.bin);
-      isolatedBin = (isolatedBin === binIdx) ? -1 : binIdx; // toggle
-      debouncedRebuild(); // rebuild with isolation
+      isolatedBin = (isolatedBin === binIdx) ? -1 : binIdx;
+      debouncedRebuild();
     });
   });
 }
 
-/* ===== FIXED: Enhanced Canonicalization ===== */
+/* ===== Canonicalization ===== */
 const canon = {
   season: v => {
     const s = (v ?? '').toString().toLowerCase().trim();
@@ -957,76 +959,72 @@ const canon = {
     return (Number.isFinite(n) && n >= 2015 && n <= 2024) ? String(n) : '';
   }
 };
-
+function canonYesNo(v){
+  const s = (v ?? '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  if (['yes','sim','y'].includes(s)) return 'Yes';
+  if (['no','nao','não','n'].includes(s)) return 'No';
+  return s ? s[0].toUpperCase() + s.slice(1) : '';
+}
+const canonDecomp = v => {
+  if (v == null || v === '') return 'Unknown';
+  const n = parseInt(String(v).replace(/\.0+$/,''),10);
+  if (Number.isFinite(n) && n>=1 && n<=5) return String(n);
+  return 'Unknown';
+};
 const asIntString = v => { 
   const n = parseInt(v, 10); 
   return Number.isFinite(n) ? String(n) : String(v); 
 };
 
-/* ===== FIXED: Capability Probing System ===== */
+/* ===== Capability probe ===== */
 let detectedCapabilities = {
   hasYear: false, hasMonth: false, hasSex: false, hasStage: false, 
-  hasSeason: false, hasSpecies: false, metricFields: new Set()
+  hasSeason: false, hasSpecies: false, hasDecomp:false, metricFields: new Set()
 };
 
 async function probeCapabilities(pmFile, layerName) {
   const capabilities = {
     hasYear: false, hasMonth: false, hasSex: false, hasStage: false, 
-    hasSeason: false, hasSpecies: false, metricFields: new Set()
+    hasSeason: false, hasSpecies: false, hasDecomp:false, metricFields: new Set()
   };
-  
   try {
     if (!window.__VT__ || !window.__PBF__) return capabilities;
-    
     const pm = await getPM(pmFile);
     const hdr = header || await pm.getHeader();
     const z = Math.max(6, hdr.minZoom);
     const {minX, maxX, minY, maxY} = tileRangeForBounds(map.getBounds(), z);
-    
     let probed = 0;
-    outer: for (let x = minX; x <= maxX && probed < 3; x++) {
-      for (let y = minY; y <= maxY && probed < 3; y++) {
-        try {
-          const resp = await pm.getZxy(z, wrapX(x, z), y);
+    outer: for (let x=minX;x<=maxX && probed<3;x++){
+      for (let y=minY;y<=maxY && probed<3;y++){
+        try{
+          const resp = await pm.getZxy(z, wrapX(x,z), y);
           if (!resp?.data) continue;
-          
           const vt = new window.__VT__(new window.__PBF__(resp.data));
           const lyr = vt.layers[layerName]; 
-          if (!lyr || lyr.length === 0) continue;
-          
-          // Sample first few features
-          for (let i = 0; i < Math.min(3, lyr.length); i++) {
-            const feat = lyr.feature(i);
-            const props = feat.properties || {};
-            
-            // Check field presence
+          if (!lyr || lyr.length===0) continue;
+          for (let i=0;i<Math.min(3,lyr.length);i++){
+            const props = lyr.feature(i).properties || {};
             if (props.year != null) capabilities.hasYear = true;
             if (props.month != null) capabilities.hasMonth = true;
             if (props.sex != null || props.Sex != null) capabilities.hasSex = true;
             if (props.development_stage != null || props.stage != null) capabilities.hasStage = true;
             if (props.season != null) capabilities.hasSeason = true;
             if (props.species != null) capabilities.hasSpecies = true;
-            
-            // Check metric fields
+            if (props.decomposition_code != null) capabilities.hasDecomp = true;
             ['sum_val','weight','new_weight','new_mortality_est_bf_mean',
-             'new_mortality_est_bf_low','new_mortality_est_bf_high'].forEach(k => {
+             'new_mortality_est_bf_low','new_mortality_est_bf_high'].forEach(k=>{
               if (Number.isFinite(Number(props[k]))) capabilities.metricFields.add(k);
             });
           }
           probed++;
-        } catch(e) {
-          continue;
-        }
+        }catch{continue;}
       }
     }
-  } catch(e) {
-    console.warn('Capability probe failed:', e);
-  }
-  
+  } catch(e) { console.warn('Capability probe failed:', e); }
   return capabilities;
 }
 
-/* ===== FIXED: Robust Predicate Building ===== */
+/* ===== Predicate (robust, canonical) ===== */
 function makePredicate(capabilities = detectedCapabilities) {
   const sel = {
     species: new Set(getCheckboxValues('speciesGroup')),
@@ -1040,60 +1038,45 @@ function makePredicate(capabilities = detectedCapabilities) {
     Oil: new Set(getCheckboxValues('oilGroup')),
     Petrol: new Set(getCheckboxValues('petrolGroup')),
     season: new Set(getCheckboxValues('seasonGroup')),
+    decomp: new Set(getCheckboxValues('decompGroup')),
     month: new Set(getMulti('monthFilter'))
   };
 
-  // FIXED: Year range from sliders
   const yearMin = parseInt($('yearRangeMin').value);
   const yearMax = parseInt($('yearRangeMax').value);
-
   const ignoredFilters = [];
 
   const test = (k, raw) => {
-    const set = sel[k];
+    const set = (k==='decomposition_code') ? sel.decomp : sel[k];
     if (!set || !set.size) return true;
 
-    // FIXED: Skip filter if field not detected in dataset
+    // Skip if field not present
     if (k === 'year' && !capabilities.hasYear) {
-      if (!ignoredFilters.includes('year')) {
-        ignoredFilters.push('year');
-        showToast('Year filter ignored (field missing in dataset)', 3000, 'warning');
-      }
+      if (!ignoredFilters.includes('year')) { ignoredFilters.push('year'); showToast('Year filter ignored (field missing in dataset)', 3000, 'warning'); }
       return true;
     }
     if (k === 'month' && !capabilities.hasMonth) {
-      if (!ignoredFilters.includes('month')) {
-        ignoredFilters.push('month');
-        showToast('Month filter ignored (field missing)', 3000, 'warning');
-      }
+      if (!ignoredFilters.includes('month')) { ignoredFilters.push('month'); showToast('Month filter ignored (field missing)', 3000, 'warning'); }
       return true;
     }
     if (k === 'sex' && !capabilities.hasSex) {
-      if (!ignoredFilters.includes('sex')) {
-        ignoredFilters.push('sex');
-        showToast('Sex filter ignored (field missing)', 3000, 'warning');
-      }
+      if (!ignoredFilters.includes('sex')) { ignoredFilters.push('sex'); showToast('Sex filter ignored (field missing)', 3000, 'warning'); }
       return true;
     }
     if (k === 'development_stage' && !capabilities.hasStage) {
-      if (!ignoredFilters.includes('stage')) {
-        ignoredFilters.push('stage');
-        showToast('Stage filter ignored (field missing)', 3000, 'warning');
-      }
+      if (!ignoredFilters.includes('stage')) { ignoredFilters.push('stage'); showToast('Stage filter ignored (field missing)', 3000, 'warning'); }
       return true;
     }
     if (k === 'season' && !capabilities.hasSeason) {
-      if (!ignoredFilters.includes('season')) {
-        ignoredFilters.push('season');
-        showToast('Season filter ignored (field missing)', 3000, 'warning');
-      }
+      if (!ignoredFilters.includes('season')) { ignoredFilters.push('season'); showToast('Season filter ignored (field missing)', 3000, 'warning'); }
       return true;
     }
     if (k === 'species' && !capabilities.hasSpecies) {
-      if (!ignoredFilters.includes('species')) {
-        ignoredFilters.push('species');
-        showToast('Species filter ignored (field missing)', 3000, 'warning');
-      }
+      if (!ignoredFilters.includes('species')) { ignoredFilters.push('species'); showToast('Species filter ignored (field missing)', 3000, 'warning'); }
+      return true;
+    }
+    if (k === 'decomposition_code' && !capabilities.hasDecomp) {
+      if (!ignoredFilters.includes('decomp')) { ignoredFilters.push('decomp'); showToast('Decomposition code filter ignored (field missing)', 3000, 'warning'); }
       return true;
     }
 
@@ -1103,21 +1086,23 @@ function makePredicate(capabilities = detectedCapabilities) {
     else if (k === 'development_stage') pv = canon.stage(raw);
     else if (k === 'year') pv = canon.year(raw);
     else if (k === 'month') pv = asIntString(raw);
+    else if (k === 'decomposition_code') pv = canonDecomp(raw);
+    else if (['Fishing','Marine_Debris','Agression','Boat_collision','Dredging','Oil','Petrol'].includes(k)) {
+      pv = canonYesNo(raw);
+    }
 
     if (set.has(pv)) return true;
     if (k === 'month') {
       return set.has(asIntString(raw)) || set.has(asIntString(pv));
     }
-    
     return false;
   };
 
-  // Special year range handling
   const testYear = (raw) => {
     if (!capabilities.hasYear) return true;
     const year = canon.year(raw);
     if (!year) return true;
-    const y = parseInt(year);
+    const y = parseInt(year,10);
     return y >= yearMin && y <= yearMax;
   };
 
@@ -1133,12 +1118,13 @@ function makePredicate(capabilities = detectedCapabilities) {
     test('Oil', p.Oil) &&
     test('Petrol', p.Petrol) &&
     test('season', p.season) &&
+    test('decomposition_code', p.decomposition_code) &&
     test('month', p.month) &&
     testYear(p.year)
   );
 }
 
-/* ===== FIXED: PMTiles fetch shim with cache-busters ===== */
+/* ===== PMTiles fetch shim with cache-busters ===== */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
 
@@ -1155,7 +1141,6 @@ window.fetch = async (input, init) => {
     const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
     if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
     const [_, archive, z, x, y] = m;
-    
     try {
       const pm = await getPM(archive);
       const t = await pm.getZxy(+z, +x, +y);
@@ -1169,7 +1154,7 @@ window.fetch = async (input, init) => {
   return origFetch(input, init);
 };
 
-/* ===== Utility Functions ===== */
+/* ===== Utility ===== */
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function lon2tile(lon, z) { return Math.floor((lon + 180) / 360 * Math.pow(2, z)); }
 function lat2tile(lat, z) { 
@@ -1188,25 +1173,22 @@ function tileRangeForBounds(b, z) {
   return {minX, maxX, minY, maxY};
 }
 const wrapX = (x, z) => { const n = Math.pow(2, z); return ((x % n) + n) % n; };
-
-// FIXED: Consistent cache-busting for PMTiles
 function fileFor(res, ct) {
   const v = '20250812';
   return `hexgrid_${res}_${ct}.pmtiles?v=${v}`;
 }
 
-/* ===== State Management ===== */
+/* ===== State ===== */
 let vtLayer = null, layerName = '', header = null;
 const aggByHex = new Map();
 let metricField = 'sum_val';
 
-/* ===== FIXED: Safe Layer Name Detection ===== */
+/* ===== Layer detection ===== */
 async function detectLayerName(pmFile) {
   try {
     const pm = await getPM(pmFile);
     header = await pm.getHeader();
     const md = await pm.getMetadata();
-    
     if (md && md.json) {
       const j = (typeof md.json === 'string') ? JSON.parse(md.json) : md.json;
       if (j && j.vector_layers) {
@@ -1216,15 +1198,12 @@ async function detectLayerName(pmFile) {
         if (keys.length) return keys[0];
       }
     }
-    
     if (!window.__VT__ || !window.__PBF__) 
       throw new Error('VectorTile/Pbf globals not available to probe tiles.');
-    
     const z = clamp(Math.floor(map.getZoom()), header.minZoom, header.maxZoom);
     const {minX, maxX, minY, maxY} = tileRangeForBounds(map.getBounds(), z);
-    
-    for (let x = minX; x <= maxX; x++) {
-      for (let y = minY; y <= maxY; y++) {
+    for (let x=minX;x<=maxX;x++){
+      for (let y=minY;y<=maxY;y++){
         const r = await (await getPM(pmFile)).getZxy(z, wrapX(x, z), y);
         if (!r || !r.data) continue;
         const vt = new window.__VT__(new window.__PBF__(r.data));
@@ -1232,22 +1211,18 @@ async function detectLayerName(pmFile) {
         if (names.length) return names[0];
       }
     }
-  } catch(e) { 
-    console.warn('Layer detect failed:', e); 
-  }
-  
+  } catch(e) { console.warn('Layer detect failed:', e); }
   console.warn('Falling back to "hexgrid"');
   return 'hexgrid';
 }
 
-/* ===== FIXED: Robust Aggregation & Breaks Computation ===== */
+/* ===== Aggregation & breaks ===== */
 const JENKS_CLASSES = 5;
 const MIN_SAMPLES_JENKS = 20;
 const MIN_DISTINCT = 3;
 const SAMPLE_TARGET = 1000;
 const MAX_TILES_STATS = 90;
 const MAX_HEXES_STATS = 1800;
-const EPS = 1e-9;
 
 function expandIfFlat(min, max) {
   if (!isFinite(min) || !isFinite(max)) return [0,1,2,3,4,5];
@@ -1257,41 +1232,33 @@ function expandIfFlat(min, max) {
   }
   return null;
 }
-
-// FIXED: Always returns monotonic edges if at least one finite value
 function computeSafeBreaks(values) {
   if (!Array.isArray(values) || !values.length) return null;
-  const sorted = values.filter(Number.isFinite).sort((a,b) => a - b);
+  const sorted = values.filter(Number.isFinite).sort((a,b)=>a-b);
   if (!sorted.length) return null;
-
   const min = sorted[0], max = sorted[sorted.length - 1];
   const flat = expandIfFlat(min, max);
   if (flat) return flat;
-
   let edges;
-  if (sorted.length < MIN_SAMPLES_JENKS || 
-      (new Set(sorted.map(v => +v.toFixed(6)))).size < MIN_DISTINCT) {
-    edges = ss.quantileSorted(sorted, [0, 0.2, 0.4, 0.6, 0.8, 1]);
+  if (sorted.length < MIN_SAMPLES_JENKS || (new Set(sorted.map(v => +v.toFixed(6)))).size < MIN_DISTINCT) {
+    edges = ss.quantileSorted(sorted, [0,0.2,0.4,0.6,0.8,1]);
   } else {
-    try {
+    try{
       edges = ss.jenks(sorted, JENKS_CLASSES);
       const unique = new Set(edges.map(v => +v.toFixed(10)));
       if (unique.size < JENKS_CLASSES + 1) {
-        edges = ss.quantileSorted(sorted, [0, 0.2, 0.4, 0.6, 0.8, 1]);
+        edges = ss.quantileSorted(sorted, [0,0.2,0.4,0.6,0.8,1]);
       }
-    } catch {
-      edges = ss.quantileSorted(sorted, [0, 0.2, 0.4, 0.6, 0.8, 1]);
+    }catch{
+      edges = ss.quantileSorted(sorted, [0,0.2,0.4,0.6,0.8,1]);
     }
   }
-  
-  // Ensure monotonic
-  for (let i = 1; i < edges.length; i++) {
-    if (edges[i] <= edges[i-1]) edges[i] = edges[i-1] + EPS;
+  for (let i=1;i<edges.length;i++){
+    if (edges[i] <= edges[i-1]) edges[i] = edges[i-1] + 1e-9;
   }
   return edges;
 }
 
-// FIXED: Metric field detection with prioritization
 const metricCandidatesByCT = {
   weight: ['sum_val','weight'],
   new_weight: ['sum_val','new_weight'],
@@ -1299,7 +1266,6 @@ const metricCandidatesByCT = {
   new_mortality_est_bf_low: ['sum_val','new_mortality_est_bf_low'],
   new_mortality_est_bf_high: ['sum_val','new_mortality_est_bf_high']
 };
-
 function discoverMetricField(sampleProps, ct) {
   if (Number.isFinite(Number(sampleProps?.sum_val))) return 'sum_val';
   const cands = metricCandidatesByCT[ct] || [];
@@ -1311,17 +1277,6 @@ function discoverMetricField(sampleProps, ct) {
   }
   return 'sum_val';
 }
-
-// FIXED: Enhanced turtle ID detection with fallbacks
-function getTurtleIdFromProps(p) {
-  const keys = ['turtle_id','id','uid','individual_id','turtle_individual_id'];
-  for (const k of keys) {
-    const n = Number(p[k]);
-    if (Number.isFinite(n)) return n;
-  }
-  return null; // Will fallback to 1 per feature
-}
-
 function getUidCountFromProps(p) {
   const keys = ['uid_count','unique_ids','unique_turtle_ids','unique_id_count','turtle_id_count','uidCount'];
   for (const k of keys) {
@@ -1332,32 +1287,25 @@ function getUidCountFromProps(p) {
   if (Number.isFinite(c)) return c;
   return null;
 }
-
-// FIXED: Enhanced categorical count extraction
 function pickCounts(props, candidates) {
   for (const group of candidates) {
-    let sum = 0, have = false;
-    for (const [label, keyList] of Object.entries(group)) {
+    let have = false;
+    for (const keyList of Object.values(group)) {
       const arr = Array.isArray(keyList) ? keyList : [keyList];
-      for (const k of arr) {
-        if (k in props) {
-          sum += Number(props[k]) || 0; 
-          have = true;
-        }
-      }
+      for (const k of arr) { if (k in props) { have = true; break; } }
+      if (have) break;
     }
-    if (have) return Object.fromEntries(Object.entries(group).map(([label, keys]) => {
-      const arr = Array.isArray(keys) ? keys : [keys];
-      let v = 0; 
-      for (const k of arr) { 
-        v += Number(props[k]) || 0; 
+    if (have) {
+      const out = {};
+      for (const [label, keyList] of Object.entries(group)) {
+        const arr = Array.isArray(keyList) ? keyList : [keyList];
+        out[label] = arr.reduce((s,k)=>s + (Number(props[k])||0),0);
       }
-      return [label, v];
-    }));
+      return out;
+    }
   }
   return null;
 }
-
 function pctParts(countMap) {
   if (!countMap) return {parts: [], unknownCount: 0, totalLabelled: 0};
   const unknown = Number(countMap.Unknown || 0);
@@ -1371,24 +1319,17 @@ function pctParts(countMap) {
   };
 }
 
-// FIXED: Stride retry aggregation system
 async function aggregateAndCollect(pmFile, layerName, predicate, ct) {
   if (!window.__VT__ || !window.__PBF__) {
-    showToast('Vector-tile.js / pbf.js not loaded — cannot compute breaks. Verify docs/vendor files.');
+    showToast('vector-tile.js / pbf.js not loaded — cannot compute breaks. Verify docs/vendor files.');
     return [];
   }
-  
   aggByHex.clear();
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
-
   const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
   const {minX, maxX, minY, maxY} = tileRangeForBounds(map.getBounds(), zView);
-
-  const tilesX = maxX - minX + 1, tilesY = maxY - minY + 1;
-  const totalTiles = tilesX * tilesY;
-  
-  // FIXED: Smart stride calculation
+  const tilesX = maxX - minX + 1, tilesY = maxY - minY + 1, totalTiles = tilesX * tilesY;
   let stride = 1;
   if (totalTiles > MAX_TILES_STATS) {
     const factor = Math.ceil(Math.sqrt(totalTiles / MAX_TILES_STATS));
@@ -1399,27 +1340,18 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct) {
   const processJobs = async (currentStride) => {
     const jobs = [];
     let cellCount = 0;
-    
     outer:
-    for (let x = minX; x <= maxX; x += currentStride) {
-      for (let y = minY; y <= maxY; y += currentStride) {
-        jobs.push(pm.getZxy(zView, wrapX(x, zView), y).then(resp => {
+    for (let x=minX;x<=maxX;x+=currentStride){
+      for (let y=minY;y<=maxY;y+=currentStride){
+        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
           if (!resp || !resp.data) return;
-          
           const vt = new window.__VT__(new window.__PBF__(resp.data));
           const lyr = vt.layers[layerName]; 
           if (!lyr) return;
-          
-          for (let i = 0; i < lyr.length; i++) {
-            const feat = lyr.feature(i);
-            const props = feat.properties || {};
+          for (let i=0;i<lyr.length;i++){
+            const props = lyr.feature(i).properties || {};
             if (!predicate(props)) continue;
-
-            if (!discovered) { 
-              metricField = discoverMetricField(props, ct); 
-              discovered = true; 
-            }
-
+            if (!discovered) { metricField = discoverMetricField(props, ct); discovered = true; }
             const key = props.h3_index ?? props.h3 ?? props.id;
             if (!key) continue;
 
@@ -1432,150 +1364,93 @@ async function aggregateAndCollect(pmFile, layerName, predicate, ct) {
               monthCounts: Object.create(null),
               species: props.species || null
             };
-
             if (Number.isFinite(val)) entry.sum += val;
             if (uid != null && Number.isFinite(uid)) entry.uidCount += uid;
             else entry.uidCount += 1;
 
-            // FIXED: Enhanced categorical aggregation
             entry.sexCounts ||= pickCounts(props, [
               {Female:'sex_female', Male:'sex_male', Unknown:'sex_unknown'}
             ]);
             entry.stageCounts ||= pickCounts(props, [
-              {Adult:'stage_adult', Juvenile:'stage_juvenile', 
-               Hatchling:'stage_hatchling', Unknown:'stage_unknown'}
+              {Adult:'stage_adult', Juvenile:'stage_juvenile', Hatchling:'stage_hatchling', Unknown:'stage_unknown'}
             ]);
             entry.seasonCounts ||= pickCounts(props, [
-              {Autumn:'season_autumn', Spring:'season_spring', 
-               Summer:'season_summer', Winter:'season_winter', Unknown:'season_unknown'}
+              {Autumn:'season_autumn', Spring:'season_spring', Summer:'season_summer', Winter:'season_winter', Unknown:'season_unknown'}
             ]);
-
-            // Year/month mode counting
             if (props.year != null) {
-              const y = canon.year(props.year);
-              if (y) entry.yearCounts[y] = (entry.yearCounts[y] || 0) + 1;
+              const yv = canon.year(props.year);
+              if (yv) entry.yearCounts[yv] = (entry.yearCounts[yv] || 0) + 1;
             }
             if (props.month != null) {
-              const m = asIntString(props.month);
-              if (m) entry.monthCounts[m] = (entry.monthCounts[m] || 0) + 1;
+              const mv = asIntString(props.month);
+              if (mv) entry.monthCounts[mv] = (entry.monthCounts[mv] || 0) + 1;
             }
-
             aggByHex.set(key, entry);
             cellCount++;
           }
-        }).catch(e => {
-          console.warn('Tile decode skipped:', e);
-          return null;
-        }));
-        
+        }).catch(e=>console.warn('Tile decode skipped:', e)));
         if (cellCount > MAX_HEXES_STATS) break outer;
       }
     }
-    
     await Promise.allSettled(jobs);
     return cellCount;
   };
 
-  // FIXED: Stride retry mechanism
   let cellCount = await processJobs(stride);
-  
-  // If stride sampling found no data, retry with full scan
   if (cellCount === 0 && stride > 1) {
-    console.log('Stride sampling found no data, retrying with full scan...');
     showToast('Expanding search area...', 2000, 'info');
     cellCount = await processJobs(1);
   }
-
-  // Return sums for break computation
-  const values = Array.from(aggByHex.values())
-    .map(d => d.sum)
-    .filter(v => Number.isFinite(v));
-  
-  if (values.length === 0) {
-    console.warn('No valid data found after aggregation');
-  }
-  
+  const values = Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
+  if (values.length === 0) console.warn('No valid data found after aggregation');
   return values;
 }
 
-/* ===== FIXED: Hardened Binning ===== */
-function computeBinIndex(breaks, v) {
-  if (!Array.isArray(breaks) || breaks.length < 2 || !Number.isFinite(v)) return -1;
-  const last = breaks.length - 1;
-  if (v <= breaks[0]) return 0;
-  if (v >= breaks[last]) return last - 1;
-  for (let i = 1; i < breaks.length; i++) {
-    if (v < breaks[i] || Math.abs(v - breaks[i]) <= EPS) return i - 1;
-  }
-  return last - 1;
-}
-
-/* ===== FIXED: Enhanced Styling with Bin Isolation ===== */
-function makeStyle(localBreaks, localRamp, opacity = 0.65, top10Threshold = Infinity) {
+/* ===== Styling & popups (frozen options) ===== */
+function makeStyle(localBreaks, localRamp, opts) {
+  const { opacity, top10, p90, isolatedBin } = opts;
   return (props) => {
     const key = props.h3_index || props.h3 || props.id;
     const agg = key ? aggByHex.get(key) : undefined;
     const v = agg ? agg.sum : undefined;
-
-    if (!Number.isFinite(v)) {
-      return { opacity: 0, fillOpacity: 0, interactive: false };
-    }
+    if (!Number.isFinite(v)) return { opacity:0, fillOpacity:0, interactive:false };
 
     const idx = computeBinIndex(localBreaks, v);
     const safeIdx = Math.max(0, Math.min(idx, localRamp.length - 1));
-    
-    // FIXED: Bin isolation logic
     if (isolatedBin >= 0 && idx !== isolatedBin) {
-      return { opacity: 0.1, fillOpacity: 0.05, interactive: false };
+      return { opacity:0.1, fillOpacity:0.05, interactive:false };
     }
-    
     const color = localRamp[safeIdx] || localRamp[0];
-    const isTopDecile = v >= top10Threshold;
-    const highlightEnabled = $('highlightTop10').checked;
-    
+    const isTop = Number.isFinite(p90) && v >= p90 && top10;
     return {
-      fill: true,
-      fillColor: color,
-      fillOpacity: (isTopDecile && highlightEnabled) ? 
-        Math.min(opacity + 0.15, 0.95) : opacity,
-      color: (isTopDecile && highlightEnabled) ? '#111' : color,
-      weight: (isTopDecile && highlightEnabled) ? 1.5 : 0.6,
-      interactive: true
+      fill:true, fillColor:color,
+      fillOpacity: isTop ? Math.min(opacity + 0.15, 0.95) : opacity,
+      color: isTop ? '#111' : color,
+      weight: isTop ? 1.5 : 0.6,
+      interactive:true
     };
   };
 }
 
-// FIXED: Enhanced popup aggregation with proper stats
 function modeFromCounts(obj) {
   const entries = Object.entries(obj || {});
   if (!entries.length) return ['–', 0];
-  
-  // Tie-break: prefer newest (bigger key as number)
-  entries.sort((a, b) => {
-    if (b[1] !== a[1]) return b[1] - a[1];
-    const an = +a[0], bn = +b[0];
-    return (Number.isFinite(bn) ? bn : 0) - (Number.isFinite(an) ? an : 0);
+  entries.sort((a,b)=>{
+    if (b[1] !== a[1]) return b[1]-a[1];
+    const an=+a[0], bn=+b[0];
+    return (Number.isFinite(bn)?bn:0) - (Number.isFinite(an)?an:0);
   });
   return entries[0];
 }
 
-function bindHoverPopups(layer, localBreaks) {
+function bindHoverPopups(layer) {
   let locked = false;
-  
-  // FIXED: Enhanced keyboard handling
-  const handleKeydown = (e) => {
-    if (e.key === 'Escape') { 
-      locked = false; 
-      map.closePopup(); 
-    }
-  };
-  
+  const handleKeydown = (e) => { if (e.key === 'Escape') { locked = false; map.closePopup(); } };
   document.addEventListener('keydown', handleKeydown);
   map.on('click', () => { locked = false; });
 
   layer.on('mouseover', e => {
     if (locked) return;
-    
     const p = e.layer?.properties || {};
     const key = p.h3_index || p.h3 || p.id;
     const agg = key ? aggByHex.get(key) : undefined;
@@ -1589,22 +1464,17 @@ function bindHoverPopups(layer, localBreaks) {
     const [topMonth, mCount] = modeFromCounts(agg && agg.monthCounts);
 
     const spSel = getCheckboxValues('speciesGroup');
-    const spLabel = (spSel.length === 1) ? spSel[0] : 
-                    (spSel.length > 1 ? 'Mixed' : 'All');
+    const spLabel = (spSel.length === 1) ? spSel[0] : (spSel.length > 1 ? 'Mixed' : 'All');
 
-    // FIXED: Proper percentage formatting excluding Unknown from denominator
     const partsToHTML = (arr, unknownCount, totalLabelled) => {
-      const pctText = arr.length ? 
-        arr.map(([k, v]) => `${k} ${nf(v)}%`).join(' · ') : '—';
-      const unk = (unknownCount && unknownCount > 0) ? 
-        ` · Unknown ${nf(unknownCount)}` : '';
+      const pctText = arr.length ? arr.map(([k, v]) => `${k} ${nf(v)}%`).join(' · ') : '—';
+      const unk = (unknownCount && unknownCount > 0) ? ` · Unknown ${nf(unknownCount)}` : '';
       const total = totalLabelled > 0 ? ` (of ${nf(totalLabelled)})` : '';
       return pctText + unk + total;
     };
 
-    // FIXED: Enhanced popup content
     const popupContent = `
-      <div style="min-width:300px">
+      <div>
         <div class="kv"><b>Species</b><span>${spLabel}</span></div>
         <div class="kv"><b>Sum (${metricField})</b><span>${Number.isFinite(sum) ? nf(sum) : '–'}</span></div>
         <div class="kv"><b>Unique turtle IDs</b><span>${Number.isFinite(uid) ? nf(uid) : 'row-count fallback'}</span></div>
@@ -1617,90 +1487,66 @@ function bindHoverPopups(layer, localBreaks) {
         <hr style="margin:8px 0;border:none;border-top:1px solid rgba(226,232,240,0.5)"/>
         <small class="muted">H3 Index: ${key || '–'}</small>
       </div>`;
-
-    L.popup({
-      autoPan: false, 
-      offset: [0, -10],
-      className: 'modern-popup'
-    })
-    .setLatLng(e.latlng)
-    .setContent(popupContent)
-    .openOn(map);
+    L.popup({autoPan:false,offset:[0,-10],className:'modern-popup'})
+      .setLatLng(e.latlng).setContent(popupContent).openOn(map);
   });
-
-  layer.on('mouseout', () => { 
-    if (!locked) map.closePopup(); 
-  });
-  
-  layer.on('click', () => { 
-    locked = !locked; 
-  });
-  
-  // Cleanup
-  layer.on('remove', () => {
-    document.removeEventListener('keydown', handleKeydown);
-  });
+  layer.on('mouseout', () => { if (!locked) map.closePopup(); });
+  layer.on('click', () => { locked = !locked; });
+  layer.on('remove', () => { document.removeEventListener('keydown', handleKeydown); });
 }
 
-/* ===== FIXED: Enhanced Build/Rebuild System ===== */
+/* ===== Build / Rebuild ===== */
 async function buildLayer() {
   showSpinner('Loading & aggregating data…');
-  
   try {
     const res = $('resolution').value;
     const ct = $('counttype').value;
     const pmFile = fileFor(res, ct);
-    
-    // FIXED: Capability probing before aggregation
+
     layerName = await detectLayerName(pmFile);
     detectedCapabilities = await probeCapabilities(pmFile, layerName);
-    
+
     const predicate = makePredicate(detectedCapabilities);
     const values = await aggregateAndCollect(pmFile, layerName, predicate, ct);
 
-    // FIXED: Only replace layer if there is actual data
     const edges = computeSafeBreaks(values);
     if (!edges) {
-      showToast('No data in current view — try zooming out or changing filters.', 5000, 'warning');
+      showToast('No data in current view — zoom out or change filters.', 5000, 'warning');
       hideSpinner();
-      return; // Keep previous layer visible
+      return; // keep existing layer (avoid blank)
     }
 
-    // FIXED: Freeze config for render (race-proof)
     const localBreaks = edges.slice();
     const localRamp = currentRamp().slice();
-    const opacity = parseInt($('opacitySlider').value) / 100;
+    const opacity = parseInt($('opacitySlider').value, 10) / 100;
 
-    // FIXED: Top 10% threshold calculation
     const sortedVals = values.filter(Number.isFinite).sort((a, b) => a - b);
     const p90 = sortedVals.length ? ss.quantileSorted(sortedVals, 0.9) : Infinity;
 
-    // Update legend with histogram
     updateLegend(localBreaks, localRamp, values);
 
-    // Remove previous layer
-    if (vtLayer) { 
-      map.removeLayer(vtLayer); 
-      vtLayer = null; 
-    }
+    if (vtLayer) { map.removeLayer(vtLayer); vtLayer = null; }
 
-    // FIXED: Enhanced VectorGrid creation with frozen config
-    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`, {
-      rendererFactory: L.canvas.tile,
-      vectorTileLayerStyles: {
-        [layerName]: makeStyle(localBreaks, localRamp, opacity, p90)
-      },
-      interactive: true,
-      getFeatureId: f => f.properties && (
-        f.properties.h3_index || f.properties.h3 || f.properties.id
-      )
+    const opts = Object.freeze({
+      opacity,
+      top10: $('highlightTop10').checked,
+      p90,
+      isolatedBin
     });
 
-    bindHoverPopups(vtLayer, localBreaks);
+    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`, {
+      rendererFactory: L.canvas.tile,
+      interactive: true,
+      vectorTileLayerStyles: {
+        [layerName]: makeStyle(localBreaks, localRamp, opts)
+      },
+      getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+    });
+
+    bindHoverPopups(vtLayer);
     vtLayer.addTo(map);
-    
-    showToast('Layer updated successfully!', 2000, 'success');
-    
+    showToast('Layer updated successfully!', 1800, 'success');
+
   } catch(err) {
     console.error('buildLayer error:', err);
     showToast('Failed to load layer. Check console for details.', 5000, 'error');
@@ -1709,129 +1555,91 @@ async function buildLayer() {
   }
 }
 
-/* ===== Event Handlers ===== */
+/* ===== Events ===== */
 $('applyBtn').addEventListener('click', () => buildLayer());
 $('resolution').addEventListener('change', () => debouncedRebuild());
 $('counttype').addEventListener('change', () => debouncedRebuild());
-$('resetBtn').addEventListener('click', () => {
-  clearAllFilters();
-  buildLayer();
-});
+$('resetBtn').addEventListener('click', () => { clearAllFilters(); buildLayer(); });
 
-// FIXED: Debounced control handlers for performance
 $('opacitySlider').addEventListener('input', () => debouncedRebuild());
 $('highlightTop10').addEventListener('change', () => debouncedRebuild());
 $('yearRangeMin').addEventListener('input', () => debouncedRebuild());
 $('yearRangeMax').addEventListener('input', () => debouncedRebuild());
 
-/* ===== FIXED: Enhanced Permalink System ===== */
+/* ===== Permalink ===== */
 function readStateFromHash() {
   const h = new URLSearchParams(location.hash.slice(1));
-  
-  // Map position
-  if (h.has('z') && h.has('lat') && h.has('lng')) {
-    map.setView([+h.get('lat'), +h.get('lng')], +h.get('z'));
-  }
-  
-  // Controls
+  if (h.has('z') && h.has('lat') && h.has('lng')) map.setView([+h.get('lat'), +h.get('lng')], +h.get('z'));
   if (h.has('res')) $('resolution').value = h.get('res');
   if (h.has('ct')) $('counttype').value = h.get('ct');
-  if (h.has('opacity')) {
-    $('opacitySlider').value = h.get('opacity');
-    $('opacityValue').textContent = (h.get('opacity') / 100).toFixed(2);
-  }
+  if (h.has('opacity')) { $('opacitySlider').value = h.get('opacity'); $('opacityValue').textContent = (h.get('opacity') / 100).toFixed(2); }
   if (h.has('highlight')) $('highlightTop10').checked = h.get('highlight') === '1';
   if (h.has('isolated')) isolatedBin = parseInt(h.get('isolated'));
-  
-  // Year range
   if (h.has('yearMin')) $('yearRangeMin').value = h.get('yearMin');
   if (h.has('yearMax')) $('yearRangeMax').value = h.get('yearMax');
   updateYearLabels();
-  
-  // Checkbox groups
+
   const checkboxGroups = {
     'sp': 'speciesGroup', 'st': 'stageGroup', 'sx': 'sexGroup',
     'fish': 'fishingGroup', 'debris': 'marineDebrisGroup', 
     'aggr': 'aggressionGroup', 'boat': 'boatGroup', 
     'dredge': 'dredgingGroup', 'oil': 'oilGroup', 'petrol': 'petrolGroup',
-    'season': 'seasonGroup'
+    'season': 'seasonGroup', 'decomp':'decompGroup'
   };
-  
   Object.entries(checkboxGroups).forEach(([key, groupId]) => {
     const val = h.get(key);
     if (val) {
       const group = $(groupId);
       const wanted = new Set(val.split('|'));
-      
-      // Reset all first
       group.querySelectorAll('input').forEach(cb => cb.checked = false);
-      
       if (wanted.has('all')) {
         group.querySelector('.all input').checked = true;
       } else {
-        // Set specific checkboxes
-        group.querySelectorAll('input:not(.all input)').forEach(cb => {
-          const label = cb.labels[0]?.textContent;
+        group.querySelectorAll('input').forEach(cb=>{
+          const row = cb.closest('.checkbox-row');
+          if (row && row.classList.contains('all')) return;
+          const label = cb.labels[0]?.textContent.trim();
           if (wanted.has(label)) cb.checked = true;
         });
       }
     }
   });
-  
-  // Multi-selects
+
   if (h.has('month')) {
     const vals = new Set(h.get('month').split('|'));
-    Array.from($('monthFilter').options).forEach(o => 
-      o.selected = vals.has(o.value)
-    );
+    Array.from($('monthFilter').options).forEach(o => o.selected = vals.has(o.value));
   }
 }
-
 function writeStateToHash() {
   const h = new URLSearchParams();
   const c = map.getCenter();
-  
-  // Map state
   h.set('z', map.getZoom().toFixed(2)); 
   h.set('lat', c.lat.toFixed(6)); 
   h.set('lng', c.lng.toFixed(6));
-  
-  // Controls
   h.set('res', $('resolution').value); 
   h.set('ct', $('counttype').value);
   h.set('opacity', $('opacitySlider').value);
   if ($('highlightTop10').checked) h.set('highlight', '1');
-  if (isolatedBin >= 0) h.set('isolated', isolatedBin);
-  
-  // Year range
+  if (isolatedBin >= 0) h.set('isolated', String(isolatedBin));
   h.set('yearMin', $('yearRangeMin').value);
   h.set('yearMax', $('yearRangeMax').value);
-  
-  // FIXED: Checkbox group serialization
+
   const checkboxGroups = {
     'sp': 'speciesGroup', 'st': 'stageGroup', 'sx': 'sexGroup',
     'fish': 'fishingGroup', 'debris': 'marineDebrisGroup', 
     'aggr': 'aggressionGroup', 'boat': 'boatGroup', 
-    'dredge': 'dredgingGroup', 'oil': 'oilGroup', 'petrol': 'petrol Group',
-    'season': 'seasonGroup'
+    'dredge': 'dredgingGroup', 'oil': 'oilGroup', 'petrol': 'petrolGroup',
+    'season': 'seasonGroup', 'decomp':'decompGroup'
   };
-  
   Object.entries(checkboxGroups).forEach(([key, groupId]) => {
     const vals = getCheckboxValues(groupId);
-    if (vals.length) {
-      h.set(key, vals.join('|'));
-    } else {
-      h.set(key, 'all');
-    }
+    h.set(key, vals.length ? vals.join('|') : 'all');
   });
-  
-  // Multi-selects
+
   const months = getMulti('monthFilter');
   if (months.length) h.set('month', months.join('|'));
-  
   location.hash = h.toString();
 }
-
 $('permalink').addEventListener('click', async () => {
   writeStateToHash();
   try { 
@@ -1842,21 +1650,12 @@ $('permalink').addEventListener('click', async () => {
   }
 });
 
-/* ===== FIXED: Boot Sequence ===== */
+/* ===== Boot ===== */
 (function init() {
-  // Initialize from URL if present
   if (location.hash) {
-    try {
-      readStateFromHash();
-    } catch(e) {
-      console.warn('Failed to parse URL state:', e);
-    }
+    try { readStateFromHash(); } catch(e) { console.warn('Failed to parse URL state:', e); }
   }
-  
-  // Build initial layer
   buildLayer();
-  
-  // Update labels
   updateYearLabels();
 })();
 </script>
