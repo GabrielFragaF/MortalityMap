@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <!-- Avoid favicon 404 -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E'>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
 
 <!-- Leaflet (local, CSP-safe) -->
 <link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
@@ -19,39 +19,26 @@
 <script src="./vendor/vector-tile.js?v=20250812"></script>
 <script src="./vendor/simple-statistics.min.js?v=20250812"></script>
 
-<!-- v15 skin: Inter font -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
 <style>
 :root{
   --bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;--ring:#93c5fd;
   --shadow:0 10px 30px rgba(2,6,23,.25);--brand:#0ea5e9;--danger:#e11d48;--ok:#16a34a;
-
-  /* v15 skin tokens */
-  --accent:#007AFF;
-  --control:#eef2f6;
-  --control-hover:#e6ebf2;
-  --pill-border:rgba(0,0,0,.14);
-  --panel-glass:rgba(252,252,252,0.92);
-  --text-secondary:#6e6e73;
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:'Inter',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
 #map{position:absolute;inset:0}
 
 /* Panel */
 #panel{position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:92vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
 #panel.collapsed{height:46px;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak);position:sticky;top:0;z-index:5}
 .topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
-.iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600;transition:transform .06s ease, box-shadow .2s ease}
-.iconbtn:hover{filter:brightness(0.98);box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.iconbtn:active{transform:scale(.98)}
+.iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
+.iconbtn:hover{filter:brightness(0.98)}
 .section{padding:10px 14px}
 .row{margin-bottom:10px}
 label{display:block;font-weight:700;margin:6px 0 4px;font-size:13px}
 select, input[type="range"]{width:100%}
-select{padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;font-weight:600}
+select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
 select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
 details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
 details+details{margin-top:10px}
@@ -59,45 +46,21 @@ summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;backgro
 summary::-webkit-details-marker{display:none}
 details .content{padding:10px 12px}
 .controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
-#resetBtn,#applyBtn{flex:1;background:var(--brand);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer;transition:transform .06s ease, box-shadow .2s ease}
+#resetBtn,#applyBtn{flex:1;background:var(--brand);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
 #resetBtn{background:var(--danger)}
-#resetBtn:hover,#applyBtn:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}
-#resetBtn:active,#applyBtn:active{transform:scale(.98)}
 
+/* Checkbox groups */
+.chk-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chk{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 8px}
+.chk input{accent-color:var(--brand)}
 .small{font-size:12px;color:var(--muted)}
 
-/* v15: visual tabs & section titles (purely presentational) */
-.v15-tabtitle{font-size:12px;font-weight:700;color:var(--text-secondary);margin:6px 0 4px 2px}
-.v15-title{margin:0 0 6px 2px;font-size:13px;font-weight:700;color:var(--text-secondary)}
-
-/* v15: basemap chip buttons */
-.v15-basemaps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.v15-btn{padding:8px 10px;border-radius:10px;border:1px solid transparent;background:var(--control);font-weight:700;font-size:12px;cursor:pointer;text-align:center;color:var(--text);transition:all .15s}
-.v15-btn:hover{background:var(--control-hover)}
-.v15-btn:active{transform:scale(.98)}
-.v15-btn.active{background:#fff;border:1px solid var(--pill-border);box-shadow:0 1px 6px rgba(0,0,0,.08)}
-
-/* Checkbox groups → pill chips (visual only; inputs unchanged) */
-.chk-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-label.chk{display:flex;align-items:center;justify-content:center;padding:7px 10px;border-radius:10px;background:var(--control);border:1px solid transparent;font-weight:700;cursor:pointer;transition:all .15s;gap:8px}
-label.chk:hover{background:var(--control-hover)}
-label.chk input{accent-color:var(--accent)}
-label.chk:has(input:checked){background:#fff;border:1px solid var(--pill-border);box-shadow:0 1px 6px rgba(0,0,0,.06);color:#0f172a}
-
-/* v15 segmented control (visual only) */
-.seg{display:flex;align-items:stretch;background:var(--control);border-radius:10px;padding:2px;position:relative;overflow:hidden;gap:0}
-.seg input{display:none}
-.seg label{flex:1;text-align:center;padding:6px 6px;font-size:12px;font-weight:700;color:var(--text-secondary);cursor:pointer;z-index:2;user-select:none}
-.seg .pill{position:absolute;top:2px;bottom:2px;left:2px;background:#fff;border:1px solid var(--pill-border);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:transform .25s cubic-bezier(.2,.8,.2,1), width .2s;opacity:0}
-.seg input:checked + label{color:#0f172a}
-
-/* Legend bottom-right — v15 polish & footer */
-#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:rgba(255,255,255,.96);border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px}
+/* Legend bottom-right */
+#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px}
 .leghdr{font-weight:800;margin-bottom:6px}
 .legend-row{display:flex;align-items:center;justify-content:space-between;margin:4px 0;gap:8px}
 .swatch{width:28px;height:12px;border-radius:3px;border:1px solid #94a3b8}
 .legend-hint{margin-top:6px;color:var(--muted);font-size:11px}
-.legend-footer{margin-top:8px;font-size:11px;color:var(--muted)}
 
 /* Histogram */
 .hist{display:flex;align-items:flex-end;gap:4px;margin-top:6px;height:42px}
@@ -115,19 +78,6 @@ label.chk:has(input:checked){background:#fff;border:1px solid var(--pill-border)
 .leaflet-popup-content{margin:8px 12px}
 .kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}
 small.muted{color:#64748b}
-
-/* v15: Selected filters summary */
-.v15-summary{border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px}
-.v15-summary-title{font-size:11px;color:var(--text-secondary);font-weight:700;margin:0 0 4px 2px}
-.v15-summary-list{list-style:none;margin:0;padding:0;max-height:24vh;overflow:auto}
-.v15-summary-list li{font-size:11px;padding:4px 2px;border-bottom:1px dashed #eef2f7}
-
-/* v15: author credit */
-.v15-author{margin:8px 2px 2px;color:var(--text-secondary);font-size:10px}
-
-/* v15: Leaflet scale bar harmonization */
-.leaflet-control-scale{background:rgba(255,255,255,.9);border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.08);padding:4px 6px}
-.leaflet-control-scale-line{background:none;border:1px solid #64748b;border-top:none;color:#0f172a;font-weight:700}
 </style>
 </head>
 <body>
@@ -144,13 +94,8 @@ small.muted{color:#64748b}
   </div>
 
   <div class="section">
-    <!-- v15: Visual tab title -->
-    <div class="v15-tabtitle">Main</div>
-
-    <!-- v15: Cell size (H3) -->
-    <div class="v15-title">Cell size (H3)</div>
     <div class="row">
-      <label for="resolution" style="display:none">Grid cell size (H3)</label>
+      <label for="resolution">Grid cell size (H3)</label>
       <select id="resolution">
         <option value="r3">≈ 60 km edge</option>
         <option value="r4">≈ 22.6 km</option>
@@ -160,44 +105,15 @@ small.muted{color:#64748b}
       <div class="small">Tip: start coarse (r3/r4) for speed; switch to r6 when zoomed in.</div>
     </div>
 
-    <!-- v15: Map layer (visual segmented driving #counttype) -->
-    <div class="v15-title">Map layer</div>
-    <div class="row" style="display:grid;gap:8px">
-      <!-- Segmented: Observed vs Estimation (visual only) -->
-      <div class="seg" id="v15LayerType">
-        <input type="radio" id="v15-observed" name="v15layer" value="observed">
-        <label for="v15-observed">Observed strandings</label>
-        <input type="radio" id="v15-estimation" name="v15layer" value="estimation">
-        <label for="v15-estimation">Mortality estimation</label>
-        <div class="pill"></div>
-      </div>
-
-      <!-- Sub segmented for estimation level (Low/Mean/High) -->
-      <div class="seg" id="v15EstimationLevel" style="max-width:280px;justify-self:center">
-        <input type="radio" id="v15-est-low"  name="v15est" value="low"><label for="v15-est-low">Low</label>
-        <input type="radio" id="v15-est-mean" name="v15est" value="mean"><label for="v15-est-mean">Mean</label>
-        <input type="radio" id="v15-est-high" name="v15est" value="high"><label for="v15-est-high">High</label>
-        <div class="pill"></div>
-      </div>
-
-      <!-- The real select (kept intact & hidden label). We update it programmatically. -->
-      <label for="counttype" style="display:none">Count Type</label>
-      <select id="counttype" style="display:none">
-        <option value="weight" selected>Observed strandings</option>
-        <option value="new_weight">Observed strandings (alt)</option>
-        <option value="new_mortality_est_bf_mean">Mortality estimation — Mean</option>
-        <option value="new_mortality_est_bf_low">Mortality estimation — Low</option>
-        <option value="new_mortality_est_bf_high">Mortality estimation — High</option>
+    <div class="row">
+      <label for="counttype">Count Type</label>
+      <select id="counttype">
+        <option value="weight" selected>Mortality position (weight)</option>
+        <option value="new_weight">Mortality position (new_weight)</option>
+        <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+        <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+        <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
       </select>
-    </div>
-
-    <!-- v15: Basemap -->
-    <div class="v15-title">Basemap</div>
-    <div class="v15-basemaps" id="basemapBtns">
-      <button class="v15-btn active" data-map="Light">Light</button>
-      <button class="v15-btn" data-map="Satellite">Satellite</button>
-      <button class="v15-btn" data-map="Terrain">Terrain</button>
-      <button class="v15-btn" data-map="Dark">Dark</button>
     </div>
 
     <!-- Species -->
@@ -205,6 +121,7 @@ small.muted{color:#64748b}
       <summary>Species</summary>
       <div class="content">
         <div class="chk-group" id="speciesGroup">
+          <!-- All toggle + species -->
           <label class="chk"><input type="checkbox" data-group="species" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="species" value="Caretta caretta">Caretta caretta</label>
           <label class="chk"><input type="checkbox" data-group="species" value="Chelonia mydas">Chelonia mydas</label>
@@ -215,14 +132,11 @@ small.muted{color:#64748b}
       </div>
     </details>
 
-    <!-- v15: Visual tab title for biology -->
-    <div class="v15-tabtitle" style="margin-top:10px">Biological parameters</div>
-
     <!-- Stage / Sex / Season -->
     <details>
       <summary>Biology</summary>
       <div class="content">
-        <div class="v15-title">Development stage</div>
+        <label>Development stage</label>
         <div class="chk-group" id="stageGroup">
           <label class="chk"><input type="checkbox" data-group="stage" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="stage" value="Adult">Adult</label>
@@ -231,7 +145,7 @@ small.muted{color:#64748b}
           <label class="chk"><input type="checkbox" data-group="stage" value="Unknown">Unknown</label>
         </div>
 
-        <div class="v15-title" style="margin-top:8px">Sex</div>
+        <label style="margin-top:8px">Sex</label>
         <div class="chk-group" id="sexGroup">
           <label class="chk"><input type="checkbox" data-group="sex" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="sex" value="Female">Female</label>
@@ -239,7 +153,7 @@ small.muted{color:#64748b}
           <label class="chk"><input type="checkbox" data-group="sex" value="Unknown">Unknown</label>
         </div>
 
-        <div class="v15-title" style="margin-top:8px">Season</div>
+        <label style="margin-top:8px">Season</label>
         <div class="chk-group" id="seasonGroup">
           <label class="chk"><input type="checkbox" data-group="season" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="season" value="Autumn">Autumn</label>
@@ -251,70 +165,11 @@ small.muted{color:#64748b}
       </div>
     </details>
 
-    <!-- v15: Visual tab title for anthropogenic -->
-    <div class="v15-tabtitle" style="margin-top:10px">Anthropogenic interactions</div>
-
-    <!-- Human interactions + Decomposition -->
+    <!-- Human interactions (English only) + Decomposition -->
     <details>
       <summary>Human interactions & condition</summary>
       <div class="content">
-        <!-- Each anthropogenic item title (presentation only) + visual segmented mapping to original 3 checkboxes -->
-        <div class="v15-title">Fishing</div>
-        <div class="seg" data-v15-human="Fishing">
-          <input type="radio" id="fish-any"  name="fish" value="any"><label for="fish-any">Any</label>
-          <input type="radio" id="fish-yes"  name="fish" value="Yes"><label for="fish-yes">Yes</label>
-          <input type="radio" id="fish-no"   name="fish" value="No"><label for="fish-no">No</label>
-          <div class="pill"></div>
-        </div>
-
-        <div class="v15-title" style="margin-top:8px">Marine debris</div>
-        <div class="seg" data-v15-human="Marine_Debris">
-          <input type="radio" id="deb-any"  name="deb" value="any"><label for="deb-any">Any</label>
-          <input type="radio" id="deb-yes"  name="deb" value="Yes"><label for="deb-yes">Yes</label>
-          <input type="radio" id="deb-no"   name="deb" value="No"><label for="deb-no">No</label>
-          <div class="pill"></div>
-        </div>
-
-        <div class="v15-title" style="margin-top:8px">Boat collision</div>
-        <div class="seg" data-v15-human="Boat_collision">
-          <input type="radio" id="boat-any" name="boat" value="any"><label for="boat-any">Any</label>
-          <input type="radio" id="boat-yes" name="boat" value="Yes"><label for="boat-yes">Yes</label>
-          <input type="radio" id="boat-no"  name="boat" value="No"><label for="boat-no">No</label>
-          <div class="pill"></div>
-        </div>
-
-        <div class="v15-title" style="margin-top:8px">Dredging</div>
-        <div class="seg" data-v15-human="Dredging">
-          <input type="radio" id="dred-any" name="dred" value="any"><label for="dred-any">Any</label>
-          <input type="radio" id="dred-yes" name="dred" value="Yes"><label for="dred-yes">Yes</label>
-          <input type="radio" id="dred-no"  name="dred" value="No"><label for="dred-no">No</label>
-          <div class="pill"></div>
-        </div>
-
-        <div class="v15-title" style="margin-top:8px">Aggression</div>
-        <div class="seg" data-v15-human="Aggression">
-          <input type="radio" id="agr-any"  name="agr" value="any"><label for="agr-any">Any</label>
-          <input type="radio" id="agr-yes"  name="agr" value="Yes"><label for="agr-yes">Yes</label>
-          <input type="radio" id="agr-no"   name="agr" value="No"><label for="agr-no">No</label>
-          <div class="pill"></div>
-        </div>
-
-        <div class="v15-title" style="margin-top:8px">Oil / petrol</div>
-        <div class="seg" data-v15-human="Oil">
-          <input type="radio" id="oil-any" name="oil" value="any"><label for="oil-any">Any</label>
-          <input type="radio" id="oil-yes" name="oil" value="Yes"><label for="oil-yes">Oil: Yes</label>
-          <input type="radio" id="oil-no"  name="oil" value="No"><label for="oil-no">Oil: No</label>
-          <div class="pill"></div>
-        </div>
-        <div class="seg" style="margin-top:8px" data-v15-human="Petrol">
-          <input type="radio" id="pet-any" name="pet" value="any"><label for="pet-any">Any</label>
-          <input type="radio" id="pet-yes" name="pet" value="Yes"><label for="pet-yes">Petrol: Yes</label>
-          <input type="radio" id="pet-no"  name="pet" value="No"><label for="pet-no">Petrol: No</label>
-          <div class="pill"></div>
-        </div>
-
-        <!-- Original checkbox block kept intact for logic; now visually styled as pills -->
-        <div class="v15-title" style="margin-top:10px">Raw checkboxes (kept for logic)</div>
+        <label>Human interactions</label>
         <div class="chk-group" id="humanGroup">
           <label class="chk"><input type="checkbox" data-group="Fishing" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="Fishing" value="Yes">Fishing: Yes</label>
@@ -345,7 +200,7 @@ small.muted{color:#64748b}
           <label class="chk"><input type="checkbox" data-group="Petrol" value="No">Petrol: No</label>
         </div>
 
-        <div class="v15-title" style="margin-top:8px">Decomposition code</div>
+        <label style="margin-top:8px">Decomposition code</label>
         <div class="chk-group" id="decompGroup">
           <label class="chk"><input type="checkbox" data-group="decomposition_code" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="decomposition_code" value="1">1</label>
@@ -362,7 +217,7 @@ small.muted{color:#64748b}
       <summary>Environment & time</summary>
       <div class="content">
         <div class="row">
-          <div class="v15-title">Year range</div>
+          <label>Year range</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;margin-bottom:6px">
             <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
             <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
@@ -372,12 +227,13 @@ small.muted{color:#64748b}
           </div>
         </div>
 
-        <div class="v15-title" style="margin-top:8px">Year</div>
+        <label style="margin-top:8px">Year (checkboxes)</label>
         <div class="chk-group" id="yearGroup">
           <label class="chk"><input type="checkbox" data-group="year" value="__ALL__" checked>(All)</label>
+          <!-- Years will be populated dynamically based on observed data min/max -->
         </div>
 
-        <div class="v15-title" style="margin-top:8px">Month</div>
+        <label style="margin-top:8px">Month</label>
         <div class="chk-group" id="monthGroup">
           <label class="chk"><input type="checkbox" data-group="month" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="month" value="1">1</label>
@@ -401,7 +257,7 @@ small.muted{color:#64748b}
       <summary>Layer controls</summary>
       <div class="content">
         <div class="row">
-          <div class="v15-title">Layer opacity</div>
+          <label for="opacity">Layer opacity</label>
           <input id="opacity" type="range" min="0.30" max="0.90" step="0.01" value="0.65">
         </div>
         <div class="row">
@@ -414,13 +270,6 @@ small.muted{color:#64748b}
       <button id="resetBtn">Reset</button>
       <button id="applyBtn">Apply</button>
     </div>
-
-    <!-- v15: Selected filters summary (read-only) -->
-    <div class="v15-summary">
-      <div class="v15-summary-title">Selected filters</div>
-      <ul id="railSummary" class="v15-summary-list"></ul>
-      <div class="v15-author">Author: Gabriel Fraga da Fonseca</div>
-    </div>
   </div>
 </div>
 
@@ -430,7 +279,6 @@ small.muted{color:#64748b}
   <div id="legendRows"></div>
   <div class="hist" id="histogram"></div>
   <div class="legend-hint">Breaks based on visible, filtered hexes.</div>
-  <div class="legend-footer">Basemap: <span id="legendBasemap">Light</span></div>
 </div>
 
 <div id="spinner">Loading…</div>
@@ -457,50 +305,7 @@ small.muted{color:#64748b}
 
 /* ===== Map ===== */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
-
-// v15 skin: Base layers + switching (open providers)
-const BASEMAPS = {
-  Light: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    opts: {attribution:'&copy; OpenStreetMap contributors'}
-  },
-  Satellite: {
-    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    opts: {attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'}
-  },
-  Terrain: {
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    opts: {attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)'}
-  },
-  Dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-    opts: {attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}
-  }
-};
-let baseLayer = null;
-function setBaseLayer(name){
-  const cfg = BASEMAPS[name] || BASEMAPS.Light;
-  try{ if(baseLayer){ map.removeLayer(baseLayer); } }catch(e){}
-  baseLayer = L.tileLayer(cfg.url, cfg.opts).addTo(map);
-  const lb = document.getElementById('legendBasemap'); if(lb) lb.textContent = name;
-}
-setBaseLayer('Light');
-
-// Basemap UI (progressive)
-(function wireBasemapButtons(){
-  const box = document.getElementById('basemapBtns');
-  if(!box) return;
-  box.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-map]');
-    if(!btn) return;
-    [...box.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    setBaseLayer(btn.getAttribute('data-map'));
-  });
-})();
-
-// Scale bar
-L.control.scale({ metric:true, imperial:false }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 
 /* ===== UI helpers ===== */
 const $ = id => document.getElementById(id);
@@ -681,9 +486,9 @@ function enableYearsWithinRange(){
 /* ===== State ===== */
 let vtLayer = null, lastGoodLayer = null;
 let layerName='', header=null;
-const aggByHex = new Map();
+const aggByHex = new Map(); // h3 -> { sum, uids:Set, counts:{sex,stage,season,year,month}, rowCount }
 let metricField = 'sum_val';
-let cachedCap = null;
+let cachedCap = null; // capability probe result
 let jenksBreaks = [0,1,2,3,4,5];
 let activeRamp = ramps['multi'];
 let histogramCounts = [0,0,0,0,0];
@@ -849,8 +654,8 @@ const MAX_HEXES_STATS  = 3000;
 
 /* ---- TUNING ---- */
 const WINSOR_TAIL = 0.02;
-const FIRST_BIN_FLOOR = 1;
-const FLOOR_APPLY_FRAC_OF_MAX = 0.98;
+const FIRST_BIN_FLOOR = 1;           // desired floor
+const FLOOR_APPLY_FRAC_OF_MAX = 0.98;// FIX: only apply floor if < 98% of max
 const FIRST_BIN_MAX_SHARE = 0.55;
 const FIRST_CUT_MIN_ADJ = 0.70;
 const FIRST_CUT_STEP = 0.05;
@@ -913,7 +718,7 @@ function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, m
   return edges;
 }
 
-/* monotonic guard */
+/* FIX: monotonic guard */
 function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
   let e = edges.slice().sort((a,b)=>a-b);
   const rng = (maxVal - minVal) || 1;
@@ -923,6 +728,7 @@ function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
   for(let i=1;i<e.length;i++){
     if(!(e[i] > e[i-1])) e[i] = Math.min(maxVal, e[i-1] + eps);
   }
+  // trim/pad to k+1
   while(e.length > k+1) e.splice(e.length-2,1);
   while(e.length < k+1){
     const i = e.length-1;
@@ -931,7 +737,7 @@ function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
   return e;
 }
 
-/* Head/Tail winsor */
+/* NEW: winsorized Head/Tail with safe floor */
 function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=FIRST_BIN_FLOOR){
   const v = values.filter(Number.isFinite); if(v.length<5) return null;
   const s = v.slice().sort((a,b)=>a-b);
@@ -940,6 +746,7 @@ function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=F
   const w = s.map(x=>clamp(x,qLo,qHi));
   const minVal = w[0], maxVal = w[w.length-1];
 
+  // FIX: only apply the 1.0 floor if it is meaningfully below the visible max
   const canApplyFloor = (floor <= maxVal * FLOOR_APPLY_FRAC_OF_MAX);
   const lowerEdge = canApplyFloor ? Math.max(floor, minVal) : minVal;
   const firstApplied = canApplyFloor && (lowerEdge > minVal + (maxVal-minVal)*1e-9);
@@ -953,8 +760,9 @@ function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=F
     const prev = edges[edges.length-1];
     let m = mean;
     if(!(m > prev)){
+      // FIX: if mean is not above prev, nudge forward but never backward
       if(prev < maxVal) m = prev + (maxVal - prev) * 0.25;
-      else m = prev;
+      else m = prev; // stuck at max
     }
     edges.push(m);
     current = current.filter(x=>x>=m);
@@ -965,7 +773,7 @@ function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=F
   return { edges: safe, firstFloorApplied:firstApplied };
 }
 
-/* tiny adaptive nudge */
+/* tiny adaptive nudge of first cut */
 function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIRST_CUT_MIN_ADJ, step=FIRST_CUT_STEP){
   const e = edges.slice();
   if(e.length<3) return {edges:e, adjusted:false};
@@ -981,16 +789,7 @@ function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIR
   return {edges:ensureMonotonic(edges, edges[0], edges[edges.length-1], edges.length-1), adjusted:false};
 }
 
-/* legend helpers */
-function computeLegendCounts(values, breaks){
-  const counts=[0,0,0,0,0];
-  const n=breaks.length-1;
-  for(const v of values){
-    const idx = computeBinIndex(v, breaks);
-    if(idx>=0 && idx<n) counts[idx]++; 
-  }
-  return counts;
-}
+/* Hardened binning using frozen breaks */
 function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
   const n = breaks.length-1; if(n<=0) return -1;
@@ -999,10 +798,89 @@ function computeBinIndex(v, breaks){
   for(let i=0;i<n;i++){
     const a=breaks[i], b=breaks[i+1];
     if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
-    if (i===n-1){ if(v>=a && v<=b) return i; }
-    else if (v>=a && v<b) return i;
+    if (i===n-1){
+      if(v>=a && v<=b) return i;
+    } else if (v>=a && v<b) {
+      return i;
+    }
   }
   return -1;
+}
+
+/* ===== Aggregate tiles ===== */
+async function aggregateViewport(pmFile, layerName, predicate, ct){
+  aggByHex.clear();
+  const pm = await getPM(pmFile);
+  const hdr = header || await pm.getHeader();
+  const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
+  const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+
+  const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
+  let stride=1;
+  if(tilesX*tilesY>MAX_TILES_STATS){
+    const factor=Math.ceil(Math.sqrt((tilesX*tilesY)/MAX_TILES_STATS));
+    stride=Math.max(1,factor);
+  }
+
+  let discovered=false, sampleProps=[];
+  async function scan(withStride){
+    const jobs=[];
+    outer:
+    for(let x=minX;x<=maxX;x+=withStride){
+      for(let y=minY;y<=maxY;y+=withStride){
+        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
+          if(!resp || !resp.data) return;
+          const vt = new window.__VT__(new window.__PBF__(resp.data));
+          const lyr = vt.layers[layerName]; if(!lyr) return;
+          for(let i=0;i<lyr.length;i++){
+            const f = lyr.feature(i), props = f.properties||{};
+            sampleProps.length<50 && sampleProps.push(props);
+            if(!discovered){ lockMetricField(sampleProps, ct); discovered=true; }
+            if(!predicate(props)) continue;
+            const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
+            const val = Number(props[metricField]);
+            const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
+            const sex = toCanon(props.sex,'sex');
+            const stage = toCanon(props.development_stage,'stage');
+            const season = toCanon(props.season,'season');
+            const year = canonYear(props.year);
+            const month = String(props.month||'').trim();
+
+            let entry = aggByHex.get(key);
+            if(!entry){
+              entry = { sum:0, uids:new Set(), counts:{ sex:{}, stage:{}, season:{}, year:{}, month:{} }, rowCount:0 };
+              aggByHex.set(key, entry);
+            }
+            if(Number.isFinite(val)) entry.sum += val;
+            if(uid) entry.uids.add(uid); else entry.rowCount++;
+            entry.counts.sex[sex] = (entry.counts.sex[sex]||0)+1;
+            entry.counts.stage[stage] = (entry.counts.stage[stage]||0)+1;
+            entry.counts.season[season] = (entry.counts.season[season]||0)+1;
+            if(year) entry.counts.year[year] = (entry.counts.year[year]||0)+1;
+            if(month) entry.counts.month[month] = (entry.counts.month[month]||0)+1;
+          }
+        }).catch(()=>{}));
+        if(aggByHex.size > MAX_HEXES_STATS) break outer;
+      }
+    }
+    await Promise.all(jobs);
+  }
+
+  await scan(stride);
+  if(aggByHex.size===0 && stride>1) await scan(1);
+
+  return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+}
+
+/* ===== Compute breaks + histogram + top10 ===== */
+function computeLegendCounts(values, breaks){
+  const counts=[0,0,0,0,0];
+  const n=breaks.length-1;
+  for(const v of values){
+    const idx = computeBinIndex(v, breaks);
+    if(idx>=0 && idx<n) counts[idx]++; 
+  }
+  return counts;
 }
 function p90(values){
   const s=values.slice().sort((a,b)=>a-b);
@@ -1019,17 +897,27 @@ function updateLegendFrozen(cfg){
     const a=brks[i], b=brks[i+1];
     const row=document.createElement('div'); row.className='legend-row';
     const sw=document.createElement('span'); sw.className='swatch'; sw.style.background=ramp[i];
-    sw.title=`${nf(a)} – ${nf(b)} (click to isolate)`; sw.style.cursor='pointer';
-    sw.addEventListener('click',()=>{ isolatedBin = (isolatedBin===i ? -1 : i); if(vtLayer) vtLayer.redraw(); });
+    sw.title=`${nf(a)} – ${nf(b)} (click to isolate)`;
+    sw.style.cursor='pointer';
+    sw.addEventListener('click',()=>{
+      isolatedBin = (isolatedBin===i ? -1 : i);
+      if(vtLayer) vtLayer.redraw();
+    });
     const lab=document.createElement('span');
-    if(i===0 && cfg.firstFloorApplied) lab.textContent = `≤ ${nf(b)}`; else lab.textContent = `${nf(a)} – ${nf(b)}`;
-    row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
+    if(i===0 && cfg.firstFloorApplied) lab.textContent = `≤ ${nf(b)}`;
+    else lab.textContent = `${nf(a)} – ${nf(b)}`;
+    row.appendChild(sw); row.appendChild(lab);
+    rows.appendChild(row);
   }
   const hist=$('histogram'); hist.innerHTML='';
-  (cfg.histCounts||[]).forEach((c,i)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; if(isolatedBin===i) bar.classList.add('active'); hist.appendChild(bar); });
+  (cfg.histCounts||[]).forEach((c,i)=>{
+    const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px';
+    if(isolatedBin===i) bar.classList.add('active');
+    hist.appendChild(bar);
+  });
 }
 
-/* ===== Popup helpers ===== */
+/* ===== Popup aggregation ===== */
 function percentParts(counts){
   const totalKnown = Object.entries(counts).filter(([k])=>k!=='Unknown').reduce((a,[,v])=>a+v,0);
   const uCount = counts['Unknown']||0;
@@ -1041,155 +929,12 @@ function topMode(countsObj, numeric=false){
   for(const k in countsObj){
     const cnt=countsObj[k];
     if(cnt>bestCnt) { bestCnt=cnt; bestKey=k; }
-    else if(cnt===bestCnt){ if(numeric){ if(+k > +bestKey) bestKey=k; } else { if(String(k) > String(bestKey)) bestKey=k; } }
+    else if(cnt===bestCnt){
+      if(numeric){ if(+k > +bestKey) bestKey=k; }
+      else { if(String(k) > String(bestKey)) bestKey=k; }
+    }
   }
   return { key:bestKey, count:bestCnt };
-}
-
-/* ===== v15 visual layer picker <-> #counttype sync ===== */
-function segSyncPill(seg){
-  const radios=[...seg.querySelectorAll('input[type="radio"]')];
-  const labels=[...seg.querySelectorAll('label')];
-  const pill=seg.querySelector('.pill'); if(!pill) return;
-  const idx=radios.findIndex(r=>r.checked); if(idx<0){ pill.style.opacity='0'; return; }
-  const r = labels[idx].getBoundingClientRect(), s = seg.getBoundingClientRect();
-  pill.style.opacity='1'; pill.style.width = r.width+'px'; pill.style.transform = `translateX(${r.left - s.left}px)`;
-}
-function setCountType(val, triggerChange=true){
-  const sel = $('counttype'); if(!sel) return;
-  sel.value = val;
-  if(triggerChange){ sel.dispatchEvent(new Event('change',{bubbles:true})); }
-  // reflect to visual segmented controls
-  const lyrSeg=$('v15LayerType'), estSeg=$('v15EstimationLevel');
-  if(!lyrSeg || !estSeg) return;
-  if(val==='weight' || val==='new_weight'){
-    lyrSeg.querySelector('#v15-observed').checked = true;
-  }else{
-    lyrSeg.querySelector('#v15-estimation').checked = true;
-    if(val.endsWith('_low'))  estSeg.querySelector('#v15-est-low').checked = true;
-    if(val.endsWith('_mean')) estSeg.querySelector('#v15-est-mean').checked = true;
-    if(val.endsWith('_high')) estSeg.querySelector('#v15-est-high').checked = true;
-  }
-  segSyncPill(lyrSeg); segSyncPill(estSeg);
-}
-(function wireLayerPicker(){
-  const lyrSeg=$('v15LayerType'), estSeg=$('v15EstimationLevel'), sel=$('counttype');
-  if(!lyrSeg || !estSeg || !sel) return;
-
-  // init from current select (hash restore may change it earlier)
-  function reflectFromSelect(){
-    const v = sel.value;
-    if(v==='weight' || v==='new_weight'){
-      lyrSeg.querySelector('#v15-observed').checked = true;
-      // leave estimation off
-    }else{
-      lyrSeg.querySelector('#v15-estimation').checked = true;
-      if(v.endsWith('_low'))  estSeg.querySelector('#v15-est-low').checked = true;
-      if(v.endsWith('_mean')) estSeg.querySelector('#v15-est-mean').checked = true;
-      if(v.endsWith('_high')) estSeg.querySelector('#v15-est-high').checked = true;
-    }
-    segSyncPill(lyrSeg); segSyncPill(estSeg);
-  }
-  reflectFromSelect();
-  window.addEventListener('resize',()=>{ segSyncPill(lyrSeg); segSyncPill(estSeg); });
-
-  // user clicks segmented -> set the underlying select (and fire original listeners)
-  lyrSeg.addEventListener('change',()=>{
-    const chosen = lyrSeg.querySelector('input:checked')?.value;
-    if(chosen==='observed'){
-      // prefer 'weight' as canonical observed
-      setCountType('weight', true);
-    }else if(chosen==='estimation'){
-      // default to mean if they just switched to estimation
-      setCountType('new_mortality_est_bf_mean', true);
-    }
-    segSyncPill(lyrSeg);
-  });
-  estSeg.addEventListener('change',()=>{
-    const v = estSeg.querySelector('input:checked')?.value;
-    if(!v) return;
-    const map = {low:'new_mortality_est_bf_low', mean:'new_mortality_est_bf_mean', high:'new_mortality_est_bf_high'};
-    setCountType(map[v], true);
-    segSyncPill(estSeg);
-  });
-
-  // if the real select changes (hash restore / programmatic), mirror back
-  sel.addEventListener('change', reflectFromSelect);
-})();
-
-/* ===== v15: anthropogenic segmented mirrors ===== */
-function setHumanGroupState(groupKey, mode){ // mode: 'any' | 'Yes' | 'No'
-  const parent = $('humanGroup'); if(!parent) return;
-  const boxes = Array.from(parent.querySelectorAll(`input[type="checkbox"][data-group="${groupKey}"]`));
-  const all = boxes.find(b=>b.value==='__ALL__');
-  const yes = boxes.find(b=>b.value==='Yes');
-  const no  = boxes.find(b=>b.value==='No');
-  if(mode==='any'){ if(all){ all.checked=true; } if(yes) yes.checked=false; if(no) no.checked=false; }
-  if(mode==='Yes'){ if(all) all.checked=false; if(yes) yes.checked=true; if(no) no.checked=false; }
-  if(mode==='No'){  if(all) all.checked=false; if(yes) yes.checked=false; if(no) no.checked=true; }
-  syncAllCheckbox(parent);
-}
-function reflectHumanSegFromBoxes(){
-  const container = document.querySelectorAll('[data-v15-human]');
-  container.forEach(seg=>{
-    const key = seg.getAttribute('data-v15-human');
-    const parent = $('humanGroup'); if(!parent) return;
-    const boxes = Array.from(parent.querySelectorAll(`input[type="checkbox"][data-group="${key}"]`));
-    const allChecked = boxes.find(b=>b.value==='__ALL__')?.checked;
-    const yesChecked = boxes.find(b=>b.value==='Yes')?.checked;
-    const noChecked  = boxes.find(b=>b.value==='No')?.checked;
-    const any = (allChecked || (!yesChecked && !noChecked));
-    const choice = any ? 'any' : (yesChecked ? 'Yes' : 'No');
-    seg.querySelectorAll('input').forEach(r=> r.checked = (r.value===choice));
-    segSyncPill(seg);
-  });
-}
-(function wireHumanSegs(){
-  document.querySelectorAll('[data-v15-human]').forEach(seg=>{
-    seg.addEventListener('change', ()=>{
-      const key = seg.getAttribute('data-v15-human');
-      const val = seg.querySelector('input:checked')?.value || 'any';
-      setHumanGroupState(key, val);
-    });
-    segSyncPill(seg);
-  });
-  // reflect on init & whenever human checkboxes clicked or hash restored
-  const hg = $('humanGroup'); if(hg){
-    hg.addEventListener('click', (e)=>{ if(e.target && e.target.matches('input[type="checkbox"][data-group]')) reflectHumanSegFromBoxes(); });
-    reflectHumanSegFromBoxes();
-  }
-})();
-
-/* ===== v15 Selected filters summary ===== */
-function friendlyLayer(ct){
-  if(ct==='weight' || ct==='new_weight') return 'Observed strandings';
-  if(ct==='new_mortality_est_bf_mean') return 'Mortality estimation — Mean';
-  if(ct==='new_mortality_est_bf_low')  return 'Mortality estimation — Low';
-  if(ct==='new_mortality_est_bf_high') return 'Mortality estimation — High';
-  return ct;
-}
-function friendlyResolution(res){
-  return res==='r3'?'60 km':res==='r4'?'22.6 km':res==='r5'?'8.6 km':res==='r6'?'3.2 km':res;
-}
-function updateSummaryList(){
-  const list = $('railSummary'); if(!list) return;
-  const items = [];
-  items.push('Layer: ' + friendlyLayer($('counttype').value));
-  items.push('Cell size: ' + friendlyResolution($('resolution').value));
-
-  const species = getChecked('species');
-  items.push('Species: ' + (species.length ? species.join(', ') : 'All'));
-
-  const stage = getChecked('stage'); if(stage.length) items.push('Stage: ' + stage.join(', '));
-  const sex   = getChecked('sex');   if(sex.length)   items.push('Sex: ' + sex.join(', '));
-  const seas  = getChecked('season');if(seas.length)  items.push('Season: ' + seas.join(', '));
-
-  const years = getChecked('year');  if(years.length) items.push('Year: ' + years.join(', '));
-  const months= getChecked('month'); if(months.length)items.push('Month: ' + months.join(', '));
-
-  const hi10 = document.getElementById('top10'); if(hi10 && hi10.checked) items.push('Highlight: Top 10%');
-
-  list.innerHTML = items.map(s=>`<li>${s}</li>`).join('');
 }
 
 /* ===== Build / Rebuild ===== */
@@ -1222,18 +967,21 @@ async function buildLayer(){
     if(!values || values.length===0){
       showToast('No data in view—zoom out or change filters.');
       hideSpinner();
-      updateSummaryList();
       return;
     }
 
-    // breaks
+    // Primary: HT winsorized + safe floor
     let ht = headTailWinsorBreaks(values, JENKS_CLASSES, WINSOR_TAIL, FIRST_BIN_FLOOR);
     let brks = ht ? ht.edges : null;
     let firstFloorApplied = ht ? ht.firstFloorApplied : false;
+
+    // Adaptive first cut
     if(brks){
       const tuned = tuneFirstCut(brks, values, FIRST_BIN_MAX_SHARE, FIRST_CUT_MIN_ADJ, FIRST_CUT_STEP);
       brks = tuned.edges;
     }
+
+    // Fallbacks if needed
     if(!brks || brks.length<2){
       brks = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE)
           || tryJenks(values)
@@ -1241,8 +989,12 @@ async function buildLayer(){
           || prettyBreaks(Math.min(...values), Math.max(...values));
       firstFloorApplied = false;
     }
+
+    // Show the real maximum in legend (but keep classification)
     const realMax = Math.max(...values);
-    if(Number.isFinite(realMax) && brks && brks.length){ brks[brks.length-1] = Math.max(brks[brks.length-1], realMax); }
+    if(Number.isFinite(realMax) && brks && brks.length){
+      brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
+    }
 
     activeRamp = speciesRamp();
     jenksBreaks = brks.slice();
@@ -1272,11 +1024,16 @@ async function buildLayer(){
           if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
 
           const idx = computeBinIndex(v, cfg.breaks);
-          if(cfg.isolatedBin>=0 && idx!==cfg.isolatedBin){ return {opacity:0, fillOpacity:0, interactive:false}; }
+          if(cfg.isolatedBin>=0 && idx!==cfg.isolatedBin){
+            return {opacity:0, fillOpacity:0, interactive:false};
+          }
           const color = cfg.ramp[Math.min(Math.max(idx,0), cfg.ramp.length-1)];
           let fillOpacity = cfg.opacity;
           let weight = 0.5, strokeColor = color;
-          if(cfg.highlightTop10 && cfg.top10Threshold!=null && v>=cfg.top10Threshold){ weight = 1.2; fillOpacity = Math.min(1, cfg.opacity + 0.1); }
+
+          if(cfg.highlightTop10 && cfg.top10Threshold!=null && v>=cfg.top10Threshold){
+            weight = 1.2; fillOpacity = Math.min(1, cfg.opacity + 0.1);
+          }
           return {fill:true, fillColor:color, fillOpacity, color:strokeColor, weight};
         }
       },
@@ -1335,7 +1092,6 @@ async function buildLayer(){
     showToast('Failed to load layer. Check console for details.');
   }finally{
     hideSpinner();
-    updateSummaryList();
   }
 }
 
@@ -1402,26 +1158,6 @@ function restoreFromHash(){
     syncAllCheckbox($(parentId));
   }
   ['species','stage','sex','season','year','month','Fishing','Marine_Debris','Aggression','Boat_collision','Dredging','Oil','Petrol','decomposition_code'].forEach(g=>setChecks(g,h.get(g)||''));
-
-  // After restoring ct, mirror the visual layer picker
-  (function syncVisualAfterHash(){
-    const sel=$('counttype'); if(!sel) return;
-    const lyrSeg=$('v15LayerType'), estSeg=$('v15EstimationLevel');
-    if(!lyrSeg || !estSeg) return;
-    // defer a tick so DOM measures are ready
-    setTimeout(()=>{
-      const v=sel.value;
-      if(v==='weight' || v==='new_weight'){ lyrSeg.querySelector('#v15-observed').checked = true; }
-      else{
-        lyrSeg.querySelector('#v15-estimation').checked = true;
-        if(v.endsWith('_low'))  estSeg.querySelector('#v15-est-low').checked = true;
-        if(v.endsWith('_mean')) estSeg.querySelector('#v15-est-mean').checked = true;
-        if(v.endsWith('_high')) estSeg.querySelector('#v15-est-high').checked = true;
-      }
-      segSyncPill(lyrSeg); segSyncPill(estSeg);
-      reflectHumanSegFromBoxes();
-    },0);
-  })();
 }
 
 /* ===== Init ===== */
