@@ -78,18 +78,6 @@ details .content{padding:10px 12px}
 .leaflet-popup-content{margin:8px 12px}
 .kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}
 small.muted{color:#64748b}
-
-/* Anthropogenic interactions layout (uncramped) */
-#humanGroup{ padding:0 }
-#humanGroup .interact-grid{
-  display:grid; gap:8px;
-  grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
-}
-#humanGroup .interact{
-  border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; padding:8px;
-}
-#humanGroup .interact .title{ font-weight:800; font-size:12px; margin-bottom:6px; color:#0f172a }
-#humanGroup .interact .opts{ display:grid; grid-template-columns:1fr 1fr; gap:6px }
 </style>
 </head>
 <body>
@@ -182,75 +170,34 @@ small.muted{color:#64748b}
       <summary>Human interactions & condition</summary>
       <div class="content">
         <label>Human interactions</label>
-
-        <!-- Un-cramped layout, same inputs & data-group values -->
         <div class="chk-group" id="humanGroup">
-          <div class="interact-grid">
+          <label class="chk"><input type="checkbox" data-group="Fishing" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Fishing" value="Yes">Fishing: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Fishing" value="No">Fishing: No</label>
 
-            <div class="interact">
-              <div class="title">Fishing</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Fishing" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Fishing" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Fishing" value="No">No</label>
-              </div>
-            </div>
+          <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="Yes">Marine Debris: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="No">Marine Debris: No</label>
 
-            <div class="interact">
-              <div class="title">Marine debris</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Marine_Debris" value="No">No</label>
-              </div>
-            </div>
+          <label class="chk"><input type="checkbox" data-group="Aggression" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Aggression" value="Yes">Aggression: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Aggression" value="No">Aggression: No</label>
 
-            <div class="interact">
-              <div class="title">Aggression</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Aggression" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Aggression" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Aggression" value="No">No</label>
-              </div>
-            </div>
+          <label class="chk"><input type="checkbox" data-group="Boat_collision" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Boat_collision" value="Yes">Boat collision: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Boat_collision" value="No">Boat collision: No</label>
 
-            <div class="interact">
-              <div class="title">Boat collision</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Boat_collision" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Boat_collision" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Boat_collision" value="No">No</label>
-              </div>
-            </div>
+          <label class="chk"><input type="checkbox" data-group="Dredging" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Dredging" value="Yes">Dredging: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Dredging" value="No">Dredging: No</label>
 
-            <div class="interact">
-              <div class="title">Dredging</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Dredging" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Dredging" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Dredging" value="No">No</label>
-              </div>
-            </div>
+          <label class="chk"><input type="checkbox" data-group="Oil" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Oil" value="Yes">Oil: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Oil" value="No">Oil: No</label>
 
-            <div class="interact">
-              <div class="title">Oil</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Oil" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Oil" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Oil" value="No">No</label>
-              </div>
-            </div>
-
-            <div class="interact">
-              <div class="title">Petrol</div>
-              <div class="opts">
-                <label class="chk"><input type="checkbox" data-group="Petrol" value="__ALL__" checked>(All)</label><span></span>
-                <label class="chk"><input type="checkbox" data-group="Petrol" value="Yes">Yes</label>
-                <label class="chk"><input type="checkbox" data-group="Petrol" value="No">No</label>
-              </div>
-            </div>
-
-          </div>
+          <label class="chk"><input type="checkbox" data-group="Petrol" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="Petrol" value="Yes">Petrol: Yes</label>
+          <label class="chk"><input type="checkbox" data-group="Petrol" value="No">Petrol: No</label>
         </div>
 
         <label style="margin-top:8px">Decomposition code</label>
@@ -549,7 +496,7 @@ let histogramCounts = [0,0,0,0,0];
 let top10Threshold = null;
 let isolatedBin = -1;
 
-/* ===== Capability probe: detect existing fields quickly ===== */
+/* ===== Capability probe ===== */
 async function capabilityProbe(pmFile, layerName){
   const caps = { hasYear:false, hasMonth:false, hasSex:false, hasStage:false, hasSeason:false, hasUID:false, sampleMetricKeys:new Set(), observedYears:new Set() };
   try{
@@ -633,7 +580,7 @@ function lockMetricField(sampleList, ct){
   metricField = 'sum_val';
 }
 
-/* ===== Filters -> predicate (with capability awareness) ===== */
+/* ===== Filters -> predicate ===== */
 function readFilterSelections(caps){
   // Take checked values; empty array = no constraint
   const sel = {
@@ -653,7 +600,6 @@ function readFilterSelections(caps){
     month: new Set(getChecked('month'))
   };
 
-  // If a field is absent in data, ignore user selection for that dimension (one-time toast per dimension)
   const ignored = [];
   if(!caps.hasYear && sel.year.size){ sel.year.clear(); ignored.push('Year'); }
   if(!caps.hasMonth && sel.month.size){ sel.month.clear(); ignored.push('Month'); }
@@ -709,6 +655,10 @@ const SAMPLE_TARGET = 1500;
 const MAX_TILES_STATS = 90;
 const MAX_HEXES_STATS  = 3000;
 
+/* NEW: Winsorized hybrid params */
+const WINSOR_TAIL = 0.02;                          // 2% each tail
+const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95];       // Bottom 25% ... Top 5%
+
 function prettyBreaks(min, max){
   if (!isFinite(min) || !isFinite(max)) return null;
   if (min===max) {
@@ -747,66 +697,36 @@ function reservoir(values, k){
   return out;
 }
 
-/* === Balanced, zero-aware breaks (winsorized + optional log + tail caps) === */
-function robustBreaks(values){
-  const finite = (values||[]).filter(Number.isFinite);
-  if (finite.length < 8) {
-    const min = Math.min(...finite), max = Math.max(...finite);
-    return prettyBreaks(min, max);
+/* NEW: Winsorized hybrid percentile breaks
+   - Clamp values to [Q2%, Q98%]
+   - Breaks at [0, 25, 50, 75, 95, 100]% of the winsorized distribution */
+function winsorizedHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS){
+  if(!Array.isArray(values) || values.length<5) return null;
+  const sorted = values.filter(v=>Number.isFinite(v)).sort((a,b)=>a-b);
+  if(sorted.length<5) return null;
+
+  // Winsor bounds
+  const qLo = ss.quantileSorted(sorted, tail);
+  const qHi = ss.quantileSorted(sorted, 1 - tail);
+
+  // Winsorize: clamp to [qLo, qHi]
+  const w = sorted.map(v => clamp(v, qLo, qHi));
+  // Ensure sorted (mapping preserves order, but guard anyway)
+  w.sort((a,b)=>a-b);
+
+  // Build edges: [min, ...cuts..., max]
+  const probs = [0].concat(cuts, 1);
+  const edges = probs.map(p => ss.quantileSorted(w, p));
+
+  // Guard against flat/duplicate edges → enforce slight monotonicity
+  edges[0] = w[0];
+  edges[edges.length-1] = w[w.length-1];
+  const totalSpan = edges[edges.length-1] - edges[0];
+  const eps = (totalSpan>0 ? totalSpan : 1) * 1e-9; // tiny epsilon
+  for(let i=0;i<edges.length-1;i++){
+    if(!(edges[i+1] > edges[i])) edges[i+1] = edges[i] + eps;
   }
 
-  const sortedAll = finite.slice().sort((a,b)=>a-b);
-  const minAll = sortedAll[0], maxAll = sortedAll[sortedAll.length-1];
-
-  const zeroCount = sortedAll.filter(v => v <= 0).length;
-  const zeroRatio = zeroCount / sortedAll.length;
-
-  const pos = sortedAll.filter(v => v > 0);
-  if (!pos.length) return prettyBreaks(minAll, maxAll);
-
-  // Winsorize (less aggressive to be "halfway")
-  const p02 = ss.quantileSorted(sortedAll, 0.02);
-  const p98 = ss.quantileSorted(sortedAll, 0.98);
-  const clip = v => Math.min(Math.max(v, p02), p98);
-
-  const posClipped = pos.map(clip);
-  const spread = p98 / Math.max(1e-9, p02);
-  const useLog = spread >= 12; // slightly less aggressive than before
-
-  const transform = v => useLog ? Math.log1p(v) : v;
-  const inv = v => useLog ? Math.expm1(v) : v;
-
-  const tPos = posClipped.map(transform).sort((a,b)=>a-b);
-
-  // Helper to get transformed quantiles and map back
-  const tq = p => inv(ss.quantileSorted(tPos, p));
-
-  // Ensure strict increase of edges
-  const strictlyIncrease = (edges) => {
-    for (let i=1;i<edges.length;i++){
-      if (!(edges[i] > edges[i-1])) edges[i] = edges[i-1] + Math.max(1e-9, Math.abs(edges[i-1])*1e-9);
-    }
-    return edges;
-  };
-
-  if (zeroRatio >= 0.25) {
-    // Many zeros -> dedicate first bin to zero, then balanced quantiles on positives
-    const q25 = tq(0.25);
-    const q60 = tq(0.60);
-    const q85 = tq(0.85);
-    const eps = Math.max(1e-9, q25*0.5); // thin non-zero low bin
-    const edges = [0, eps, q25, q60, q85, Math.max(maxAll, tq(1))];
-    return strictlyIncrease(edges);
-  }
-
-  // No heavy zero problem -> anchor tails: ~15% low, ~10-15% high
-  const q15 = tq(0.15);
-  const q45 = tq(0.45);
-  const q70 = tq(0.70);
-  const q90 = tq(0.90);
-
-  let edges = [Math.min(minAll, q15), q15, q45, q70, q90, Math.max(maxAll, q90)];
-  edges = strictlyIncrease(edges);
   return edges;
 }
 
@@ -862,8 +782,7 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
             if(!predicate(props)) continue;
             const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
             const val = Number(props[metricField]);
-            const uid = (props.turtle_id != null) ? String(props.turtle_id)
-                       : String(props.individual_id ?? props.uid ?? props.id ?? '');
+            const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
             const sex = toCanon(props.sex,'sex');
             const stage = toCanon(props.development_stage,'stage');
             const season = toCanon(props.season,'season');
@@ -943,7 +862,7 @@ function updateLegendFrozen(cfg){
   });
 }
 
-/* ===== Popup aggregation (Unknown excluded from % denominators) ===== */
+/* ===== Popup aggregation ===== */
 function percentParts(counts){
   const totalKnown = Object.entries(counts).filter(([k])=>k!=='Unknown').reduce((a,[,v])=>a+v,0);
   const uCount = counts['Unknown']||0;
@@ -971,7 +890,6 @@ function getSelectionsSummaryName(){
   const sp=getChecked('species');
   return (sp.length===1)? sp[0] : (sp.length>1? 'Multiple species' : 'All species');
 }
-
 function speciesRamp(){ return currentRamp(); }
 
 async function buildLayer(){
@@ -1009,21 +927,20 @@ async function buildLayer(){
       return; // keep last good layer
     }
 
-    // Compute breaks (balanced)
-    let brks = robustBreaks(values);
-    if(!brks || !Array.isArray(brks) || brks.length<2){
-      const min=Math.min(...values), max=Math.max(...values);
-      brks = tryJenks(values) || quantileBreaks(values) || prettyBreaks(min, max);
-    }
+    // Compute breaks → prefer winsorized hybrid (2–98% tails, 25/50/75/95 cuts)
+    let brks = winsorizedHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS)
+            || tryJenks(values)
+            || quantileBreaks(values)
+            || prettyBreaks(Math.min(...values), Math.max(...values));
 
     if(!brks || brks.length<2){ showToast('Could not compute breaks. Keeping previous layer.'); hideSpinner(); return; }
 
     activeRamp = speciesRamp();
-    jenksBreaks = brks.slice(); // for info only
+    jenksBreaks = brks.slice(); // for info only; do not read in renderer
     histogramCounts = computeLegendCounts(values, brks);
-    top10Threshold = p90(values);
+    top10Threshold = p90(values); // unchanged: UI says "top 10%"
 
-    // Freeze render config to avoid races
+    // Freeze render config
     const cfg = Object.freeze({
       breaks: brks.slice(),
       ramp: activeRamp.slice(),
@@ -1073,7 +990,6 @@ async function buildLayer(){
       const uidCount = agg ? (agg.uids.size || agg.rowCount) : 0;
       const uidLabel = (agg && agg.uids.size>0) ? 'Unique turtle IDs' : 'Count (row fallback)';
 
-      // Distributions with Unknown excluded from % denom
       const sSex = percentParts(agg ? agg.counts.sex : {});
       const sStage = percentParts(agg ? agg.counts.stage : {});
       const sSeason = percentParts(agg ? agg.counts.season : {});
