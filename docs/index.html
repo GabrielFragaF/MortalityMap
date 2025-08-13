@@ -582,7 +582,6 @@ function lockMetricField(sampleList, ct){
 
 /* ===== Filters -> predicate ===== */
 function readFilterSelections(caps){
-  // Take checked values; empty array = no constraint
   const sel = {
     species: new Set(getChecked('species')),
     development_stage: new Set(getChecked('stage')),
@@ -613,7 +612,6 @@ function readFilterSelections(caps){
 function makePredicate(sel){
   function pass(set, value){ if(!set.size) return true; return set.has(value); }
   return (props)=>{
-    // Canonicalize per prop
     const species = String(props.species||'').trim();
     const stage = toCanon(props.development_stage,'stage');
     const sex = toCanon(props.sex,'sex');
@@ -655,9 +653,23 @@ const SAMPLE_TARGET = 1500;
 const MAX_TILES_STATS = 90;
 const MAX_HEXES_STATS  = 3000;
 
-/* NEW: Winsorized hybrid params */
-const WINSOR_TAIL = 0.02;                          // 2% each tail
-const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95];       // Bottom 25% ... Top 5%
+/* ---- NEW robust break settings ---- */
+const WINSOR_TAIL = 0.02;                    // clamp each tail at 2%
+const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95]; // bottom 25% ... top 5%
+const TRANSFORM_MODE = "log1p";              // "log1p" (strong), "sqrt" (milder), or "none"
+
+/* helpers for transforms */
+function tforward(v, mode){
+  const x = Math.max(0, v);
+  if(mode==="log1p") return Math.log1p(x);
+  if(mode==="sqrt")  return Math.sqrt(x);
+  return x;
+}
+function tinverse(v, mode){
+  if(mode==="log1p") return Math.expm1(v);
+  if(mode==="sqrt")  return v*v;
+  return v;
+}
 
 function prettyBreaks(min, max){
   if (!isFinite(min) || !isFinite(max)) return null;
@@ -697,36 +709,42 @@ function reservoir(values, k){
   return out;
 }
 
-/* NEW: Winsorized hybrid percentile breaks
-   - Clamp values to [Q2%, Q98%]
-   - Breaks at [0, 25, 50, 75, 95, 100]% of the winsorized distribution */
-function winsorizedHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS){
-  if(!Array.isArray(values) || values.length<5) return null;
-  const sorted = values.filter(v=>Number.isFinite(v)).sort((a,b)=>a-b);
-  if(sorted.length<5) return null;
+/* ---- NEW: winsorized log-quantile hybrid ----
+   1) sort & winsorize to [Q_tail, Q_1-tail]
+   2) transform with log1p (or sqrt), compute quantiles at [0, cuts..., 1]
+   3) inverse-transform edges; cap final edge at winsorized high (Q_1-tail)
+*/
+function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, mode=TRANSFORM_MODE){
+  const arr = values.filter(v=>Number.isFinite(v));
+  if(arr.length<5) return null;
+  const sorted = arr.slice().sort((a,b)=>a-b);
 
-  // Winsor bounds
   const qLo = ss.quantileSorted(sorted, tail);
-  const qHi = ss.quantileSorted(sorted, 1 - tail);
+  const qHi = ss.quantileSorted(sorted, 1-tail);
 
-  // Winsorize: clamp to [qLo, qHi]
-  const w = sorted.map(v => clamp(v, qLo, qHi));
-  // Ensure sorted (mapping preserves order, but guard anyway)
-  w.sort((a,b)=>a-b);
+  const w = sorted.map(v => clamp(v, qLo, qHi)).sort((a,b)=>a-b);
+  const wt = w.map(v => tforward(v, mode)).sort((a,b)=>a-b);
 
-  // Build edges: [min, ...cuts..., max]
   const probs = [0].concat(cuts, 1);
-  const edges = probs.map(p => ss.quantileSorted(w, p));
+  let edgesT = probs.map(p => ss.quantileSorted(wt, p));
+  // monotonic guard
+  const epsT = (edgesT[edgesT.length-1]-edgesT[0] || 1)*1e-9;
+  for(let i=0;i<edgesT.length-1;i++){
+    if(!(edgesT[i+1] > edgesT[i])) edgesT[i+1] = edgesT[i] + epsT;
+  }
 
-  // Guard against flat/duplicate edges → enforce slight monotonicity
-  edges[0] = w[0];
-  edges[edges.length-1] = w[w.length-1];
-  const totalSpan = edges[edges.length-1] - edges[0];
-  const eps = (totalSpan>0 ? totalSpan : 1) * 1e-9; // tiny epsilon
+  // back-transform
+  let edges = edgesT.map(v => tinverse(v, mode));
+
+  // ensure first/last equal to winsorized bounds (prevents huge last bin)
+  edges[0] = w[0];                       // = qLo after winsor
+  edges[edges.length-1] = w[w.length-1]; // = qHi after winsor
+
+  // monotonic guard in original scale too
+  const eps = (edges[edges.length-1]-edges[0] || 1)*1e-9;
   for(let i=0;i<edges.length-1;i++){
     if(!(edges[i+1] > edges[i])) edges[i+1] = edges[i] + eps;
   }
-
   return edges;
 }
 
@@ -735,7 +753,7 @@ function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
   const n = breaks.length-1; if(n<=0) return -1;
   if(v < breaks[0]) return 0;
-  if(v > breaks[n]) return n-1;
+  if(v > breaks[n]) return n-1; // values above winsorized max fall in top bin
   for(let i=0;i<n;i++){
     const a=breaks[i], b=breaks[i+1];
     if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
@@ -812,7 +830,6 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
 
   const tiles1 = await scan(stride);
   if(aggByHex.size===0 && stride>1){
-    // Retry with stride=1 for reliability
     await scan(1);
   }
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
@@ -853,7 +870,6 @@ function updateLegendFrozen(cfg){
     row.appendChild(sw); row.appendChild(lab);
     rows.appendChild(row);
   }
-  // histogram
   const hist=$('histogram'); hist.innerHTML='';
   (cfg.histCounts||[]).forEach((c,i)=>{
     const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px';
@@ -898,11 +914,9 @@ async function buildLayer(){
     const res=$('resolution').value, ct=$('counttype').value;
     const pmFile = fileFor(res, ct);
 
-    // Detect layer + capabilities
     layerName = await detectLayerName(pmFile);
     cachedCap = await capabilityProbe(pmFile, layerName);
 
-    // Update Years UI range from observed (fallback to 2015–2024)
     const years = Array.from(cachedCap.observedYears.values()).sort((a,b)=>a-b);
     const minY = years.length? years[0] : 2015;
     const maxY = years.length? years[years.length-1] : 2024;
@@ -914,21 +928,19 @@ async function buildLayer(){
     setYearCheckboxes(minY,maxY);
     enableYearsWithinRange();
 
-    // Build predicate with capability awareness
     const sel = readFilterSelections(cachedCap);
     const predicate = makePredicate(sel);
 
-    // Aggregate viewport
     const values = await aggregateViewport(pmFile, layerName, predicate, ct);
 
     if(!values || values.length===0){
       showToast('No data in view—zoom out or change filters.');
       hideSpinner();
-      return; // keep last good layer
+      return;
     }
 
-    // Compute breaks → prefer winsorized hybrid (2–98% tails, 25/50/75/95 cuts)
-    let brks = winsorizedHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS)
+    // ---- NEW: Prefer winsorized log-quantile hybrid; then fallback
+    let brks = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE)
             || tryJenks(values)
             || quantileBreaks(values)
             || prettyBreaks(Math.min(...values), Math.max(...values));
@@ -936,11 +948,10 @@ async function buildLayer(){
     if(!brks || brks.length<2){ showToast('Could not compute breaks. Keeping previous layer.'); hideSpinner(); return; }
 
     activeRamp = speciesRamp();
-    jenksBreaks = brks.slice(); // for info only; do not read in renderer
+    jenksBreaks = brks.slice();
     histogramCounts = computeLegendCounts(values, brks);
-    top10Threshold = p90(values); // unchanged: UI says "top 10%"
+    top10Threshold = p90(values);
 
-    // Freeze render config
     const cfg = Object.freeze({
       breaks: brks.slice(),
       ramp: activeRamp.slice(),
@@ -950,7 +961,6 @@ async function buildLayer(){
       isolatedBin: isolatedBin
     });
 
-    // Render or re-render layer
     if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
 
     vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
@@ -1025,7 +1035,6 @@ async function buildLayer(){
     vtLayer.addTo(map);
     lastGoodLayer = vtLayer;
 
-    // Legend UI for this frozen cfg
     updateLegendFrozen({ breaks: cfg.breaks, ramp: cfg.ramp, histCounts: histogramCounts });
 
   }catch(err){
@@ -1109,7 +1118,7 @@ function restoreFromHash(){
   buildLayer();
 })();
 
-/* ===== Save state on moveend (optional, not intrusive) ===== */
+/* ===== Save state on moveend ===== */
 map.on('moveend', ()=>{ writeHash(); });
 
 </script>
