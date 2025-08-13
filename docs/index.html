@@ -488,7 +488,7 @@ let vtLayer = null, lastGoodLayer = null;
 let layerName='', header=null;
 const aggByHex = new Map(); // h3 -> { sum, uids:Set, counts:{sex,stage,season,year,month}, rowCount }
 let metricField = 'sum_val';
-let cachedCap = null;
+let cachedCap = null; // capability probe result
 let jenksBreaks = [0,1,2,3,4,5];
 let activeRamp = ramps['multi'];
 let histogramCounts = [0,0,0,0,0];
@@ -534,7 +534,7 @@ async function detectLayerName(pmFile){
   try{
     const pm = await getPM(pmFile);
     header = await pm.getHeader();
-    const md = await pm.getMetadata();
+    const md = await getPM(pmFile).then(pm=>pm.getMetadata());
     if (md && md.json){
       const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
       if (j && j.vector_layers){
@@ -652,24 +652,18 @@ const SAMPLE_TARGET = 1500;
 const MAX_TILES_STATS = 90;
 const MAX_HEXES_STATS  = 3000;
 
-/* ---- robust break settings ---- */
+/* ---- TUNING (tiny knobs) ---- */
 const WINSOR_TAIL = 0.02;                    // clamp each tail at 2%
+const FIRST_BIN_FLOOR = 1;                   // never show first lower edge < 1
+const FIRST_BIN_MAX_SHARE = 0.55;            // aim: ≤55% of cells in first bin
+const FIRST_CUT_MIN_ADJ = 0.70;              // don’t shrink more than 30% toward min
+const FIRST_CUT_STEP = 0.05;                 // shrink step for first cut when needed
 const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95]; // fallback cuts for log-hybrid
 const TRANSFORM_MODE = "log1p";              // fallback transform
-const FIRST_BIN_FLOOR = 1;                   // first bin lower edge never below this
 
-/* helpers for transforms (fallback method) */
-function tforward(v, mode){
-  const x = Math.max(0, v);
-  if(mode==="log1p") return Math.log1p(x);
-  if(mode==="sqrt")  return Math.sqrt(x);
-  return x;
-}
-function tinverse(v, mode){
-  if(mode==="log1p") return Math.expm1(v);
-  if(mode==="sqrt")  return v*v;
-  return v;
-}
+/* transform helpers (fallback) */
+function tforward(v, mode){ const x=Math.max(0,v); return mode==="log1p"? Math.log1p(x) : mode==="sqrt"? Math.sqrt(x) : x; }
+function tinverse(v, mode){ return mode==="log1p"? Math.expm1(v) : mode==="sqrt"? v*v : v; }
 
 /* basic breaks (fallbacks) */
 function prettyBreaks(min, max){
@@ -703,10 +697,9 @@ function reservoir(values, k){
   return out;
 }
 
-/* ---- winsorized log-quantile hybrid (fallback) ---- */
+/* fallback: winsorized log-quantile hybrid */
 function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, mode=TRANSFORM_MODE){
-  const arr = values.filter(v=>Number.isFinite(v));
-  if(arr.length<5) return null;
+  const arr = values.filter(v=>Number.isFinite(v)); if(arr.length<5) return null;
   const sorted = arr.slice().sort((a,b)=>a-b);
   const qLo = ss.quantileSorted(sorted, tail);
   const qHi = ss.quantileSorted(sorted, 1-tail);
@@ -724,10 +717,9 @@ function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, m
   return edges;
 }
 
-/* ---- NEW: Winsorized Head/Tail breaks with first-bin floor ---- */
+/* NEW: winsorized Head/Tail breaks (first bin floor) */
 function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=FIRST_BIN_FLOOR){
-  const v = values.filter(Number.isFinite);
-  if(v.length<5) return null;
+  const v = values.filter(Number.isFinite); if(v.length<5) return null;
   const s = v.slice().sort((a,b)=>a-b);
   const qLo = ss.quantileSorted(s, tail);
   const qHi = ss.quantileSorted(s, 1-tail);
@@ -736,50 +728,52 @@ function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=F
 
   const edges = [];
   let firstApplied = false;
-
-  // enforce legend floor (labels) but keep assigning <floor into first bin
   const lowerEdge = Math.max(floor, minVal);
   if (lowerEdge > minVal) firstApplied = true;
   edges.push(lowerEdge);
 
-  // recursive means on the tail
   let current = w.slice();
   for(let i=1; i<k; i++){
     if(current.length<2) break;
     const mean = current.reduce((a,b)=>a+b,0)/current.length;
-    // guard monotonicity
     const prev = edges[edges.length-1];
     const m = mean > prev ? mean : prev + (maxVal-prev)*1e-9;
     edges.push(m);
-    // next tail: values >= mean
     current = current.filter(x=>x>=mean);
   }
-
-  // top edge fixed at winsorized high
   edges.push(maxVal);
 
-  // ensure we have exactly k+1 edges; if less, pad with quantiles
   if(edges.length < k+1){
     const need = (k+1) - edges.length;
     const qs = [];
-    for(let i=1;i<=need;i++){
-      qs.push(ss.quantileSorted(w, (i)/(need+1)));
-    }
-    // merge and sort then dedupe tiny gaps
+    for(let i=1;i<=need;i++){ qs.push(ss.quantileSorted(w, (i)/(need+1))); }
     const tmp = edges.concat(qs).sort((a,b)=>a-b);
     const out=[tmp[0]];
     for(let i=1;i<tmp.length;i++){
       if(tmp[i] > out[out.length-1] + (maxVal-minVal)*1e-9) out.push(tmp[i]);
     }
-    while(out.length > k+1) out.splice(out.length-2,1); // remove near-top duplicates if any
+    while(out.length > k+1) out.splice(out.length-2,1);
     while(out.length < k+1) out.splice(out.length-1,0,(out[out.length-2]+out[out.length-1])/2);
     return { edges: out, firstFloorApplied:firstApplied };
   }
-
-  // limit to k+1 edges if we created extra
   if(edges.length > k+1) edges.length = k+1;
-
   return { edges, firstFloorApplied:firstApplied };
+}
+
+/* tiny adaptive nudge: shrink first interior cut if bottom bin too large */
+function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIRST_CUT_MIN_ADJ, step=FIRST_CUT_STEP){
+  const e = edges.slice();
+  if(e.length<3) return {edges:e, adjusted:false};
+  const min = e[0]; const orig = e[1];
+  let adj = 0.95; // small change first
+  while(adj >= minAdj){
+    e[1] = min + (orig - min) * adj; // move toward min -> threshold down -> fewer in bin0
+    const c = computeLegendCounts(values, e);
+    const share = c[0] / values.length;
+    if(share <= targetShare) return {edges:e, adjusted:true};
+    adj -= step;
+  }
+  return {edges:edges, adjusted:false};
 }
 
 /* Hardened binning using frozen breaks */
@@ -963,24 +957,30 @@ async function buildLayer(){
       return;
     }
 
-    // Primary: Head/Tail winsorized with first-bin floor; fallback to log-hybrid
+    // Primary: HT winsorized + floor
     let ht = headTailWinsorBreaks(values, JENKS_CLASSES, WINSOR_TAIL, FIRST_BIN_FLOOR);
     let brks = ht ? ht.edges : null;
     let firstFloorApplied = ht ? ht.firstFloorApplied : false;
 
-    // Validate distribution property: bottom bin larger than top bin
+    // Tiny adaptive nudge so bin0 isn’t over-dominant
     if(brks){
-      const counts = computeLegendCounts(values, brks);
-      const bottom = counts[0], top = counts[counts.length-1];
-      if(!(bottom > top)){ // if not satisfied, fall back to log-hybrid
-        const alt = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE);
-        if(alt){ brks = alt; firstFloorApplied = (FIRST_BIN_FLOOR>Math.min(...values)); }
-      }
+      const tuned = tuneFirstCut(brks, values, FIRST_BIN_MAX_SHARE, FIRST_CUT_MIN_ADJ, FIRST_CUT_STEP);
+      brks = tuned.edges;
     }
 
+    // Fallbacks if something went off
     if(!brks || brks.length<2){
-      brks = tryJenks(values) || quantileBreaks(values) || prettyBreaks(Math.min(...values), Math.max(...values));
+      brks = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE)
+          || tryJenks(values)
+          || quantileBreaks(values)
+          || prettyBreaks(Math.min(...values), Math.max(...values));
       firstFloorApplied = false;
+    }
+
+    // Show the real maximum in legend (but keep classification)
+    const realMax = Math.max(...values);
+    if(Number.isFinite(realMax) && brks && brks.length){
+      brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
     }
 
     activeRamp = speciesRamp();
