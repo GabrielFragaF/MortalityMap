@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sea Turtle Mortality — v15 UI</title>
 
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E">
-
-<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<!-- Leaflet + deps (swap to your local copies if needed) -->
 <link rel="stylesheet" href="./vendor/leaflet.css"/>
 <script src="./vendor/leaflet.js"></script>
 <script src="./vendor/pmtiles.js"></script>
@@ -20,105 +15,81 @@
 <script src="./vendor/simple-statistics.min.js"></script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-:root {
-  --accent: #007AFF;
-  --bg-map: #e9eef2;
-  --panel-bg: rgba(252, 252, 252, 0.92);
-  --border: rgba(0, 0, 0, 0.10);
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --control-bg: #eef2f6;
-  --control-bg-hover: #e6ebf2;
-  --focus: rgba(0,122,255,.25);
-  --pill-border: rgba(0,0,0,.14);
-  --label-selected: #0f172a;
-  --rail-w: 200px;
+:root{
+  --accent:#007AFF; --bg-map:#e9eef2; --panel-bg:rgba(252,252,252,.92);
+  --border:rgba(0,0,0,.10); --text-primary:#1d1d1f; --text-secondary:#6e6e73;
+  --control-bg:#eef2f6; --control-bg-hover:#e6ebf2; --focus:rgba(0,122,255,.25);
+  --pill-border:rgba(0,0,0,.14); --label-selected:#0f172a; --rail-w:200px
 }
-body[data-theme="dark"] {
-  --panel-bg: rgba(26, 28, 33, 0.88);
-  --border: rgba(255,255,255,0.12);
-  --text-primary: #E8EAED;
-  --text-secondary: #B6BDC7;
-  --control-bg: #2B3037;
-  --control-bg-hover: #323841;
-  --focus: rgba(255,255,255,.12);
-  --pill-border: rgba(255,255,255,.22);
-  --label-selected: var(--accent);
+body[data-theme="dark"]{
+  --panel-bg:rgba(26,28,33,.88); --border:rgba(255,255,255,.12);
+  --text-primary:#E8EAED; --text-secondary:#B6BDC7; --control-bg:#2B3037;
+  --control-bg-hover:#323841; --focus:rgba(255,255,255,.12);
+  --pill-border:rgba(255,255,255,.22); --label-selected:var(--accent)
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
 body{
   font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  background-color:var(--bg-map);
-  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1000" height="1000"><path fill="%23d4e3f3" d="M0 50 L50 0 L100 50 L50 100 Z" /><path fill="%23c0d7f0" d="M0 50 L50 100 L0 100 Z" /><path fill="%23a8c9eb" d="M100 50 L50 100 L100 100 Z" /></svg>');
-  background-size:50px;color:var(--text-primary);font-size:13px
+  background:var(--bg-map); color:var(--text-primary); font-size:13px
 }
-
-/* Map */
 #map{position:absolute;inset:0}
 
-/* Drawer (rail + animated panel) */
-.drawer{position:fixed;top:0;left:0;height:100%;display:flex;align-items:stretch;gap:0;z-index:1000}
+/* Drawer */
+.drawer{position:fixed;top:0;left:0;height:100%;display:flex;z-index:1000}
 .rail{
   width:var(--rail-w);background:rgba(255,255,255,.75);backdrop-filter:blur(14px);
-  border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:stretch;
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
   padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px}
 .theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
 .theme-toggle:hover{background:var(--control-bg-hover)}
-
-.rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:.2s}
 .rail-btn svg{width:18px;height:18px;opacity:.9}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
+.rail-top-group{display:flex;flex-direction:column;gap:8px}
+.rail-spacer{flex:1} /* pushes summary + controls + author to bottom */
+
 .rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
-.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:34vh;border-top:1px solid var(--border)}
+.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:26vh;border-top:1px solid var(--border)}
 .rail-summary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--border)}
-.control-row{display:flex;gap:8px;margin:8px 8px 2px}
-.btn-small{padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
+
+.controls-row{display:flex;gap:8px;margin:10px 8px 8px}
+.btn-small{flex:1;padding:8px 10px;font-size:12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
+.btn-apply{color:var(--accent)} /* blue text to stand out */
 .btn-small[disabled]{opacity:.5;cursor:not-allowed}
 body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:var(--pill-border)}
-.apply-btn{margin:8px 8px 10px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
-.apply-btn[disabled]{opacity:.5;cursor:not-allowed}
-.apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
-body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
-.author{margin:6px 8px 8px;font-size:10px;color:var(--text-secondary)}
 
-/* Animated panel */
+.author{margin:0 8px 8px;font-size:10px;color:var(--text-secondary)}
+
 .panel{
-  position:fixed;left:var(--rail-w);top:auto;bottom:auto;max-height:78vh;width:330px;background:var(--panel-bg);
+  position:fixed;left:var(--rail-w);max-height:78vh;width:330px;background:var(--panel-bg);
   backdrop-filter:blur(28px)saturate(200%);-webkit-backdrop-filter:blur(28px)saturate(200%);
-  border:1px solid rgba(255,255,255,.6);box-shadow:12px 12px 48px rgba(0,0,0,.12);display:flex;flex-direction:column;border-radius:14px;
-  opacity:0;pointer-events:none;transform:translateX(-14px) scale(.96);transform-origin:left var(--anchorY, 50%);
+  border:1px solid rgba(255,255,255,.6);box-shadow:12px 12px 48px rgba(0,0,0,.12);
+  display:flex;flex-direction:column;border-radius:14px;opacity:0;pointer-events:none;
+  transform:translateX(-14px) scale(.96);transform-origin:left var(--anchorY,50%);
   transition:opacity .25s, transform .35s cubic-bezier(.2,1,.2,1); z-index:1001
 }
 .drawer.open .panel{opacity:1;pointer-events:auto;transform:translateX(0) scale(1)}
 .head{padding:10px 14px;border-bottom:1px solid var(--border)}
 .head h1{margin:0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .content{padding:14px;overflow:auto;max-height:calc(78vh - 44px)}
-.tabpane{animation:fadeIn .2s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(2px)} to{opacity:1;transform:none}}
-
 .section{margin-bottom:14px}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
 .section-title{margin:0;font-size:13px;font-weight:600;color:var(--text-secondary)}
-.hint{font-size:11px;color:var(--text-secondary);font-weight:500;margin-left:6px}
-
-/* Enable/disable toggles */
 .filter-toggle{display:flex;align-items:center;cursor:pointer}
 .filter-toggle input{display:none}
-.toggle-track{width:36px;height:20px;background:#d1d1d6;border-radius:10px;position:relative;transition:background-color .3s}
+.toggle-track{width:36px;height:20px;background:#d1d1d6;border-radius:10px;position:relative;transition:.3s}
 .toggle-nub{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform .3s cubic-bezier(.2,1,.2,1)}
 .filter-toggle input:checked + .toggle-track{background:#34C759}
 .filter-toggle input:checked + .toggle-track .toggle-nub{transform:translateX(16px)}
 .section-content.disabled{opacity:.45;pointer-events:none;transition:opacity .25s}
 
-/* Grids */
 .grid{display:grid;gap:8px}
 .grid.one{grid-template-columns:1fr}
 .grid.two{grid-template-columns:repeat(2,1fr)}
@@ -126,44 +97,34 @@ body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
 .grid.four{grid-template-columns:repeat(4,1fr)}
 .grid.five{grid-template-columns:repeat(5,1fr)}
 
-/* Pills & chips */
-.btn,.chip,select{width:100%;padding:7px 10px;border-radius:10px;border:1px solid transparent;background:var(--control-bg);font-weight:600;font-size:12px;cursor:pointer;text-align:center;color:var(--text-primary);transition:all .2s}
+.btn,.chip,select{width:100%;padding:7px 10px;border-radius:10px;border:1px solid transparent;background:var(--control-bg);font-weight:600;font-size:12px;cursor:pointer;text-align:center;color:var(--text-primary);transition:.2s}
 .btn:hover,.chip:hover{background:var(--control-bg-hover)}
 .btn:active,.chip:active{transform:scale(.98)}
 .btn.active,.chip.active{background:#fff;border:1px solid var(--pill-border);box-shadow:0 1px 4px rgba(0,0,0,.06)}
 body[data-theme="dark"] .btn.active, body[data-theme="dark"] .chip.active{background:#23262b;border:1px solid var(--pill-border);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 
-/* Select */
-select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:#fff;border:1px solid var(--border);padding:9px 34px 9px 10px;border-radius:10px;font-weight:600;line-height:1.2;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+select{appearance:none;background:#fff;border:1px solid var(--border);padding:9px 34px 9px 10px;border-radius:10px;font-weight:600;line-height:1.2;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05)}
 select:focus{outline:none;box-shadow:0 0 0 3px var(--focus)}
 #layer-type-select{
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><polyline points='4,7 10,13 16,7'/></svg>");
   background-repeat:no-repeat;background-position:right 10px center;background-size:16px
 }
-body[data-theme="dark"] select{
-  background:#23262b;
-  color:var(--text-primary);
-  border:1px solid var(--pill-border);
-}
+body[data-theme="dark"] select{background:#23262b;color:var(--text-primary);border:1px solid var(--pill-border)}
 
-/* Hex buttons */
 .hex-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;height:62px}
 .hex-btn .hex-icon{display:flex;align-items:center;justify-content:center;flex:1;transition:transform .2s}
 .hex-btn:hover .hex-icon{transform:scale(1.06)}
 .hex-btn .hex-label{font-size:10px;color:var(--text-secondary)}
 
-/* Segmented control */
 .section-content.seg{max-width:230px;margin:0 auto}
-#tab-anth .section-content.seg{max-width:200px}
 .seg{display:flex;align-items:stretch;background:var(--control-bg);border-radius:10px;padding:2px;position:relative;overflow:hidden}
 .seg.disabled{opacity:.4;pointer-events:none}
 .seg input{display:none}
 .seg label{flex:1;text-align:center;padding:5px 0;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;z-index:2}
-.seg .pill{position:absolute;top:2px;bottom:2px;left:0;background:#fff;border:1px solid var(--pill-border);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:transform .25s cubic-bezier(.2,.8,.2,1), width .2s;opacity:0;will-change:transform,width}
+.seg .pill{position:absolute;top:2px;bottom:2px;left:0;background:#fff;border:1px solid var(--pill-border);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:transform .25s cubic-bezier(.2,.8,.2,1),width .2s;opacity:0}
 .seg input:checked + label{color:var(--label-selected)}
 body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pill-border)}
 
-/* Ranges (dual handles) */
 .labels{display:flex;justify-content:space-between;font-weight:700;font-size:11px;color:#374151;margin-bottom:6px}
 .track-wrap{position:relative;height:38px}
 .track,.hl{position:absolute;left:10px;right:10px;top:14px;height:8px;border-radius:6px}
@@ -172,7 +133,6 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .handle{position:absolute;top:10px;width:18px;height:18px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:grab;z-index:2;transition:transform .2s}
 .handle:active{cursor:grabbing;transform:scale(1.12)}
 
-/* Legend */
 .map-overlay{position:absolute;background:var(--panel-bg);backdrop-filter:blur(20px)saturate(180%);-webkit-backdrop-filter:blur(20px)saturate(180%);border:1px solid rgba(255,255,255,.5);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);padding:10px 12px;font-size:12px}
 #legend{bottom:20px;right:20px;width:260px;z-index:1002}
 .legend-header{font-weight:600;margin-bottom:8px}
@@ -184,9 +144,6 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
 .hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
 .hist div{flex:1;background:#cbd5e1;border-radius:3px}
-.hist div.active{background:#94a3b8}
-
-/* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
 .toast.show{opacity:1;transform:none}
 #spinner{position:absolute;top:16px;right:16px;background:var(--panel-bg);border:1px solid var(--border);border-radius:10px;padding:6px 10px;box-shadow:0 4px 14px rgba(0,0,0,.1);z-index:1004;display:none}
@@ -203,7 +160,11 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
-    <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M7 8l5 5 5-5"/></symbol>
+    <!-- Threat / alert triangle icon -->
+    <symbol id="icon-threat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="18" r="1"/>
+    </symbol>
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
@@ -221,35 +182,38 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
       </button>
     </div>
 
-    <button class="rail-btn active" data-tab="main" title="Main">
-      <svg><use href="#icon-main"></use></svg><span>Main</span>
-    </button>
-    <button class="rail-btn" data-tab="bio" title="Biological parameters">
-      <svg><use href="#icon-bio"></use></svg><span>Biological parameters</span>
-    </button>
-    <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions">
-      <svg><use href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
-    </button>
+    <div class="rail-top-group">
+      <button class="rail-btn active" data-tab="main" title="Main">
+        <svg><use href="#icon-main"></use></svg><span>Main</span>
+      </button>
+      <button class="rail-btn" data-tab="bio" title="Biological parameters">
+        <svg><use href="#icon-bio"></use></svg><span>Biological parameters</span>
+      </button>
+      <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions">
+        <svg><use href="#icon-threat"></use></svg><span>Anthropogenic interactions</span>
+      </button>
+    </div>
+
+    <div class="rail-spacer"></div>
 
     <div class="rail-summary-title">Selected filters</div>
     <ul id="railSummary" class="rail-summary"></ul>
 
-    <div class="control-row">
-      <button id="resetBtn" class="btn-small">Reset all</button>
+    <div class="controls-row">
+      <button id="resetBtn" class="btn-small">Reset</button>
+      <button id="applyBtn" class="btn-small btn-apply" disabled>Apply</button>
     </div>
-    <button id="applyBtn" class="apply-btn" disabled>Apply</button>
+
     <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
 
   <div class="panel" id="panel">
     <div class="head"><h1>Marine Megafauna Mortality</h1></div>
     <div class="content">
-      <!-- MAIN TAB -->
+      <!-- MAIN -->
       <section class="section tabpane" id="tab-main">
-        <!-- Hex size -->
         <div class="section" data-filter-section="grid">
-          <div class="section-header">
-            <h2 class="section-title">Cell size (H3)</h2>
+          <div class="section-header"><h2 class="section-title">Cell size (H3)</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid four" id="grid-size-selector">
@@ -260,10 +224,8 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
-        <!-- Map layer -->
         <div class="section" data-filter-section="layer">
-          <div class="section-header">
-            <h2 class="section-title">Map layer</h2>
+          <div class="section-header"><h2 class="section-title">Map layer</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid" id="map-layer-selector" style="gap:10px">
@@ -280,10 +242,8 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
-        <!-- Basemap -->
         <div class="section" data-filter-section="basemap">
-          <div class="section-header">
-            <h2 class="section-title">Basemap</h2>
+          <div class="section-header"><h2 class="section-title">Basemap</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid four" id="basemapBtns">
@@ -294,21 +254,19 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
-        <!-- Taxonomic group -->
         <div class="section" data-filter-section="taxon">
-          <div class="section-header">
-            <h2 class="section-title">Taxonomic group</h2>
+          <div class="section-header"><h2 class="section-title">Taxonomic group</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid one" id="taxonChips">
             <button class="btn chip active" data-group="Sea turtles">Sea turtles</button>
+            <button class="btn chip" data-group="Marine mammals">Marine mammals</button>
+            <button class="btn chip" data-group="Seabirds">Seabirds</button>
           </div>
         </div>
 
-        <!-- Species -->
         <div class="section" data-filter-section="species">
-          <div class="section-header">
-            <h2 class="section-title">Species</h2>
+          <div class="section-header"><h2 class="section-title">Species</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content">
@@ -325,37 +283,35 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
-        <!-- Year -->
         <div class="section" data-filter-section="year">
-          <div class="section-header"><h2 class="section-title">Year</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Year</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="yStartL">2015</span><span id="yEndL">2024</span></div>
             <div class="track-wrap" id="yearWrap" data-start-frac="0" data-end-frac="1">
-              <div class="track"></div>
-              <div class="hl" id="yHL"></div>
-              <div class="handle" id="yStart" role="slider" aria-label="Start year" tabindex="0"></div>
-              <div class="handle" id="yEnd" role="slider" aria-label="End year" tabindex="0"></div>
+              <div class="track"></div><div class="hl" id="yHL"></div>
+              <div class="handle" id="yStart" role="slider" tabindex="0"></div>
+              <div class="handle" id="yEnd" role="slider" tabindex="0"></div>
             </div>
           </div>
         </div>
 
-        <!-- Month -->
         <div class="section" data-filter-section="month">
-          <div class="section-header"><h2 class="section-title">Month</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Month</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="mStartL">Jan</span><span id="mEndL">Dec</span></div>
             <div class="track-wrap" id="monthWrap" data-start-frac="0" data-end-frac="1">
-              <div class="track"></div>
-              <div class="hl" id="mHL"></div>
-              <div class="handle" id="mStart" role="slider" aria-label="Start month" tabindex="0"></div>
-              <div class="handle" id="mEnd" role="slider" aria-label="End month" tabindex="0"></div>
+              <div class="track"></div><div class="hl" id="mHL"></div>
+              <div class="handle" id="mStart" role="slider" tabindex="0"></div>
+              <div class="handle" id="mEnd" role="slider" tabindex="0"></div>
             </div>
           </div>
         </div>
 
-        <!-- Seasons -->
         <div class="section" data-filter-section="season">
-          <div class="section-header"><h2 class="section-title">Season <span class="hint">Southern hemisphere</span></h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Season <span class="hint">Southern hemisphere</span></h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid two disabled" id="seasonBtns">
             <button class="btn" data-season="summer">Summer (Dec–Feb)</button>
             <button class="btn" data-season="autumn">Autumn (Mar–May)</button>
@@ -365,10 +321,11 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
         </div>
       </section>
 
-      <!-- BIO TAB -->
+      <!-- BIO -->
       <section class="section tabpane" id="tab-bio" hidden>
         <div class="section" data-filter-section="sex">
-          <div class="section-header"><h2 class="section-title">Sex</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Sex</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid three disabled" data-button-group="sex">
             <button class="btn chip" data-val="Female">Female</button>
             <button class="btn chip" data-val="Male">Male</button>
@@ -376,7 +333,8 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
         <div class="section" data-filter-section="stage">
-          <div class="section-header"><h2 class="section-title">Development stage</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Development stage</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid three disabled" data-button-group="stage">
             <button class="btn chip" data-val="Juvenile">Juvenile</button>
             <button class="btn chip" data-val="Adult">Adult</button>
@@ -385,7 +343,8 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
         <div class="section" data-filter-section="decomp">
-          <div class="section-header"><h2 class="section-title">Decomposition code</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Decomposition code</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid five disabled" data-button-group="decomp">
             <button class="btn chip" data-val="1">1</button>
             <button class="btn chip" data-val="2">2</button>
@@ -396,55 +355,56 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
         </div>
       </section>
 
-      <!-- ANTH TAB -->
+      <!-- ANTH -->
       <section class="section tabpane" id="tab-anth" hidden>
         <div class="section" data-filter-section="fishing">
-          <div class="section-header"><h2 class="section-title">Fishing</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Fishing</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="fish">
             <input type="radio" id="fish-yes" name="fish" value="Yes"><label for="fish-yes">Yes</label>
             <input type="radio" id="fish-no" name="fish" value="No"><label for="fish-no">No</label>
             <div class="pill"></div>
           </div>
         </div>
-
         <div class="section" data-filter-section="debris">
-          <div class="section-header"><h2 class="section-title">Marine debris</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Marine debris</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="debris">
             <input type="radio" id="debris-yes" name="debris" value="Yes"><label for="debris-yes">Yes</label>
             <input type="radio" id="debris-no" name="debris" value="No"><label for="debris-no">No</label>
             <div class="pill"></div>
           </div>
         </div>
-
         <div class="section" data-filter-section="boat">
-          <div class="section-header"><h2 class="section-title">Boat collision</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Boat collision</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="boat">
             <input type="radio" id="boat-yes" name="boat" value="Yes"><label for="boat-yes">Yes</label>
             <input type="radio" id="boat-no" name="boat" value="No"><label for="boat-no">No</label>
             <div class="pill"></div>
           </div>
         </div>
-
         <div class="section" data-filter-section="dredge">
-          <div class="section-header"><h2 class="section-title">Dredging</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Dredging</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="dredge">
             <input type="radio" id="dredge-yes" name="dredge" value="Yes"><label for="dredge-yes">Yes</label>
             <input type="radio" id="dredge-no" name="dredge" value="No"><label for="dredge-no">No</label>
             <div class="pill"></div>
           </div>
         </div>
-
         <div class="section" data-filter-section="aggression">
-          <div class="section-header"><h2 class="section-title">Aggression</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Aggression</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="aggression">
             <input type="radio" id="aggression-yes" name="aggression" value="Yes"><label for="aggression-yes">Yes</label>
             <input type="radio" id="aggression-no" name="aggression" value="No"><label for="aggression-no">No</label>
             <div class="pill"></div>
           </div>
         </div>
-
         <div class="section" data-filter-section="oil">
-          <div class="section-header"><h2 class="section-title">Oil / petrol</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title">Oil / petrol</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" id="oilBtns" data-name="oil">
             <input type="radio" id="oil-oil" name="oil" value="Oil"><label for="oil-oil">Oil</label>
             <input type="radio" id="oil-petrol" name="oil" value="Petrol"><label for="oil-petrol">Petrol</label>
@@ -472,7 +432,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <div id="spinner">Loading…</div>
 <div class="toast" id="toast">Layer updated</div>
 
-<!-- Hidden bridge inputs (pipeline compatibility) -->
+<!-- Hidden bridge controls -->
 <select id="resolution" style="display:none">
   <option value="r3">≈ 60 km</option>
   <option value="r4" selected>≈ 22.6 km</option>
@@ -486,243 +446,115 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
   <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
 </select>
 <input id="opacity" type="range" min="0.30" max="0.90" step="0.01" value="0.65" style="display:none">
-<input id="top10" type="checkbox" style="display:none">
 
 <script>
-/* =================== MAP & BASEMAPS =================== */
-const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
+/* ---------- MAP & BASE ---------- */
+const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true, updateWhenZooming:false, updateWhenIdle:true}).setView([-24,-45],5);
 const BASEMAPS = {
   Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }),
-  Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors &copy; CARTO' }),
-  Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{ attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)' }),
-  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
+  Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap & CARTO' }),
+  Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{ attribution:'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)' }),
+  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{ attribution:'Tiles &copy; Esri' })
 };
-let baseLayer = null;
-function setBasemap(name){
-  const next = BASEMAPS[name] || BASEMAPS.Light;
-  if(baseLayer) map.removeLayer(baseLayer);
-  baseLayer = next.addTo(map);
-  const lb = document.getElementById('legendBasemap');
-  if(lb) lb.textContent = name;
-}
+let baseLayer=null;
+function setBasemap(name){ if(baseLayer) map.removeLayer(baseLayer); baseLayer = (BASEMAPS[name]||BASEMAPS.Light).addTo(map); const lb=document.getElementById('legendBasemap'); if(lb) lb.textContent=name; }
 setBasemap('Light');
 L.control.scale({ metric:true, imperial:false }).addTo(map);
 
-/* =================== UTILS =================== */
-const $ = (id)=>document.getElementById(id);
-const toast=$('toast'), spinner=$('spinner');
-const bumpToast = (msg='Layer updated')=>{
-  toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1100);
-};
-const showSpinner=(m='Loading…')=>{ spinner.textContent=m; spinner.style.display='block'; };
-const hideSpinner=()=>{ spinner.style.display='none'; };
-window.addEventListener('error', hideSpinner);
-window.addEventListener('unhandledrejection', hideSpinner);
-
-/* Decoder shim */
-(function ensureDecoders(){
-  var VT = (window.VectorTile) || (window.vectorTile&&window.vectorTile.VectorTile) || (window.mapbox_vector_tile&&window.mapbox_vector_tile.VectorTile) || null;
-  var PBF = (window.Pbf) || (window.pbf&&window.pbf.Pbf) || null;
-  if (!window.VectorTile && VT) window.VectorTile = VT;
-  if (!window.Pbf && PBF) window.Pbf = PBF;
-})();
-
-/* pmtiles fetch shim */
+/* ---------- SHIMS ---------- */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250813b'; }
-async function getPM(archive){
-  const abs = new URL(archive, new URL('.', location.href)).toString();
-  if(pmCache.has(abs)) return pmCache.get(abs);
-  const inst = new pmtiles.PMTiles(abs);
-  pmCache.set(abs, inst);
-  return inst;
-}
+function pmUrlWithBust(file){ return file + '?v=20250813c'; }
+async function getPM(archive){ const abs = new URL(archive, new URL('.', location.href)).toString(); if(pmCache.has(abs)) return pmCache.get(abs); const inst=new pmtiles.PMTiles(abs); pmCache.set(abs,inst); return inst; }
 window.fetch = async (input, init) => {
   if (typeof input === 'string' && input.startsWith('pmtiles://')) {
     const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
     if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
     const [_, archive, z, x, y] = m;
-    try{
-      const pm = await getPM(archive);
-      const t  = await pm.getZxy(+z,+x,+y);
-      if(!t || !t.data){ return new Response(null,{status:204}); }
-      return new Response(t.data);
-    }catch(e){ return new Response(null,{status:204}); }
+    try{ const pm=await getPM(archive); const t=await pm.getZxy(+z,+x,+y); if(!t||!t.data) return new Response(null,{status:204}); return new Response(t.data); }
+    catch(e){ return new Response(null,{status:204}); }
   }
   return origFetch(input, init);
 };
+(function ensureDecoders(){
+  var VT=(window.VectorTile)||(window.vectorTile&&window.vectorTile.VectorTile)||(window.mapbox_vector_tile&&window.mapbox_vector_tile.VectorTile)||null;
+  var PBF=(window.Pbf)||(window.pbf&&window.pbf.Pbf)||null;
+  if(!window.VectorTile && VT) window.VectorTile=VT;
+  if(!window.Pbf && PBF) window.Pbf=PBF;
+})();
 
-/* =================== UI (v15) =================== */
-const drawer = $('drawer');
-const panel = $('panel');
-const panes = [...document.querySelectorAll('.tabpane')];
-const railBtns = [...document.querySelectorAll('.rail-btn')];
-const applyBtn = $('applyBtn');
-const resetBtn = $('resetBtn');
-let dirty=false;
-function markDirty(){ if(!dirty){ dirty=true; applyBtn && applyBtn.removeAttribute('disabled'); } }
+/* ---------- UI (drawer/panel) ---------- */
+const $=(id)=>document.getElementById(id);
+const drawer=$('drawer'), panel=$('panel'), panes=[...document.querySelectorAll('.tabpane')], railBtns=[...document.querySelectorAll('.rail-btn')];
+const toast=$('toast'), spinner=$('spinner'); const applyBtn=$('applyBtn'), resetBtn=$('resetBtn');
+const themeBtn=$('themeBtn'), themeIcon=$('themeIcon');
+let dirty=false; function markDirty(){ if(!dirty){ dirty=true; applyBtn && applyBtn.removeAttribute('disabled'); } }
+function bumpToast(m='Updated'){ toast.textContent=m; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1100); }
+railBtns.forEach(btn=>btn.addEventListener('click',()=>{ const tab=btn.dataset.tab; const isSame = drawer.dataset.tab===tab && drawer.classList.contains('open'); const r=btn.getBoundingClientRect(); panel.style.setProperty('--anchorY', (r.top+r.height/2)+'px'); railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); panes.forEach(p=> p.hidden = (p.id!==`tab-${tab}`)); drawer.dataset.tab=tab; if(isSame) drawer.classList.remove('open'); else { drawer.classList.add('open'); requestAnimationFrame(()=>{ reflowSliders(); }); }}));
+themeBtn?.addEventListener('click',()=>{ const dark=document.body.getAttribute('data-theme')==='dark'; if(dark){document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon');} else {document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun');} document.querySelectorAll('.seg').forEach(syncSegPill); setTimeout(()=> map.invalidateSize(), 80); });
 
 function clearSection(sectionEl){
-  const content = sectionEl.querySelector('.section-content');
-  if(!content) return;
-  content.querySelectorAll('.btn, .chip').forEach(b=> b.classList.remove('active'));
+  const content=sectionEl.querySelector('.section-content'); if(!content) return;
+  content.querySelectorAll('.btn,.chip').forEach(b=>b.classList.remove('active'));
   content.querySelectorAll('input[type="radio"]').forEach(r=> r.checked=false);
   const sel=content.querySelector('select');
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
-
-railBtns.forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const tab = btn.dataset.tab;
-    if(!tab) return;
-    const isSame = drawer.dataset.tab === tab && drawer.classList.contains('open');
-    const rect = btn.getBoundingClientRect();
-    const anchor = rect.top + rect.height/2;
-    if(panel) panel.style.setProperty('--anchorY', anchor+'px');
-    railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-    panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
-    drawer.dataset.tab = tab;
-    if(isSame){ drawer.classList.remove('open'); }
-    else {
-      drawer.classList.add('open');
-      requestAnimationFrame(()=>{ reflowSliders(); });
-    }
-  });
-});
-
-/* Theme toggle */
-const themeBtn = $('themeBtn'), themeIcon = $('themeIcon');
-themeBtn?.addEventListener('click',()=>{
-  const dark = document.body.getAttribute('data-theme') === 'dark';
-  if(dark){ document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon'); }
-  else { document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun'); }
-  document.querySelectorAll('.seg').forEach(syncSegPill);
-  setTimeout(()=> map.invalidateSize(), 80);
-});
-
-/* Section toggles: disable + clear selection visuals */
 document.querySelectorAll('.filter-toggle').forEach(label=>{
-  const toggle=label.querySelector('.toggle-input');
-  const section=label.closest('[data-filter-section]');
-  if(!section) return;
-  const content=section.querySelector('.section-content');
-  if(toggle && !toggle.checked){ content && content.classList.add('disabled'); }
-  toggle && toggle.addEventListener('change',()=>{
-    const on = toggle.checked;
-    content && content.classList.toggle('disabled',!on);
-    if(!on){ clearSection(section); }
-    markDirty();
-  });
+  const t=label.querySelector('.toggle-input'), sec=label.closest('[data-filter-section]'), content=sec.querySelector('.section-content');
+  if(t && !t.checked) content.classList.add('disabled');
+  t && t.addEventListener('change',()=>{ const on=t.checked; content.classList.toggle('disabled',!on); if(!on) clearSection(sec); markDirty(); });
 });
 
-/* Hex size selection -> #resolution */
-const gridSel = $('grid-size-selector');
-gridSel && gridSel.addEventListener('click',e=>{
-  const btn=e.target.closest('button'); if(!btn) return;
-  [...gridSel.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  const val = btn.dataset.val;
-  if(val){ $('resolution').value = val; }
-  markDirty();
-});
+/* Hex size -> #resolution */
+const gridSel=$('grid-size-selector');
+gridSel && gridSel.addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; [...gridSel.querySelectorAll('button')].forEach(b=>b.classList.remove('active')); btn.classList.add('active'); $('resolution').value = btn.dataset.val; markDirty(); });
 
-/* Basemap buttons */
+/* Basemap */
 const baseBox=$('basemapBtns');
-baseBox && baseBox.addEventListener('click',e=>{
-  const btn=e.target.closest('button'); if(!btn) return;
-  [...baseBox.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  setBasemap(btn.dataset.map);
-  markDirty();
-});
+baseBox && baseBox.addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; [...baseBox.querySelectorAll('button')].forEach(b=>b.classList.remove('active')); btn.classList.add('active'); setBasemap(btn.dataset.map); });
 
-/* Map layer selection -> #counttype */
-const layerSel=$('layer-type-select');
-const estimation=$('estimation-options');
-function syncSegPill(seg){
-  const radios=[...seg.querySelectorAll('input[type="radio"]')];
-  const labels=[...seg.querySelectorAll('label')];
-  const pill=seg.querySelector('.pill');
-  if(!pill) return;
-  const idx=radios.findIndex(r=>r.checked);
-  if(idx<0){ pill.style.opacity='0'; return; }
-  const lab=labels[idx];
-  const segRect=seg.getBoundingClientRect();
-  const labRect=lab.getBoundingClientRect();
-  const left=labRect.left - segRect.left;
-  const width=labRect.width;
-  pill.style.opacity='1';
-  pill.style.width = width + 'px';
-  pill.style.transform = `translateX(${left}px)`;
-}
-function updateEstimationVisibility(){
-  const on = (layerSel?.value === 'estimation');
-  estimation?.classList.toggle('disabled', !on);
-  if(on) syncSegPill(estimation);
-}
+/* Layer + estimation visibility */
+const layerSel=$('layer-type-select'), estimation=$('estimation-options');
+function syncSegPill(seg){ const radios=[...seg.querySelectorAll('input[type="radio"]')]; const labels=[...seg.querySelectorAll('label')]; const pill=seg.querySelector('.pill'); if(!pill) return; const idx=radios.findIndex(r=>r.checked); if(idx<0){pill.style.opacity='0';return;} const lab=labels[idx]; const segRect=seg.getBoundingClientRect(), labRect=lab.getBoundingClientRect(); const left=labRect.left-segRect.left; pill.style.opacity='1'; pill.style.width=labRect.width+'px'; pill.style.transform=`translateX(${left}px)`; }
+function updateEstimationVisibility(){ const on=(layerSel?.value==='estimation'); estimation?.classList.toggle('disabled',!on); if(on) syncSegPill(estimation); }
 layerSel && layerSel.addEventListener('change',()=>{ updateEstimationVisibility(); markDirty(); });
 document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()=>{ syncSegPill(seg); markDirty(); }));
-document.querySelectorAll('.seg').forEach(syncSegPill);
-updateEstimationVisibility();
+document.querySelectorAll('.seg').forEach(syncSegPill); updateEstimationVisibility();
 
-/* Taxonomic group -> toggles species availability */
-const taxonChips = $('taxonChips');
+/* Taxon -> species visibility */
+const taxonChips=$('taxonChips');
 function syncSpeciesVisibility(){
-  const secSpecies = document.querySelector('[data-filter-section="species"] .section-content');
-  const hasSeaTurtles = !!(taxonChips && taxonChips.querySelector('.chip.active[data-group="Sea turtles"]'));
-  if(secSpecies){
-    secSpecies.classList.toggle('disabled', !hasSeaTurtles);
-    if(!hasSeaTurtles){
-      secSpecies.querySelectorAll('.chip').forEach(c=> c.classList.remove('active'));
-    } else {
-      secSpecies.querySelectorAll('.chip').forEach(c=> c.classList.add('active'));
-    }
-  }
+  const secSpecies=document.querySelector('[data-filter-section="species"] .section-content');
+  const show = !!(taxonChips && taxonChips.querySelector('.chip.active[data-group="Sea turtles"]'));
+  secSpecies.classList.toggle('disabled', !show);
+  (show? secSpecies.querySelectorAll('.chip') : secSpecies.querySelectorAll('.chip.active')).forEach(c=> c.classList.toggle('active', show));
 }
-taxonChips && taxonChips.addEventListener('click', e=>{
-  const btn=e.target.closest('.chip'); if(!btn) return;
-  btn.classList.toggle('active');
-  syncSpeciesVisibility();
-  markDirty();
-});
+taxonChips && taxonChips.addEventListener('click', e=>{ const btn=e.target.closest('.chip'); if(!btn) return; // single-select groups
+  taxonChips.querySelectorAll('.chip').forEach(c=> c.classList.remove('active')); btn.classList.add('active'); syncSpeciesVisibility(); markDirty(); });
 syncSpeciesVisibility();
 
 /* Species chips */
-const speciesBox=$('speciesChips');
-const speciesAll=$('speciesAll');
-speciesBox && speciesBox.addEventListener('click',e=>{
-  const btn=e.target.closest('.chip'); if(!btn) return;
-  const secContent = speciesBox.closest('.section-content');
-  if(secContent && secContent.classList.contains('disabled')) return;
-  const activeCount=speciesBox.querySelectorAll('.chip.active').length;
-  if(btn.classList.contains('active') && activeCount<=1){ bumpToast('At least one species required'); return; }
-  btn.classList.toggle('active'); markDirty();
-});
+const speciesBox=$('speciesChips'), speciesAll=$('speciesAll');
+speciesBox && speciesBox.addEventListener('click',e=>{ const btn=e.target.closest('.chip'); if(!btn) return; if(speciesBox.closest('.section-content').classList.contains('disabled')) return; const activeCount=speciesBox.querySelectorAll('.chip.active').length; if(btn.classList.contains('active') && activeCount<=1){ bumpToast('At least one species required'); return; } btn.classList.toggle('active'); markDirty(); });
 speciesAll && speciesAll.addEventListener('click',()=>{ speciesBox && speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.add('active')); markDirty(); });
 
-/* Bio multi-select chips */
+/* BIO multi-select */
 document.querySelectorAll('[data-button-group]').forEach(group=>{
-  group.addEventListener('click',e=>{
-    const btn=e.target.closest('.chip'); if(!btn || group.classList.contains('disabled')) return;
-    btn.classList.toggle('active'); markDirty();
-  });
+  group.addEventListener('click',e=>{ const btn=e.target.closest('.chip'); if(!btn || group.classList.contains('disabled')) return; btn.classList.toggle('active'); markDirty(); });
 });
 
-/* Dual-range sliders (fractional, robust) */
+/* Sliders (robust) */
 function makeRange(wrap, hl, startHandle, endHandle, onUpdate){
   if(!wrap||!hl||!startHandle||!endHandle) return;
-  let W=0;
-  function calcW(){ const r=wrap.getBoundingClientRect(); W=Math.max(20,(r.width-20)||0); return W; }
+  let W=0; function calcW(){ const r=wrap.getBoundingClientRect(); W=Math.max(20,(r.width-20)||0); return W; }
   function draw(){ calcW(); const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`); hl.style.left=(s+10)+'px'; hl.style.width=(e-s)+'px'; onUpdate && onUpdate(); }
   function setFracs(sf,ef){ calcW(); sf=Math.max(0,Math.min(1,sf)); ef=Math.max(sf,Math.min(1,ef)); startHandle.style.left=(sf*W)+'px'; endHandle.style.left=(ef*W)+'px'; wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw(); }
-  function getFracs(){ calcW(); const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`); return {sf:(s/W)||0, ef:(e/W)||1}; }
+  function getFracs(){ calcW(); const s=parseFloat(startHandle.style.left||'0'), e=parseFloat(endHandle.style.left||`${W}`); return {sf:(s/W)||0, ef:(e/W)||1}; }
   function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
-  function attach(handle,isStart){
-    let active=false;
-    const move=(e)=>{ if(!active) return; e.preventDefault();
-      calcW(); let x=(e.touches?e.touches[0].clientX:e.clientX)-wrap.getBoundingClientRect().left-10;
-      x=clamp(x,0,W);
+  function attach(handle,isStart){ let active=false;
+    const move=(e)=>{ if(!active) return; e.preventDefault(); calcW();
+      let x=(e.touches?e.touches[0].clientX:e.clientX)-wrap.getBoundingClientRect().left-10; x=clamp(x,0,W);
       const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0'));
       if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
       handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
@@ -731,125 +563,107 @@ function makeRange(wrap, hl, startHandle, endHandle, onUpdate){
     const down=()=>{ active=true; document.addEventListener('mousemove',move); document.addEventListener('touchmove',move,{passive:false}); };
     handle.addEventListener('mousedown',down); handle.addEventListener('touchstart',down,{passive:true});
     document.addEventListener('mouseup',up); document.addEventListener('touchend',up);
-    handle.addEventListener('keydown',(e)=>{
-      calcW(); const step=W/20; let x=parseFloat(handle.style.left||'0');
-      if(e.key==='ArrowLeft') x-=step; if(e.key==='ArrowRight') x+=step;
-      x=clamp(x,0,W);
-      const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0'));
-      if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
-      handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
-    });
+    handle.addEventListener('keydown',(e)=>{ calcW(); const step=W/20; let x=parseFloat(handle.style.left||'0'); if(e.key==='ArrowLeft') x-=step; if(e.key==='ArrowRight') x+=step;
+      x=clamp(x,0,W); const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0')); if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
+      handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw(); });
   }
-  wrap.addEventListener('mousedown',(e)=>{
-    if(e.target!==wrap) return;
-    calcW(); let x=e.clientX-wrap.getBoundingClientRect().left-10; x=clamp(x,0,W);
+  wrap.addEventListener('mousedown',(e)=>{ if(e.target!==wrap) return; calcW();
+    let x=e.clientX-wrap.getBoundingClientRect().left-10; x=clamp(x,0,W);
     const s=parseFloat(startHandle.style.left||'0'); const en=parseFloat(endHandle.style.left||`${W}`);
-    const target=(Math.abs(x-s) < Math.abs(x-en)? startHandle : endHandle);
+    const target=(Math.abs(x-s)<Math.abs(x-en)? startHandle : endHandle);
     target.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
   });
-  // Public reflow
-  wrap._reflow = ()=>{ const sf=parseFloat(wrap.dataset.startFrac||'0'); const ef=parseFloat(wrap.dataset.endFrac||'1'); setFracs(sf,ef); };
-  // Init
+  wrap._reflow=()=>{ const sf=parseFloat(wrap.dataset.startFrac||'0'); const ef=parseFloat(wrap.dataset.endFrac||'1'); setFracs(sf,ef); };
   attach(startHandle,true); attach(endHandle,false); wrap._reflow();
 }
-const YEAR = {min:2015, max:2024};
+const YEAR={min:2015,max:2024};
 const yWrap=$('yearWrap'), yHL=$('yHL'), yStart=$('yStart'), yEnd=$('yEnd'), yStartL=$('yStartL'), yEndL=$('yEndL');
-function updateYearLabels(){
-  if(!yWrap) return;
-  const sf=parseFloat(yWrap.dataset.startFrac||'0'); const ef=parseFloat(yWrap.dataset.endFrac||'1');
-  const ys=Math.round(YEAR.min + sf*(YEAR.max-YEAR.min));
-  const ye=Math.round(YEAR.min + ef*(YEAR.max-YEAR.min));
-  yStartL.textContent=ys; yEndL.textContent=ye;
-}
+function updateYearLabels(){ const sf=parseFloat(yWrap.dataset.startFrac||'0'), ef=parseFloat(yWrap.dataset.endFrac||'1'); const ys=Math.round(YEAR.min+sf*(YEAR.max-YEAR.min)), ye=Math.round(YEAR.min+ef*(YEAR.max-YEAR.min)); yStartL.textContent=ys; yEndL.textContent=ye; }
 makeRange(yWrap,yHL,yStart,yEnd,updateYearLabels);
 
 const mWrap=$('monthWrap'), mHL=$('mHL'), mStart=$('mStart'), mEnd=$('mEnd'), mStartL=$('mStartL'), mEndL=$('mEndL');
 function monthLabel(m){ return new Date(2000,m-1).toLocaleString('en-US',{month:'short'}); }
-function updateMonthLabels(){
-  if(!mWrap) return;
-  const sf=parseFloat(mWrap.dataset.startFrac||'0'); const ef=parseFloat(mWrap.dataset.endFrac||'1');
-  const ms=Math.max(1,Math.min(12, Math.round(1 + sf*11)));
-  const me=Math.max(1,Math.min(12, Math.round(1 + ef*11)));
-  mStartL.textContent=monthLabel(ms); mEndL.textContent=monthLabel(me);
-}
+function updateMonthLabels(){ const sf=parseFloat(mWrap.dataset.startFrac||'0'), ef=parseFloat(mWrap.dataset.endFrac||'1'); const ms=Math.max(1,Math.min(12,Math.round(1+sf*11))); const me=Math.max(1,Math.min(12,Math.round(1+ef*11))); mStartL.textContent=monthLabel(ms); mEndL.textContent=monthLabel(me); }
 makeRange(mWrap,mHL,mStart,mEnd,updateMonthLabels);
 function reflowSliders(){ yWrap && yWrap._reflow && yWrap._reflow(); updateYearLabels(); mWrap && mWrap._reflow && mWrap._reflow(); updateMonthLabels(); }
 window.addEventListener('resize',()=>{ reflowSliders(); document.querySelectorAll('.seg').forEach(syncSegPill); });
 
-/* Seasons -> month slider union */
-const seasons={ summer:[12,1,2], autumn:[3,4,5], winter:[6,7,8], spring:[9,10,11] };
+/* Seasons -> month range */
+const seasons={summer:[12,1,2],autumn:[3,4,5],winter:[6,7,8],spring:[9,10,11]};
 const seasonBox=$('seasonBtns');
-seasonBox && seasonBox.addEventListener('click',e=>{
-  const btn=e.target.closest('.btn'); if(!btn || seasonBox.classList.contains('disabled')) return;
-  btn.classList.toggle('active');
-  const act=[...seasonBox.querySelectorAll('.btn.active')].map(b=> b.dataset.season);
-  if(act.length===0){ markDirty(); return; }
+seasonBox && seasonBox.addEventListener('click',e=>{ const btn=e.target.closest('.btn'); if(!btn || seasonBox.classList.contains('disabled')) return; btn.classList.toggle('active');
+  const act=[...seasonBox.querySelectorAll('.btn.active')].map(b=>b.dataset.season);
+  if(!act.length){ markDirty(); return; }
   const months=[...new Set(act.flatMap(k=>seasons[k]))].sort((a,b)=>a-b);
-  const ms=Math.min(...months), me=Math.max(...months);
-  const sf=(ms-1)/11, ef=(me-1)/11;
-  mWrap.dataset.startFrac=sf; mWrap.dataset.endFrac=ef; reflowSliders(); markDirty();
+  const ms=Math.min(...months), me=Math.max(...months); mWrap.dataset.startFrac=(ms-1)/11; mWrap.dataset.endFrac=(me-1)/11; reflowSliders(); markDirty();
 });
 
-/* =================== DATA PIPELINE =================== */
+/* ---------- DATA & STYLING ---------- */
 function fileFor(res, ct){ return pmUrlWithBust(`hexgrid_${res}_${ct}.pmtiles`); }
-
-/* Color ramps per species */
 const ramps={
-  'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
-  'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
-  'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
-  'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
-  'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
-  'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
+ 'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
+ 'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
+ 'Dermochelys coriacea':['#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c'],
+ 'Eretmochelys imbricata':['#f2f0f7','#cbc9e2','#9e9ac8','#756bb1','#54278f'],
+ 'Lepidochelys olivacea':['#f7fcf5','#d9f0d3','#a6dba0','#5aae61','#1b7837'],
+ 'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
-function currentRamp(){
-  const sp = getSpecies(); 
-  return (sp.length===1 && ramps[sp[0]])? ramps[sp[0]] : ramps['multi'];
-}
+function currentRamp(){ const sp=getSpecies(); return (sp.length===1 && ramps[sp[0]])? ramps[sp[0]] : ramps['multi']; }
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
-/* Canonicalization */
-const canonMaps = {
-  season:{ 'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter','autumn':'Autumn','spring':'Spring','summer':'Summer','winter':'Winter' },
-  sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','undefined':'Unknown','indefinido':'Unknown','unknown':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
-  stage:{ 'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','indeterminate':'Unknown','unknown':'Unknown' },
-  yesno:{ 'sim':'Yes','não':'No','nao':'No','yes':'Yes','no':'No' }
-};
-function toCanon(str,kind){
-  if(str==null) return kind==='sex'||kind==='stage'||kind==='season'?'Unknown': '';
-  const s = String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const map = canonMaps[kind]; return (map && map[s]) ? map[s] : (kind==='season'||kind==='sex'||kind==='stage' ? (s? s[0].toUpperCase()+s.slice(1):'Unknown') : String(str));
+let vtLayer=null, currentSourceKey=null, layerName='', metricField='sum_val';
+let aggByHex=new Map(), styleConfig=null;
+let jenksBreaks=[0,1,2,3,4,5], histogramCounts=[0,0,0,0,0];
+
+function hexKeyFromProps(p){
+  return p.h3_index || p.h3 || p.hex_id || p.hexid || p.hex || p.H3Index || p.cell_id || p.cell || p.id;
 }
+function lockMetricField(sample, ct){
+  const candidates = {
+    weight:['weight','sum_val'],
+    new_mortality_est_bf_low:['new_mortality_est_bf_low','sum_val'],
+    new_mortality_est_bf_mean:['new_mortality_est_bf_mean','sum_val'],
+    new_mortality_est_bf_high:['new_mortality_est_bf_high','sum_val']
+  }[ct] || ['sum_val'];
+  for(const k of candidates){ let seen=0; for(const p of sample){ const v=Number(p[k]); if(Number.isFinite(v)){ if(++seen>3){ metricField=k; return; } } } }
+  metricField='sum_val';
+}
+const canonMaps={
+  season:{'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter','autumn':'Autumn','spring':'Spring','summer':'Summer','winter':'Winter'},
+  sex:{'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','undefined':'Unknown','indefinido':'Unknown','unknown':'Unknown','': 'Unknown'},
+  stage:{'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','indeterminate':'Unknown','unknown':'Unknown'},
+  yesno:{'sim':'Yes','não':'No','nao':'No','yes':'Yes','no':'No'}
+};
+function toCanon(s,kind){ if(s==null) return (kind==='sex'||kind==='stage'||kind==='season')?'Unknown':''; const t=String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); const m=canonMaps[kind]; return (m&&m[t])? m[t] : (kind==='season'||kind==='sex'||kind==='stage'?(t? t[0].toUpperCase()+t.slice(1):'Unknown'):String(s)); }
 function canonYear(y){ if(y==null) return ''; const s=String(y).trim(); return s.endsWith('.0')? s.slice(0,-2) : s; }
 
-/* Capability probe */
-let header=null;
+/* Selections */
+function sectionEnabled(k){ const el=document.querySelector(`[data-filter-section="${k}"] .section-content`); return el && !el.classList.contains('disabled'); }
+function getSpecies(){ if(!sectionEnabled('species')) return []; return [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> b.dataset.species); }
+function getBioSet(group){ if(!sectionEnabled(group)) return []; return [...document.querySelectorAll(`[data-filter-section="${group}"] .chip.active`)].map(b=> b.dataset.val); }
+function getSeasons(){ if(!sectionEnabled('season')) return []; return [...document.querySelectorAll('#seasonBtns .btn.active')].map(b=> b.dataset.season); }
+function getAnthRadio(name){ const box=document.querySelector(`[data-name="${name}"]`); if(!box||box.classList.contains('disabled')) return null; const r=box.querySelector('input:checked'); return r? r.value:null; }
+function getYearRange(){ if(!sectionEnabled('year')) return null; const s=+$('yStartL').textContent, e=+$('yEndL').textContent; const a=[]; for(let y=s;y<=e;y++) a.push(String(y)); return a; }
+function getMonthRange(){ if(!sectionEnabled('month')) return null; const mapMon={"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,"Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12}; const s=mapMon[$('mStartL').textContent]||1, e=mapMon[$('mEndL').textContent]||12; const a=[]; for(let m=s;m<=e;m++) a.push(String(m)); return a; }
+
 async function capabilityProbe(pmFile, layerName){
   const caps = { hasYear:false, observedYears:new Set(), hasMonth:false, hasSex:false, hasStage:false, hasSeason:false };
   try{
-    const pm = await getPM(pmFile);
-    const hdr = header || await pm.getHeader();
-    const z = Math.max(6, hdr.minZoom);
-    const bounds = map.getBounds();
-    const {minX,maxX,minY,maxY} = (function(b,z){
-      function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
-      function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
-      const nw=b.getNorthWest(), se=b.getSouthEast();
-      let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
-      let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-      if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
-      const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
-      return {minX,maxX,minY,maxY};
-    })(bounds,z);
+    const pm=await getPM(pmFile); const hdr=await pm.getHeader(); const z=Math.max(5, hdr.minZoom); // slightly lower decode zoom for perf
+    const bounds=map.getBounds();
+    function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+    function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+    const nw=bounds.getNorthWest(), se=bounds.getSouthEast();
+    let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z), minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+    if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+    const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
     let checked=0;
-    for(let x=minX;x<=maxX && checked<5;x++){
-      for(let y=minY;y<=maxY && checked<5;y++){
-        const r = await pm.getZxy(z, ((x%Math.pow(2,z))+Math.pow(2,z))%Math.pow(2,z), y);
-        if(!r || !r.data) continue;
-        const vt = new window.VectorTile(new window.Pbf(r.data));
-        const lyr = vt.layers[layerName]; if(!lyr) continue;
-        const take = Math.min(lyr.length, 30);
-        for(let i=0;i<take;i++){
-          const p = lyr.feature(i).properties||{};
+    for(let x=minX;x<=maxX && checked<4;x++){
+      for(let y=minY;y<=maxY && checked<4;y++){
+        const r=await pm.getZxy(z, ((x%n)+n)%n, y); if(!r||!r.data) continue;
+        const vt=new window.VectorTile(new window.Pbf(r.data)); const lyr=vt.layers[layerName]; if(!lyr) continue;
+        const take=Math.min(lyr.length, 24);
+        for(let i=0;i<take;i++){ const p=lyr.feature(i).properties||{};
           if('year' in p){ caps.hasYear=true; const cy=+canonYear(p.year); if(cy) caps.observedYears.add(cy); }
           if('month' in p) caps.hasMonth=true;
           if('sex' in p) caps.hasSex=true;
@@ -863,197 +677,82 @@ async function capabilityProbe(pmFile, layerName){
   return caps;
 }
 
-/* Selection helpers */
-function sectionEnabled(key){
-  const el = document.querySelector(`[data-filter-section="${key}"] .section-content`);
-  return el && !el.classList.contains('disabled');
-}
-function getSpecies(){
-  if(!sectionEnabled('species')) return [];
-  return [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> b.dataset.species);
-}
-function getBioSet(group){
-  if(!sectionEnabled(group)) return [];
-  return [...document.querySelectorAll(`[data-filter-section="${group}"] .section-content .chip.active`)].map(b=> b.dataset.val);
-}
-function getSeasons(){
-  if(!sectionEnabled('season')) return [];
-  return [...document.querySelectorAll('#seasonBtns .btn.active')].map(b=> b.dataset.season);
-}
-function getAnthRadio(name){
-  const box = document.querySelector(`[data-name="${name}"]`);
-  if(!box || box.classList.contains('disabled')) return null;
-  const r = box.querySelector('input:checked'); return r ? r.value : null;
-}
-function getYearRange(){
-  if(!sectionEnabled('year')) return null;
-  const ys = +$('yStartL').textContent; const ye = +$('yEndL').textContent;
-  const arr=[]; for(let y=ys;y<=ye;y++) arr.push(String(y));
-  return arr;
-}
-function getMonthRange(){
-  if(!sectionEnabled('month')) return null;
-  const mapMon={"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,"Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12};
-  const s = mapMon[$('mStartL').textContent]||1;
-  const e = mapMon[$('mEndL').textContent]||12;
-  const arr=[]; for(let m=s;m<=e;m++) arr.push(String(m));
-  return arr;
-}
-
-/* Predicate construction */
 function readFilterSelections(caps){
-  const sel = {
-    species: new Set(getSpecies()),
-    development_stage: new Set(getBioSet('stage').map(v=> v==='Indeterminate' ? 'Unknown' : v)),
-    sex: new Set(getBioSet('sex').map(v=> v==='Undefined' ? 'Unknown' : v)),
-    season: new Set(getSeasons().map(s=> toCanon(s,'season'))),
-    decomposition_code: new Set(getBioSet('decomp')),
-    year: new Set(getYearRange() || []),
-    month: new Set(getMonthRange() || []),
-    Fishing: new Set(),
-    Marine_Debris: new Set(),
-    Aggression: new Set(),
-    Boat_collision: new Set(),
-    Dredging: new Set(),
-    Oil: new Set(),
-    Petrol: new Set()
+  const sel={
+    species:new Set(getSpecies()),
+    development_stage:new Set(getBioSet('stage').map(v=> v==='Indeterminate'?'Unknown':v)),
+    sex:new Set(getBioSet('sex').map(v=> v==='Undefined'?'Unknown':v)),
+    season:new Set(getSeasons().map(s=> toCanon(s,'season'))),
+    decomposition_code:new Set(getBioSet('decomp')),
+    year:new Set(getYearRange()||[]),
+    month:new Set(getMonthRange()||[]),
+    Fishing:new Set(), Marine_Debris:new Set(), Aggression:new Set(), Boat_collision:new Set(), Dredging:new Set(), Oil:new Set(), Petrol:new Set()
   };
-
-  // Anthropogenic binaries
-  const mapBin = [['fish','Fishing'],['debris','Marine_Debris'],['boat','Boat_collision'],['dredge','Dredging'],['aggression','Aggression']];
-  mapBin.forEach(([name,key])=>{
-    const v = getAnthRadio(name);
-    if(v==='Yes'||v==='No') sel[key].add(v);
-  });
-  // Oil / petrol combined
-  const oilVal = getAnthRadio('oil');
-  if(oilVal==='Oil'){ sel.Oil.add('Yes'); }
-  else if(oilVal==='Petrol'){ sel.Petrol.add('Yes'); }
-  else if(oilVal==='None'){ sel.Oil.add('No'); sel.Petrol.add('No'); }
-
-  // Field availability guards
-  const ignored=[];
-  if(!caps.hasYear && sel.year.size){ sel.year.clear(); ignored.push('Year'); }
+  [['fish','Fishing'],['debris','Marine_Debris'],['boat','Boat_collision'],['dredge','Dredging'],['aggression','Aggression']].forEach(([n,k])=>{ const v=getAnthRadio(n); if(v==='Yes'||v==='No') sel[k].add(v); });
+  const oil=getAnthRadio('oil'); if(oil==='Oil') sel.Oil.add('Yes'); else if(oil==='Petrol') sel.Petrol.add('Yes'); else if(oil==='None'){ sel.Oil.add('No'); sel.Petrol.add('No'); }
+  const ignored=[]; if(!caps.hasYear && sel.year.size){ sel.year.clear(); ignored.push('Year'); }
   if(!caps.hasMonth && sel.month.size){ sel.month.clear(); ignored.push('Month'); }
   if(!caps.hasSex && sel.sex.size){ sel.sex.clear(); ignored.push('Sex'); }
   if(!caps.hasStage && sel.development_stage.size){ sel.development_stage.clear(); ignored.push('Stage'); }
   if(!caps.hasSeason && sel.season.size){ sel.season.clear(); ignored.push('Season'); }
-  if(ignored.length) bumpToast(ignored.join(', ')+' ignored for this dataset');
+  if(ignored.length) bumpToast(ignored.join(', ')+' not available for this dataset');
   return sel;
 }
 function makePredicate(sel){
-  function pass(set, value){ if(!set.size) return true; return set.has(value); }
-  return (props)=>{
-    const species = String(props.species||'').trim();
-    const stage = toCanon(props.development_stage,'stage');
-    const sex = toCanon(props.sex,'sex');
-    const season = toCanon(props.season,'season');
-    const year = canonYear(props.year);
-    const month = String(props.month||'').trim();
+  function pass(set,v){ if(!set.size) return true; return set.has(v); }
+  return (p)=>{
+    const species=String(p.species||'').trim();
+    const stage=toCanon(p.development_stage,'stage');
+    const sex=toCanon(p.sex,'sex');
+    const season=toCanon(p.season,'season');
+    const year=canonYear(p.year);
+    const month=String(p.month||'').trim();
     const h = {
-      Fishing: toCanon(props.Fishing,'yesno'),
-      Marine_Debris: toCanon(props.Marine_Debris,'yesno'),
-      Aggression: toCanon(props.Agression || props.Aggression,'yesno'),
-      Boat_collision: toCanon(props.Boat_collision,'yesno'),
-      Dredging: toCanon(props.Dredging,'yesno'),
-      Oil: toCanon(props.Oil,'yesno'),
-      Petrol: toCanon(props.Petrol,'yesno')
+      Fishing: toCanon(p.Fishing,'yesno'),
+      Marine_Debris: toCanon(p.Marine_Debris,'yesno'),
+      Aggression: toCanon(p.Agression||p.Aggression,'yesno'),
+      Boat_collision: toCanon(p.Boat_collision,'yesno'),
+      Dredging: toCanon(p.Dredging,'yesno'),
+      Oil: toCanon(p.Oil,'yesno'),
+      Petrol: toCanon(p.Petrol,'yesno')
     };
-    return pass(sel.species, species) &&
-      pass(sel.development_stage, stage) &&
-      pass(sel.sex, sex) &&
-      pass(sel.season, season) &&
-      pass(sel.year, year) &&
-      pass(sel.month, month) &&
-      pass(sel.decomposition_code, String(props.decomposition_code||'')) &&
-      pass(sel.Fishing, h.Fishing) &&
-      pass(sel.Marine_Debris, h.Marine_Debris) &&
-      pass(sel.Aggression, h.Aggression) &&
-      pass(sel.Boat_collision, h.Boat_collision) &&
-      pass(sel.Dredging, h.Dredging) &&
-      pass(sel.Oil, h.Oil) &&
-      pass(sel.Petrol, h.Petrol);
+    return pass(sel.species, species) && pass(sel.development_stage, stage) && pass(sel.sex, sex) &&
+           pass(sel.season, season) && pass(sel.year, year) && pass(sel.month, month) &&
+           pass(sel.decomposition_code, String(p.decomposition_code||'')) &&
+           pass(sel.Fishing, h.Fishing) && pass(sel.Marine_Debris, h.Marine_Debris) && pass(sel.Aggression, h.Aggression) &&
+           pass(sel.Boat_collision, h.Boat_collision) && pass(sel.Dredging, h.Dredging) && pass(sel.Oil, h.Oil) && pass(sel.Petrol, h.Petrol);
   };
 }
 
-/* Aggregation & breaks */
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
-
-let vtLayer=null;
-let currentSourceKey=null;
-let layerName='', metricField='sum_val';
-let aggByHex = new Map();
-let jenksBreaks=[0,1,2,3,4,5], activeRamp=['#fee','#fca','#fb6','#d22','#a10'], histogramCounts=[0,0,0,0,0], top10Threshold=null;
-
-const metricCandidates = {
-  weight: ['weight','sum_val'],
-  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
-  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
-  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
-};
-function lockMetricField(sample, ct){
-  const cands = metricCandidates[ct] || ['sum_val'];
-  for(const k of cands){
-    let seen=0; for(const p of sample){ const v=Number(p[k]); if(Number.isFinite(v)) { seen++; if(seen>3){ metricField=k; return; } } }
-  }
-  metricField='sum_val';
-}
-
-/* Unique-per-individual counters inside each hex */
+/* Unique-per-individual helpers */
 function ensureSet(map, key){ let s=map.get(key); if(!s){ s=new Set(); map.set(key,s); } return s; }
 function addUidOncePerCategory(entry, uid, value, cat){
-  // prefer first non-Unknown; if we already stored a non-Unknown, keep it
-  const store = entry.uidChosen[cat];
-  const prev = store.get(uid);
-  const val = value || 'Unknown';
-  if(!prev){
-    store.set(uid, val);
-    ensureSet(entry.countSets[cat], val).add(uid);
-  }else{
-    if(prev==='Unknown' && val!=='Unknown'){
-      // move uid from Unknown -> val
-      ensureSet(entry.countSets[cat], 'Unknown').delete(uid);
-      store.set(uid, val);
-      ensureSet(entry.countSets[cat], val).add(uid);
-    }
-  }
+  const store=entry.uidChosen[cat], prev=store.get(uid); const val=value||'Unknown';
+  if(!prev){ store.set(uid,val); ensureSet(entry.countSets[cat], val).add(uid); }
+  else if(prev==='Unknown' && val!=='Unknown'){ ensureSet(entry.countSets[cat], 'Unknown').delete(uid); store.set(uid,val); ensureSet(entry.countSets[cat], val).add(uid); }
 }
 
 function computeBinIndex(v, breaks){
-  if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
-  const n = breaks.length-1; if(n<=0) return -1;
-  if(v < breaks[0]) return 0;
-  if(v > breaks[n]) return n-1;
-  for(let i=0;i<n;i++){
+  if(!breaks || breaks.length<2 || !Number.isFinite(v)) return -1;
+  for(let i=0;i<breaks.length-1;i++){
     const a=breaks[i], b=breaks[i+1];
-    if (i===n-1){ if(v>=a && v<=b) return i; }
-    else if (v>=a && v<b) return i;
+    if(i===breaks.length-2){ if(v>=a && v<=b) return i; }
+    else if(v>=a && v<b) return i;
   }
   return -1;
 }
 function computeLegendCounts(values, breaks){
-  const counts=[0,0,0,0,0];
-  const n=breaks.length-1;
-  for(const v of values){
-    const idx = computeBinIndex(v, breaks);
-    if(idx>=0 && idx<n) counts[idx]++;
-  }
+  const counts=[0,0,0,0,0]; const n=breaks.length-1;
+  for(const v of values){ const idx=computeBinIndex(v,breaks); if(idx>=0&&idx<n) counts[idx]++; }
   return counts;
 }
-function p90(values){
-  const s=values.slice().sort((a,b)=>a-b);
-  const q=ss.quantileSorted(s,0.9);
-  return Number.isFinite(q)? q : null;
-}
 function quantileBreaks(values){
-  const sorted=values.slice().sort((a,b)=>a-b);
-  return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+  const s=values.slice().sort((a,b)=>a-b);
+  return ss.quantileSorted(s,[0,0.2,0.4,0.6,0.8,1]);
 }
-/* Winsorized + log hybrid with heavier first bin and very tight top bin */
+/* Winsorized-log hybrid; ensure first bin upper edge >= 1 */
 function winsorizedLogHybridBreaks(values){
-  const tail=0.02; // winsorize 2% tails
-  // Heavier first bin (~40%), then 70%, 90%, with last 1.5–2% as top extreme
-  const cuts=[0.40,0.70,0.90,0.985];
+  const tail=0.02, cuts=[0.40,0.70,0.90,0.985];
   const arr=values.filter(Number.isFinite); if(arr.length<5) return null;
   const s=arr.slice().sort((a,b)=>a-b);
   const qLo=ss.quantileSorted(s,tail), qHi=ss.quantileSorted(s,1-tail);
@@ -1065,96 +764,67 @@ function winsorizedLogHybridBreaks(values){
   for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1]>edgesT[i])) edgesT[i+1]=edgesT[i]+epsT; }
   let edges=edgesT.map(v=>Math.expm1(v));
   edges[0]=w[0]; edges[edges.length-1]=w[w.length-1];
-  const eps=(edges[edges.length-1]-edges[0]||1)*1e-9;
-  for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1]>edges[i])) edges[i+1]=edges[i]+eps; }
+  // enforce first bin upper edge >= 1
+  if(edges[1] < 1){ edges[1] = 1; }
+  // monotonic guarantee
+  for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1]>edges[i])) edges[i+1]=edges[i]+(edges[edges.length-1]-edges[0])*1e-9; }
   return edges;
 }
 
-/* Tiles in view */
+/* Tiles / view helpers */
 function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
 function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
-function tileRangeForBounds(b,z){
-  const nw=b.getNorthWest(), se=b.getSouthEast();
-  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
-  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
-  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
-  return {minX,maxX,minY,maxY};
-}
+function tileRangeForBounds(b,z){ const nw=b.getNorthWest(), se=b.getSouthEast(); let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z), minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z); if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY]; const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY)); return {minX,maxX,minY,maxY}; }
 const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
 
 async function detectLayerName(pmFile){
   try{
-    const pm = await getPM(pmFile);
-    header = await pm.getHeader();
-    const md = await pm.getMetadata();
-    if (md && md.json){
-      const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
-      if (j && j.vector_layers){
-        if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
-        const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
-      }
-    }
-    const z = Math.max(6, header.minZoom);
-    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
-    for(let x=minX;x<=maxX;x++){
-      for(let y=minY;y<=maxY;y++){
-        const r = await pm.getZxy(z, wrapX(x,z), y);
-        if(!r || !r.data) continue;
-        const vt = new window.VectorTile(new window.Pbf(r.data));
-        const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
-      }
-    }
+    const pm=await getPM(pmFile); const hdr=await pm.getHeader(); const md=await pm.getMetadata();
+    if(md && md.json){ const j=(typeof md.json==='string')? JSON.parse(md.json):md.json; if(j && j.vector_layers){ if(Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id||'hexgrid'; const keys=Object.keys(j.vector_layers); if(keys.length) return keys[0]; } }
+    const z=Math.max(5, hdr.minZoom); const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+    for(let x=minX;x<=maxX;x++){ for(let y=minY;y<=maxY;y++){ const r=await pm.getZxy(z, wrapX(x,z), y); if(!r||!r.data) continue; const vt=new window.VectorTile(new window.Pbf(r.data)); const names=Object.keys(vt.layers||{}); if(names.length) return names[0]; } }
   }catch(e){}
   return 'hexgrid';
 }
 
-/* Aggregate current viewport once (kept stable until Apply/Reset) */
+/* Aggregate once per Apply */
 async function aggregateViewport(pmFile, layerName, predicate, ct){
-  aggByHex = new Map();
-  const pm = await getPM(pmFile);
-  const hdr = header || await pm.getHeader();
-  const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
-  const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+  aggByHex=new Map();
+  const pm=await getPM(pmFile); const hdr=await pm.getHeader();
+  const zView=Math.max(5, hdr.minZoom); // lower decode zoom = fewer tile fetches
+  const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), zView);
   let sampleProps=[];
   for(let x=minX;x<=maxX;x++){
     for(let y=minY;y<=maxY;y++){
-      const resp = await pm.getZxy(zView, wrapX(x,zView), y);
-      if(!resp || !resp.data) continue;
-      const vt = new window.VectorTile(new window.Pbf(resp.data));
-      const lyr = vt.layers[layerName]; if(!lyr) continue;
+      const resp=await pm.getZxy(zView, wrapX(x,zView), y);
+      if(!resp||!resp.data) continue;
+      const vt=new window.VectorTile(new window.Pbf(resp.data));
+      const lyr=vt.layers[layerName]; if(!lyr) continue;
       for(let i=0;i<lyr.length;i++){
         const f=lyr.feature(i); const props=f.properties||{};
-        if(sampleProps.length<50) sampleProps.push(props);
-        const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
+        if(sampleProps.length<60) sampleProps.push(props);
+        const key=hexKeyFromProps(props); if(!key) continue;
         if(!predicate(props)) continue;
 
-        // init hex entry
-        let entry = aggByHex.get(key);
+        let entry=aggByHex.get(key);
         if(!entry){
-          entry={
-            sum:0,
-            uids:new Set(),
-            rowCount:0,
-            uidChosen:{sex:new Map(), stage:new Map(), season:new Map()},
-            countSets:{sex:new Map(), stage:new Map(), season:new Map()}
-          };
+          entry={ sum:0, uids:new Set(), rowCount:0, uidChosen:{sex:new Map(),stage:new Map(),season:new Map()}, countSets:{sex:new Map(),stage:new Map(),season:new Map()} };
           aggByHex.set(key,entry);
         }
 
-        // metric sum (per row)
-        const val = Number(props[metricField]);
-        if(Number.isFinite(val)) entry.sum += val;
+        // metric sum
+        const val=Number(props[metricField]); if(Number.isFinite(val)) entry.sum += val;
 
-        // unique individual id
-        const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
+        // unique individual id -> use turtle_id explicitly
+        const uidRaw = props.turtle_id ?? props.Turtle_ID ?? props.turtleId ?? props.uid ?? props.individual_id ?? props.id;
+        const uid = uidRaw!=null ? String(uidRaw) : '';
         if(uid) entry.uids.add(uid); else entry.rowCount++;
 
-        // unique-per-individual categories (first non-Unknown wins)
-        const ssex = toCanon(props.sex,'sex');
-        const sstage = toCanon(props.development_stage,'stage');
-        const sseason = toCanon(props.season,'season');
+        // unique-per-individual categorical
         if(uid){
+          const ssex=toCanon(props.sex,'sex');
+          const sstage=toCanon(props.development_stage,'stage');
+          const sseason=toCanon(props.season,'season');
           addUidOncePerCategory(entry, uid, ssex, 'sex');
           addUidOncePerCategory(entry, uid, sstage, 'stage');
           addUidOncePerCategory(entry, uid, sseason, 'season');
@@ -1166,278 +836,164 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
 }
 
-/* Legend render */
+/* Legend */
 function updateLegendFrozen(cfg){
-  const rows = $('legendRows'); rows.innerHTML='';
-  const brks = cfg.breaks, ramp = cfg.ramp;
-  const n = Math.min(ramp.length, brks.length-1);
+  const rows=$('legendRows'); rows.innerHTML='';
+  const brks=cfg.breaks, ramp=cfg.ramp, n=Math.min(ramp.length, brks.length-1);
   for(let i=0;i<n;i++){
     const a=brks[i], b=brks[i+1];
     const row=document.createElement('div'); row.className='legend-row';
-    const sw=document.createElement('div'); sw.className='legend-swatch'; sw.style.background = ramp[i];
-    const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
-    row.appendChild(sw); row.appendChild(lab);
-    rows.appendChild(row);
+    const sw=document.createElement('div'); sw.className='legend-swatch'; sw.style.background=ramp[i];
+    const lab=document.createElement('span'); lab.textContent = (i===0 ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`);
+    row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
   }
   const hist=$('histogram'); hist.innerHTML='';
-  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
+  (cfg.histCounts||[]).forEach(c=>{ const bar=document.createElement('div'); bar.style.height=(c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
 }
 
-/* Build / update layer (kept stable after) */
-let styleConfig = null;
+/* Build / style layer (stable across zoom/pan) */
+let activeRamp=['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'];
+function styleFn(props){
+  const key=hexKeyFromProps(props); const agg=key? aggByHex.get(key):null;
+  const v=agg? agg.sum : undefined;
+  if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
+  const idx=computeBinIndex(v, styleConfig.breaks);
+  const color=styleConfig.ramp[Math.min(Math.max(idx,0), styleConfig.ramp.length-1)];
+  return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5, smoothFactor:1.2};
+}
+
+let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
+function objCountsFromSets(mapOfSets){ const out={}; for(const [k,set] of mapOfSets.entries()){ out[k]=set.size; } return out; }
+function attachHover(vtg){
+  let raf=null;
+  function onMove(e){
+    if(raf) cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=> {
+      const p=e.layer && e.layer.properties || {};
+      const key=hexKeyFromProps(p); const agg=key? aggByHex.get(key) : null;
+      if(!agg){ map.closePopup(hoverPopup); return; }
+      const v=agg.sum, sex=objCountsFromSets(agg.countSets.sex), stage=objCountsFromSets(agg.countSets.stage), season=objCountsFromSets(agg.countSets.season);
+      const html = `
+        <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
+        <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size||0}</div>
+        <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+        <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+        <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>`;
+      hoverPopup.setLatLng(e.latlng).setContent(html); if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
+    });
+  }
+  vtg.on('mouseover', onMove); vtg.on('mousemove', onMove); vtg.on('mouseout', ()=> map.closePopup(hoverPopup));
+}
+
+/* Scale label */
+function updateScaleLabel(){
+  const line=$('scaleLine'), lab=$('scaleLabel'); if(!line||!lab) return;
+  const px=120, size=map.getSize(), centerPx=L.point(size.x/2, size.y/2);
+  const p1=map.containerPointToLatLng(centerPx), p2=map.containerPointToLatLng(centerPx.add([px,0]));
+  const km = map.distance(p1,p2)/1000;
+  const pow=Math.pow(10, Math.floor(Math.log10(km||1))); const mant=km/pow; const niceMant = mant<1.5?1:mant<3?2:mant<7?5:10; const niceKm=niceMant*pow; const nicePx=px*(niceKm/km);
+  line.style.width = `${Math.max(40, Math.min(200, nicePx))}px`; lab.textContent = `≈ ${nf(niceKm)} km`;
+}
+map.on('zoomend moveend resize', updateScaleLabel); updateScaleLabel();
+
+/* ---------- APPLY / RESET / SUMMARY ---------- */
+function getText(el){ return el?.textContent?.trim() || ''; }
+function abbrSpecies(name){ const [g,s]=name.split(' '); return (g&&s)? `${g[0]}. ${s}` : name; }
+function collectFilters(){
+  const out={};
+  const gbtn=document.querySelector('#grid-size-selector .btn.active'); out.grid = gbtn? getText(gbtn.querySelector('.hex-label')):null;
+  const baseBtn=document.querySelector('#basemapBtns .btn.active'); out.basemap=getText(baseBtn);
+  const lv=layerSel?.value; if(lv==='observed') out.layer='At-sea mortality of observed strandings';
+  else{ const r=document.querySelector('#estimation-options input:checked'); out.layer=`Mortality estimation${r? ' — '+r.value : ''}`; }
+  if(sectionEnabled('species')) out.species=[...document.querySelectorAll('#speciesChips .chip.active')].map(b=> getText(b));
+  ['sex','stage','decomp'].forEach(k=>{ if(sectionEnabled(k)) out[k]=[...document.querySelectorAll(`[data-filter-section="${k}"] .chip.active`)].map(b=> getText(b)); });
+  [['fish','Fishing'],['debris','Debris'],['boat','Boat'],['dredge','Dredge'],['aggression','Aggression']].forEach(([n,lab])=>{ const v=getAnthRadio(n); if(v) out[lab]=v; });
+  const oil=getAnthRadio('oil'); if(oil) out.OilPetrol=oil;
+  if(sectionEnabled('year')) out.year=[$('yStartL').textContent, $('yEndL').textContent];
+  if(sectionEnabled('month')) out.month=[$('mStartL').textContent, $('mEndL').textContent];
+  if(sectionEnabled('season')) out.seasons=getSeasons();
+  return out;
+}
+function updateSummary(){
+  const f=collectFilters(); const rows=[];
+  if(f.layer) rows.push(`Layer: ${f.layer}`); if(f.grid) rows.push(`Cell size: ${f.grid}`);
+  if(Array.isArray(f.species)){ const all=["Caretta caretta","Chelonia mydas","Dermochelys coriacea","Eretmochelys imbricata","Lepidochelys olivacea"]; const allSel=f.species.length===all.length; if(allSel) rows.push('Species: All species'); else if(f.species.length) rows.push('Species: '+f.species.map(abbrSpecies).join(', ')); }
+  if(f.sex?.length) rows.push(`Sex: ${f.sex.join(', ')}`); if(f.stage?.length) rows.push(`Stage: ${f.stage.join(', ')}`); if(f.decomp?.length) rows.push(`Decomp: ${f.decomp.join(', ')}`);
+  if(f.Fishing) rows.push(`Fishing: ${f.Fishing}`); if(f.Debris) rows.push(`Debris: ${f.Debris}`); if(f.Boat) rows.push(`Boat: ${f.Boat}`); if(f.Dredge) rows.push(`Dredge: ${f.Dredge}`); if(f.Aggression) rows.push(`Aggression: ${f.Aggression}`); if(f.OilPetrol) rows.push(`Oil/Petrol: ${f.OilPetrol}`);
+  if(f.year) rows.push(`Year: ${f.year[0]}–${f.year[1]}`); if(f.month) rows.push(`Month: ${f.month[0]}–${f.month[1]}`); if(f.seasons?.length) rows.push(`Seasons: ${f.seasons.join(', ')}`);
+  const rs=$('railSummary'); if(rs) rs.innerHTML = rows.map(r=>`<li>${r}</li>`).join('');
+  const legendBasemap=$('legendBasemap'); if(legendBasemap && f.basemap) legendBasemap.textContent=f.basemap;
+}
+function resetAll(){
+  document.querySelectorAll('[data-filter-section]').forEach(sec=>{
+    const t=sec.querySelector('.toggle-input'), content=sec.querySelector('.section-content'), key=sec.dataset.filterSection;
+    const on=(key==='grid'||key==='layer'||key==='basemap'||key==='taxon'||key==='species');
+    if(t) t.checked=on; if(content) content.classList.toggle('disabled', !on); clearSection(sec);
+  });
+  gridSel.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.val==='r4')); $('resolution').value='r4';
+  layerSel.value='observed'; updateEstimationVisibility(); $('counttype').value='weight';
+  baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
+  document.querySelectorAll('#taxonChips .chip').forEach(c=> c.classList.toggle('active', c.dataset.group==='Sea turtles')); syncSpeciesVisibility();
+  yWrap.dataset.startFrac='0'; yWrap.dataset.endFrac='1'; mWrap.dataset.startFrac='0'; mWrap.dataset.endFrac='1'; reflowSliders();
+  updateSummary(); markDirty();
+}
+resetBtn && resetBtn.addEventListener('click', resetAll);
+applyBtn && applyBtn.addEventListener('click',()=>{
+  if(layerSel?.value==='observed') $('counttype').value='weight';
+  else{ const lev=(document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase(); $('counttype').value = `new_mortality_est_bf_${lev}`; }
+  updateSummary(); drawer.classList.remove('open'); buildLayer();
+});
+
+/* ---------- BUILD LAYER ---------- */
+function updateLegend(values, ramp){
+  // breaks
+  let brks = winsorizedLogHybridBreaks(values) || quantileBreaks(values);
+  const realMax = Math.max(...values); if(brks && brks.length) brks[brks.length-1]=Math.max(brks[brks.length-1], realMax);
+  jenksBreaks = brks.slice();
+  histogramCounts = computeLegendCounts(values, brks);
+  styleConfig = { breaks: jenksBreaks.slice(), ramp: ramp.slice(), opacity: parseFloat($('opacity').value) };
+  updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts });
+}
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
   try{
     const res=$('resolution').value, ct=$('counttype').value;
-    const pmFile = fileFor(res, ct);
-    const sourceKey = `${pmFile}`;
+    const pmFile=fileFor(res, ct); const srcKey=`${pmFile}`;
+    if(!layerName || currentSourceKey!==srcKey){ layerName=await detectLayerName(pmFile); currentSourceKey=srcKey; }
+    const caps=await capabilityProbe(pmFile, layerName); // sync time domain
+    const years=Array.from(caps.observedYears.values()).sort((a,b)=>a-b);
+    if(years.length){ YEAR.min=years[0]; YEAR.max=years[years.length-1]; $('yStartL').textContent=YEAR.min; $('yEndL').textContent=YEAR.max; reflowSliders(); }
 
-    if(!layerName || currentSourceKey!==sourceKey){
-      layerName = await detectLayerName(pmFile);
-      currentSourceKey = sourceKey;
-    }
-    const caps = await capabilityProbe(pmFile, layerName);
-
-    // Sync year domain
-    const years = Array.from(caps.observedYears.values()).sort((a,b)=>a-b);
-    if(years.length){
-      YEAR.min = years[0]; YEAR.max = years[years.length-1];
-      $('yStartL').textContent=YEAR.min; $('yEndL').textContent=YEAR.max;
-      yWrap.dataset.startFrac = Math.max(0,Math.min(1, parseFloat(yWrap.dataset.startFrac||'0')));
-      yWrap.dataset.endFrac   = Math.max(parseFloat(yWrap.dataset.startFrac), Math.min(1, parseFloat(yWrap.dataset.endFrac||'1')));
-      reflowSliders();
-    }
-
-    const sel = readFilterSelections(caps);
-    const predicate = makePredicate(sel);
-
-    const values = await aggregateViewport(pmFile, layerName, predicate, ct);
-    if(!values || values.length===0){ bumpToast('No data in view'); hideSpinner(); return; }
-
-    // Breaks (winsorized + log hybrid, heavier first bin, tight top)
-    let brks = winsorizedLogHybridBreaks(values) || quantileBreaks(values);
-    const realMax = Math.max(...values);
-    if(brks && brks.length) brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
-
+    const sel=readFilterSelections(caps); const predicate=makePredicate(sel);
     activeRamp = currentRamp();
-    jenksBreaks = brks.slice();
-    histogramCounts = computeLegendCounts(values, brks);
-    top10Threshold = p90(values);
-
-    styleConfig = {
-      breaks: jenksBreaks.slice(),
-      ramp: activeRamp.slice(),
-      opacity: parseFloat($('opacity').value)
-    };
+    const values=await aggregateViewport(pmFile, layerName, predicate, ct);
+    if(!values || values.length===0){ bumpToast('No data in view'); hideSpinner(); applyBtn && applyBtn.setAttribute('disabled',''); dirty=false; return; }
+    updateLegend(values, activeRamp);
 
     if(!vtLayer || currentSourceKey!==vtLayer.__src){
       if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
-      vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+      vtLayer=L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
         rendererFactory: L.canvas.tile,
-        interactive:true,
-        vectorTileLayerStyles: { [layerName]: styleFn },
-        getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+        interactive:true, tolerance: 4, // simplify a bit for perf
+        vectorTileLayerStyles:{ [layerName]: styleFn },
+        getFeatureId: f=> hexKeyFromProps(f.properties||{})
       }).addTo(map);
-      vtLayer.__src = currentSourceKey;
+      vtLayer.__src=currentSourceKey;
       attachHover(vtLayer);
-    } else {
-      vtLayer.redraw(); // same instance, no rebuild
+    }else{
+      vtLayer.redraw();
     }
-
-    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
     bumpToast('Layer updated');
-  }catch(e){
-    console.error(e); bumpToast('Failed to load layer');
-  }finally{ hideSpinner(); dirty=false; applyBtn && applyBtn.setAttribute('disabled',''); }
+  }catch(e){ console.error(e); bumpToast('Failed to load layer'); }
+  finally{ hideSpinner(); dirty=false; applyBtn && applyBtn.setAttribute('disabled',''); }
 }
-
-function styleFn(props){
-  const key = props.h3_index || props.h3 || props.id;
-  const agg = key ? aggByHex.get(key) : undefined;
-  const v = agg ? agg.sum : undefined;
-  if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
-  const idx = computeBinIndex(v, styleConfig.breaks);
-  const color = styleConfig.ramp[Math.min(Math.max(idx,0), styleConfig.ramp.length-1)];
-  return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
-}
-
-/* Hover info — unique individuals */
-let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
-function attachHover(vtg){
-  vtg.on('mouseover', showHover);
-  vtg.on('mousemove', showHover);
-  vtg.on('mouseout', ()=> map.closePopup(hoverPopup));
-}
-function objCountsFromSets(mapOfSets){
-  const out={};
-  for(const [k,set] of mapOfSets.entries()){ out[k]=set.size; }
-  return out;
-}
-function showHover(e){
-  const p = e.layer && e.layer.properties || {};
-  const key = p.h3_index || p.h3 || p.id;
-  const agg = key ? aggByHex.get(key) : null;
-  if(!agg){ map.closePopup(hoverPopup); return; }
-  const v = agg.sum;
-  const sex = objCountsFromSets(agg.countSets.sex);
-  const stage = objCountsFromSets(agg.countSets.stage);
-  const season = objCountsFromSets(agg.countSets.season);
-  const html = `
-    <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
-    <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || 0}</div>
-    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
-    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
-    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
-  `;
-  hoverPopup.setLatLng(e.latlng).setContent(html);
-  if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
-}
-
-/* Scale label in legend (shows ≈ km) */
-function updateScaleLabel(){
-  const line = $('scaleLine'), lab=$('scaleLabel');
-  if(!line||!lab) return;
-  const px = 120;
-  const size = map.getSize();
-  const centerPx = L.point(size.x/2, size.y/2);
-  const p1 = map.containerPointToLatLng(centerPx);
-  const p2 = map.containerPointToLatLng(centerPx.add([px,0]));
-  const meters = map.distance(p1,p2);
-  const km = meters/1000;
-  const pow = Math.pow(10, Math.floor(Math.log10(km||1)));
-  const mant = km/pow;
-  const niceMant = mant<1.5?1:mant<3?2:mant<7?5:10;
-  const niceKm = niceMant*pow;
-  const nicePx = px*(niceKm/km);
-  line.style.width = `${Math.max(40, Math.min(200, nicePx))}px`;
-  lab.textContent = `≈ ${nf(niceKm)} km`;
-}
-map.on('zoomend moveend resize', updateScaleLabel);
-updateScaleLabel();
-
-/* =================== APPLY, RESET & SUMMARY =================== */
-function getText(el){ return el?.textContent?.trim() || ''; }
-function abbrSpecies(name){ const [g,s]=name.split(' '); return (g&&s)? `${g[0]}. ${s}` : name; }
-
-function collectFilters(){
-  const out={};
-  // grid
-  const gbtn = document.querySelector('#grid-size-selector .btn.active');
-  out.grid = gbtn ? getText(gbtn.querySelector('.hex-label')) : null;
-  // basemap
-  const baseBtn = document.querySelector('#basemapBtns .btn.active'); out.basemap = getText(baseBtn);
-  // layer
-  const lv = layerSel?.value;
-  if(lv==='observed') out.layer='At-sea mortality of observed strandings';
-  else{
-    const r=document.querySelector('#estimation-options input:checked');
-    out.layer = `Mortality estimation${r? ' — '+r.value : ''}`;
-  }
-  // species
-  if(sectionEnabled('species')){
-    out.species = [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> getText(b));
-  }
-  // bio
-  ['sex','stage','decomp'].forEach(k=>{
-    if(sectionEnabled(k)){
-      out[k] = [...document.querySelectorAll(`[data-filter-section="${k}"] .chip.active`)].map(b=> getText(b));
-    }
-  });
-  // anth
-  [['fish','Fishing'],['debris','Debris'],['boat','Boat'],['dredge','Dredge'],['aggression','Aggression']].forEach(([n,lab])=>{
-    const v = getAnthRadio(n); if(v) out[lab]=v;
-  });
-  const oil = getAnthRadio('oil'); if(oil) out.OilPetrol = oil;
-  // time
-  if(sectionEnabled('year')) out.year = [$('yStartL').textContent, $('yEndL').textContent];
-  if(sectionEnabled('month')) out.month = [$('mStartL').textContent, $('mEndL').textContent];
-  if(sectionEnabled('season')) out.seasons = getSeasons();
-  return out;
-}
-
-function updateSummary(){
-  const f=collectFilters();
-  const rows=[];
-  if(f.layer) rows.push(`Layer: ${f.layer}`);
-  if(f.grid) rows.push(`Cell size: ${f.grid}`);
-  if(Array.isArray(f.species)){
-    const allNames=["Caretta caretta","Chelonia mydas","Dermochelys coriacea","Eretmochelys imbricata","Lepidochelys olivacea"];
-    const allSelected = f.species.length === allNames.length;
-    if(allSelected) rows.push('Species: All species');
-    else if(f.species.length){ rows.push('Species: ' + f.species.map(abbrSpecies).join(', ')); }
-  }
-  if(f.sex?.length) rows.push(`Sex: ${f.sex.join(', ')}`);
-  if(f.stage?.length) rows.push(`Stage: ${f.stage.join(', ')}`);
-  if(f.decomp?.length) rows.push(`Decomp: ${f.decomp.join(', ')}`);
-  if(f.Fishing) rows.push(`Fishing: ${f.Fishing}`);
-  if(f.Debris) rows.push(`Debris: ${f.Debris}`);
-  if(f.Boat) rows.push(`Boat: ${f.Boat}`);
-  if(f.Dredge) rows.push(`Dredge: ${f.Dredge}`);
-  if(f.Aggression) rows.push(`Aggression: ${f.Aggression}`);
-  if(f.OilPetrol) rows.push(`Oil/Petrol: ${f.OilPetrol}`);
-  if(f.year) rows.push(`Year: ${f.year[0]}–${f.year[1]}`);
-  if(f.month) rows.push(`Month: ${f.month[0]}–${f.month[1]}`);
-  if(f.seasons?.length) rows.push(`Seasons: ${f.seasons.join(', ')}`);
-  const rs=$('railSummary'); if(rs) rs.innerHTML = rows.map(r=>`<li>${r}</li>`).join('');
-  const legendBasemap=$('legendBasemap'); if(legendBasemap && f.basemap) legendBasemap.textContent = f.basemap;
-}
-
-/* Reset all -> defaults (r4 + observed) */
-function resetAll(){
-  document.querySelectorAll('[data-filter-section]').forEach(sec=>{
-    const toggle = sec.querySelector('.toggle-input');
-    const content= sec.querySelector('.section-content');
-    const key = sec.dataset.filterSection;
-    const on = (key==='grid' || key==='layer' || key==='basemap' || key==='taxon' || key==='species');
-    if(toggle){ toggle.checked = on; }
-    if(content){ content.classList.toggle('disabled', !on); }
-    clearSection(sec);
-  });
-
-  // grid r4
-  gridSel.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.val==='r4'));
-  $('resolution').value='r4';
-
-  // layer: observed
-  layerSel.value='observed';
-  updateEstimationVisibility();
-  $('counttype').value='weight';
-
-  // basemap: keep current visually Light
-  baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
-
-  // taxon & species
-  document.querySelectorAll('#taxonChips .chip').forEach(c=> c.classList.toggle('active', c.dataset.group==='Sea turtles'));
-  syncSpeciesVisibility();
-
-  // year/month/season off, sliders full span
-  yWrap.dataset.startFrac='0'; yWrap.dataset.endFrac='1';
-  mWrap.dataset.startFrac='0'; mWrap.dataset.endFrac='1';
-  reflowSliders();
-
-  updateSummary();
-  markDirty();
-}
-resetBtn && resetBtn.addEventListener('click', resetAll);
-
-/* Apply -> bridge UI to hidden selects, then build */
-applyBtn && applyBtn.addEventListener('click',()=>{
-  if(layerSel?.value==='observed') $('counttype').value='weight';
-  else{
-    const lev = (document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase();
-    $('counttype').value = `new_mortality_est_bf_${lev}`;
-  }
-  updateSummary();
-  drawer.classList.remove('open');
-  buildLayer();
-});
-
-/* Initial defaults (r4 + observed) */
+function showSpinner(m='Loading…'){ spinner.textContent=m; spinner.style.display='block'; }
+function hideSpinner(){ spinner.style.display='none'; }
 updateSummary();
 buildLayer();
 
-/* Keep layer stable on zoom/pan (no rebuild). We still update the scale label. */
-// (intentionally no buildLayer() on move/zoom)
+/* Keep layer stable on zoom/pan */
+function noop(){ } // no rebuild on zoom/move
 </script>
 </body>
 </html>
