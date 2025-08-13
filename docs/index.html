@@ -1,118 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Sea Turtle Mortality Map — v15 UI Skin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sea Turtle Mortality — v15 UI</title>
 
-<!-- Avoid favicon 404 -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E">
 
-<!-- Leaflet (local, CSP-safe) -->
-<link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
-<script src="./vendor/leaflet.js?v=20250812"></script>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- PMTiles / VectorGrid / PBF / VectorTile / Simple-Statistics (local, CSP-safe) -->
-<script src="./vendor/pmtiles.js?v=20250812"></script>
-<script src="./vendor/Leaflet.VectorGrid.bundled.js?v=20250812"></script>
-<script src="./vendor/pbf.js?v=20250812"></script>
-<script src="./vendor/vector-tile.js?v=20250812"></script>
-<script src="./vendor/simple-statistics.min.js?v=20250812"></script>
+<!-- Leaflet + deps (swap to your local copies if needed) -->
+<link rel="stylesheet" href="./vendor/leaflet.css"/>
+<script src="./vendor/leaflet.js"></script>
+<script src="./vendor/pmtiles.js"></script>
+<script src="./vendor/Leaflet.VectorGrid.bundled.js"></script>
+<script src="./vendor/pbf.js"></script>
+<script src="./vendor/vector-tile.js"></script>
+<script src="./vendor/simple-statistics.min.js"></script>
 
 <style>
-/* ---------------- v15 skin (visual only) ---------------- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root{
-  --accent:#007AFF;
-  --bg-map:#e9eef2;
-  --panel-bg:rgba(252,252,252,0.92);
-  --border:rgba(0,0,0,0.10);
-  --text:#1d1d1f;
-  --text-secondary:#6e6e73;
-  --control:#eef2f6;
-  --control-hover:#e6ebf2;
-  --focus:rgba(0,122,255,.25);
-  --pill-border:rgba(0,0,0,.14);
-  --label-selected:#0f172a;
-  --rail-w:200px;
-  --shadow:0 10px 30px rgba(2,6,23,.18);
+:root {
+  --accent: #007AFF;
+  --bg-map: #e9eef2;
+  --panel-bg: rgba(252, 252, 252, 0.92);
+  --border: rgba(0, 0, 0, 0.10);
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --control-bg: #eef2f6;
+  --control-bg-hover: #e6ebf2;
+  --focus: rgba(0,122,255,.25);
+  --pill-border: rgba(0,0,0,.14);
+  --label-selected: #0f172a;
+  --rail-w: 200px;
 }
-
-/* Dark theme variables (panel only) */
-body[data-theme="dark"]{
-  --panel-bg:rgba(26,28,33,0.88);
-  --border:rgba(255,255,255,0.12);
-  --text:#E8EAED;
-  --text-secondary:#B6BDC7;
-  --control:#2B3037;
-  --control-hover:#323841;
-  --focus:rgba(255,255,255,.12);
-  --pill-border:rgba(255,255,255,.22);
-  --label-selected:var(--accent);
+body[data-theme="dark"] {
+  --panel-bg: rgba(26, 28, 33, 0.88);
+  --border: rgba(255,255,255,0.12);
+  --text-primary: #E8EAED;
+  --text-secondary: #B6BDC7;
+  --control-bg: #2B3037;
+  --control-bg-hover: #323841;
+  --focus: rgba(255,255,255,.12);
+  --pill-border: rgba(255,255,255,.22);
+  --label-selected: var(--accent);
 }
-
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
 body{
   font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
   background-color:var(--bg-map);
-  color:var(--text);
-  font-size:13px;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1000" height="1000"><path fill="%23d4e3f3" d="M0 50 L50 0 L100 50 L50 100 Z" /><path fill="%23c0d7f0" d="M0 50 L50 100 L0 100 Z" /><path fill="%23a8c9eb" d="M100 50 L50 100 L100 100 Z" /></svg>');
+  background-size:50px;color:var(--text-primary);font-size:13px
 }
 
 /* Map */
 #map{position:absolute;inset:0}
 
 /* Drawer (rail + animated panel) */
-.drawer{position:fixed;top:0;left:0;height:100%;display:flex;align-items:stretch;gap:0;z-index:1000;pointer-events:none}
+.drawer{position:fixed;top:0;left:0;height:100%;display:flex;align-items:stretch;gap:0;z-index:1000}
 .rail{
-  pointer-events:auto;
-  width:var(--rail-w);
-  background:rgba(255,255,255,.75);
-  backdrop-filter:blur(14px);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;align-items:stretch;padding:10px 8px;gap:8px
+  width:var(--rail-w);background:rgba(255,255,255,.75);backdrop-filter:blur(14px);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:stretch;
+  padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text);white-space:nowrap}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
 .theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
-.theme-toggle:hover{background:var(--control-hover)}
+.theme-toggle:hover{background:var(--control-bg-hover)}
 
-.rail-btn{
-  display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;
-  padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
-}
+.rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rail-btn svg{width:18px;height:18px;opacity:.9}
-.rail-btn:hover{background:var(--control-hover);color:var(--text)}
+.rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
 .rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
-.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:36vh;border-top:1px solid var(--border)}
+.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:34vh;border-top:1px solid var(--border)}
 .rail-summary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--border)}
-
-.rail-bottom{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:0 8px 8px}
-.action-row{display:flex;gap:8px}
-.apply-btn,.reset-btn{
-  flex:1; border:1px solid var(--border); background:#fff; color:#0f172a; border-radius:10px; padding:9px 10px;
-  font-weight:800; cursor:pointer; transition:all .2s; font-size:12px;
-}
-.apply-btn{color:var(--accent)} /* blue text to reduce misclicks */
-.apply-btn[disabled]{opacity:.55;cursor:not-allowed}
-.apply-btn:not([disabled]):hover,.reset-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
-body[data-theme="dark"] .apply-btn{background:#23262b;color:var(--accent)}
-body[data-theme="dark"] .reset-btn{background:#23262b;color:#fff}
-.author{margin:2px 10px 0;font-size:10px;color:var(--text-secondary);}
+.control-row{display:flex;gap:8px;margin:8px 8px 2px}
+.btn-small{padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
+.btn-small[disabled]{opacity:.5;cursor:not-allowed}
+body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:var(--pill-border)}
+.apply-btn{margin:8px 8px 10px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
+.apply-btn[disabled]{opacity:.5;cursor:not-allowed}
+.apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
+body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
+.author{margin:6px 8px 8px;font-size:10px;color:var(--text-secondary)}
 
 /* Animated panel */
 .panel{
-  pointer-events:auto;
-  position:fixed;left:var(--rail-w);top:18px;max-height:78vh;width:340px;background:var(--panel-bg);
-  backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);
-  border:1px solid rgba(255,255,255,.6);box-shadow:12px 12px 48px rgba(0,0,0,.12);
-  display:flex;flex-direction:column;border-radius:14px;opacity:1;transform:translateX(0) scale(1)
+  position:fixed;left:var(--rail-w);top:auto;bottom:auto;max-height:78vh;width:330px;background:var(--panel-bg);
+  backdrop-filter:blur(28px)saturate(200%);-webkit-backdrop-filter:blur(28px)saturate(200%);
+  border:1px solid rgba(255,255,255,.6);box-shadow:12px 12px 48px rgba(0,0,0,.12);display:flex;flex-direction:column;border-radius:14px;
+  opacity:0;pointer-events:none;transform:translateX(-14px) scale(.96);transform-origin:left var(--anchorY, 50%);
+  transition:opacity .25s, transform .35s cubic-bezier(.2,1,.2,1); z-index:1001
 }
+.drawer.open .panel{opacity:1;pointer-events:auto;transform:translateX(0) scale(1)}
 .head{padding:10px 14px;border-bottom:1px solid var(--border)}
 .head h1{margin:0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .content{padding:14px;overflow:auto;max-height:calc(78vh - 44px)}
@@ -124,6 +109,7 @@ body[data-theme="dark"] .reset-btn{background:#23262b;color:#fff}
 .section-title{margin:0;font-size:13px;font-weight:600;color:var(--text-secondary)}
 .hint{font-size:11px;color:var(--text-secondary);font-weight:500;margin-left:6px}
 
+/* Enable/disable toggles */
 .filter-toggle{display:flex;align-items:center;cursor:pointer}
 .filter-toggle input{display:none}
 .toggle-track{width:36px;height:20px;background:#d1d1d6;border-radius:10px;position:relative;transition:background-color .3s}
@@ -132,27 +118,33 @@ body[data-theme="dark"] .reset-btn{background:#23262b;color:#fff}
 .filter-toggle input:checked + .toggle-track .toggle-nub{transform:translateX(16px)}
 .section-content.disabled{opacity:.45;pointer-events:none;transition:opacity .25s}
 
+/* Grids */
 .grid{display:grid;gap:8px}
+.grid.one{grid-template-columns:1fr}
 .grid.two{grid-template-columns:repeat(2,1fr)}
 .grid.three{grid-template-columns:repeat(3,1fr)}
 .grid.four{grid-template-columns:repeat(4,1fr)}
 .grid.five{grid-template-columns:repeat(5,1fr)}
 
-/* Unified selection: pills */
-.btn,.chip,select{
-  width:100%;padding:7px 10px;border-radius:10px;border:1px solid transparent;background:var(--control);
-  font-weight:600;font-size:12px;cursor:pointer;text-align:center;color:var(--text);transition:all .2s
-}
-.btn:hover,.chip:hover{background:var(--control-hover)}
+/* Pills & chips */
+.btn,.chip,select{width:100%;padding:7px 10px;border-radius:10px;border:1px solid transparent;background:var(--control-bg);font-weight:600;font-size:12px;cursor:pointer;text-align:center;color:var(--text-primary);transition:all .2s}
+.btn:hover,.chip:hover{background:var(--control-bg-hover)}
 .btn:active,.chip:active{transform:scale(.98)}
 .btn.active,.chip.active{background:#fff;border:1px solid var(--pill-border);box-shadow:0 1px 4px rgba(0,0,0,.06)}
 body[data-theme="dark"] .btn.active, body[data-theme="dark"] .chip.active{background:#23262b;border:1px solid var(--pill-border);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 
-/* Select (incl. dark mode) */
+/* Select */
 select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:#fff;border:1px solid var(--border);padding:9px 34px 9px 10px;border-radius:10px;font-weight:600;line-height:1.2;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05)}
 select:focus{outline:none;box-shadow:0 0 0 3px var(--focus)}
-body[data-theme="dark"] select{background:#23262b;color:var(--text);border:1px solid var(--pill-border)}
-#layer-type-select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><polyline points='4,7 10,13 16,7'/></svg>");background-repeat:no-repeat;background-position:right 10px center;background-size:16px}
+#layer-type-select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><polyline points='4,7 10,13 16,7'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:16px
+}
+body[data-theme="dark"] select{
+  background:#23262b;
+  color:var(--text-primary);
+  border:1px solid var(--pill-border);
+}
 
 /* Hex buttons */
 .hex-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;height:62px}
@@ -160,10 +152,10 @@ body[data-theme="dark"] select{background:#23262b;color:var(--text);border:1px s
 .hex-btn:hover .hex-icon{transform:scale(1.06)}
 .hex-btn .hex-label{font-size:10px;color:var(--text-secondary)}
 
-/* Segmented */
+/* Segmented control */
 .section-content.seg{max-width:230px;margin:0 auto}
-#tab-anth .section-content.seg{max-width:220px}
-.seg{display:flex;align-items:stretch;background:var(--control);border-radius:10px;padding:2px;position:relative;overflow:hidden}
+#tab-anth .section-content.seg{max-width:200px}
+.seg{display:flex;align-items:stretch;background:var(--control-bg);border-radius:10px;padding:2px;position:relative;overflow:hidden}
 .seg.disabled{opacity:.4;pointer-events:none}
 .seg input{display:none}
 .seg label{flex:1;text-align:center;padding:5px 0;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;z-index:2}
@@ -171,63 +163,59 @@ body[data-theme="dark"] select{background:#23262b;color:var(--text);border:1px s
 .seg input:checked + label{color:var(--label-selected)}
 body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pill-border)}
 
-/* Dual sliders (demo-style, used visually; data still driven by production inputs) */
+/* Ranges (dual handles) */
 .labels{display:flex;justify-content:space-between;font-weight:700;font-size:11px;color:#374151;margin-bottom:6px}
 .track-wrap{position:relative;height:38px}
 .track,.hl{position:absolute;left:10px;right:10px;top:14px;height:8px;border-radius:6px}
-.track{background:var(--control)}
+.track{background:var(--control-bg)}
 .hl{background:var(--accent);z-index:1}
 .handle{position:absolute;top:10px;width:18px;height:18px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:grab;z-index:2;transition:transform .2s}
 .handle:active{cursor:grabbing;transform:scale(1.12)}
 
-/* Legend skin */
+/* Legend */
 .map-overlay{position:absolute;background:var(--panel-bg);backdrop-filter:blur(20px)saturate(180%);-webkit-backdrop-filter:blur(20px)saturate(180%);border:1px solid rgba(255,255,255,.5);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);padding:10px 12px;font-size:12px}
-#legend{bottom:20px;right:20px;width:260px;z-index:900}
+#legend{bottom:20px;right:20px;width:260px;z-index:1002}
 .legend-header{font-weight:600;margin-bottom:8px}
-.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;justify-content:space-between}
 .legend-swatch{width:20px;height:12px;border-radius:3px;border:1px solid var(--border)}
 .legend-scale{margin-top:10px}
 .scale-line{height:6px;border:1px solid var(--text-secondary);border-top:none;width:120px}
 .scale-label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
+.hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
+.hist div{flex:1;background:#cbd5e1;border-radius:3px}
+.hist div.active{background:#94a3b8}
 
-/* Spinner + toast */
-#spinner{position:absolute;top:14px;right:14px;z-index:1100;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
-#toast{position:absolute;top:60px;right:14px;z-index:1100;display:none;background:#111;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:340px}
-
-/* Hover/selection polish */
-.leaflet-interactive:hover{filter:drop-shadow(0 0 2px rgba(14,165,233,.9))}
-
-/* Hidden proxy (keeps original IDs for data pipeline) */
-.hidden-proxy{position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden}
+/* Toast, spinner & hover pop */
+.toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
+.toast.show{opacity:1;transform:none}
+#spinner{position:absolute;top:16px;right:16px;background:var(--panel-bg);border:1px solid var(--border);border-radius:10px;padding:6px 10px;box-shadow:0 4px 14px rgba(0,0,0,.1);z-index:1004;display:none}
+.leaflet-popup-hover{pointer-events:none}
+.leaflet-popup-hover .leaflet-popup-content-wrapper{background:var(--panel-bg);backdrop-filter:blur(14px);border:1px solid var(--border)}
+.leaflet-popup-hover .leaflet-popup-content{margin:8px 10px;font-size:12px}
 </style>
 </head>
 <body>
 
-<!-- ICONS -->
+<!-- Icons -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
-    <!-- New: threat icon (triangle with exclamation) -->
-    <symbol id="icon-threat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <circle cx="12" cy="17" r="1"/>
-    </symbol>
+    <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M7 8l5 5 5-5"/></symbol>
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
 </svg>
 
-<!-- MAP -->
 <div id="map"></div>
 
-<!-- v15 Drawer (Rail + Panel) -->
+<!-- Drawer -->
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
-    <div class="brand">Filters
+    <div class="brand">
+      Filters
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
         <svg width="16" height="16"><use id="themeIcon" href="#icon-moon"></use></svg>
       </button>
@@ -240,29 +228,25 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
       <svg><use href="#icon-bio"></use></svg><span>Biological parameters</span>
     </button>
     <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions">
-      <svg><use href="#icon-threat"></use></svg><span>Anthropogenic interactions</span>
+      <svg><use href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
     <div class="rail-summary-title">Selected filters</div>
     <ul id="railSummary" class="rail-summary"></ul>
 
-    <div class="rail-bottom">
-      <div class="action-row">
-        <button id="resetBtn" class="reset-btn">Reset</button>
-        <button id="applyBtn" class="apply-btn" disabled>Apply</button>
-      </div>
-      <div class="author">Author: Gabriel Fraga da Fonseca</div>
+    <div class="control-row">
+      <button id="resetBtn" class="btn-small">Reset all</button>
     </div>
+    <button id="applyBtn" class="apply-btn" disabled>Apply</button>
+    <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
 
-  <!-- Animated Panel -->
   <div class="panel" id="panel">
     <div class="head"><h1>Marine Megafauna Mortality</h1></div>
     <div class="content">
-
       <!-- MAIN TAB -->
       <section class="section tabpane" id="tab-main">
-        <!-- Cell size -->
+        <!-- Hex size -->
         <div class="section" data-filter-section="grid">
           <div class="section-header">
             <h2 class="section-title">Cell size (H3)</h2>
@@ -287,7 +271,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
               <option value="observed" selected>At-sea mortality of observed strandings</option>
               <option value="estimation">Mortality estimation</option>
             </select>
-            <div class="seg" id="estimation-options">
+            <div class="seg disabled" id="estimation-options">
               <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low">Low</label>
               <input type="radio" id="est-mean" name="estimation" value="Mean" checked><label for="est-mean">Mean</label>
               <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high">High</label>
@@ -316,12 +300,8 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <h2 class="section-title">Taxonomic group</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
-          <div class="section-content grid two" id="taxonSelectWrap">
-            <select id="taxonSelect">
-              <option value="turtles" selected>Sea turtles</option>
-              <option value="mammals">Marine mammals</option>
-              <option value="seabirds">Seabirds</option>
-            </select>
+          <div class="section-content grid one" id="taxonChips">
+            <button class="btn chip active" data-group="Sea turtles">Sea turtles</button>
           </div>
         </div>
 
@@ -331,10 +311,9 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <h2 class="section-title">Species</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
-          <div class="section-content" id="speciesSection">
+          <div class="section-content">
             <div class="grid two" style="margin-bottom:8px">
               <button class="btn" id="speciesAll">Select all</button>
-              <button class="btn" id="speciesNone">Select none</button>
             </div>
             <div class="grid two" id="speciesChips">
               <button class="btn chip active" data-species="Caretta caretta"><em>Caretta caretta</em></button>
@@ -343,19 +322,15 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
               <button class="btn chip active" data-species="Eretmochelys imbricata"><em>Eretmochelys imbricata</em></button>
               <button class="btn chip active" data-species="Lepidochelys olivacea"><em>Lepidochelys olivacea</em></button>
             </div>
-            <div class="small" style="color:var(--text-secondary);margin-top:6px">Species appear when “Sea turtles” is selected.</div>
           </div>
         </div>
 
-        <!-- Time (visual sliders) -->
+        <!-- Year -->
         <div class="section" data-filter-section="year">
-          <div class="section-header">
-            <h2 class="section-title">Year</h2>
-            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label>
-          </div>
+          <div class="section-header"><h2 class="section-title">Year</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
-            <div class="labels"><span id="yStartL">2015</span><span id="yEndL">2025</span></div>
-            <div class="track-wrap" id="yearWrap">
+            <div class="labels"><span id="yStartL">2015</span><span id="yEndL">2024</span></div>
+            <div class="track-wrap" id="yearWrap" data-start-frac="0" data-end-frac="1">
               <div class="track"></div>
               <div class="hl" id="yHL"></div>
               <div class="handle" id="yStart" role="slider" aria-label="Start year" tabindex="0"></div>
@@ -364,14 +339,12 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
+        <!-- Month -->
         <div class="section" data-filter-section="month">
-          <div class="section-header">
-            <h2 class="section-title">Month</h2>
-            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label>
-          </div>
+          <div class="section-header"><h2 class="section-title">Month</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="mStartL">Jan</span><span id="mEndL">Dec</span></div>
-            <div class="track-wrap" id="monthWrap">
+            <div class="track-wrap" id="monthWrap" data-start-frac="0" data-end-frac="1">
               <div class="track"></div>
               <div class="hl" id="mHL"></div>
               <div class="handle" id="mStart" role="slider" aria-label="Start month" tabindex="0"></div>
@@ -380,10 +353,9 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
+        <!-- Seasons -->
         <div class="section" data-filter-section="season">
-          <div class="section-header"><h2 class="section-title">Season <span class="hint">Southern hemisphere</span></h2>
-            <label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label>
-          </div>
+          <div class="section-header"><h2 class="section-title">Season <span class="hint">Southern hemisphere</span></h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid two disabled" id="seasonBtns">
             <button class="btn" data-season="summer">Summer (Dec–Feb)</button>
             <button class="btn" data-season="autumn">Autumn (Mar–May)</button>
@@ -400,7 +372,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           <div class="section-content grid three disabled" data-button-group="sex">
             <button class="btn chip" data-val="Female">Female</button>
             <button class="btn chip" data-val="Male">Male</button>
-            <button class="btn chip" data-val="Unknown">Unknown</button>
+            <button class="btn chip" data-val="Undefined">Undefined</button>
           </div>
         </div>
         <div class="section" data-filter-section="stage">
@@ -409,13 +381,17 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <button class="btn chip" data-val="Juvenile">Juvenile</button>
             <button class="btn chip" data-val="Adult">Adult</button>
             <button class="btn chip" data-val="Hatchling">Hatchling</button>
-            <button class="btn chip" data-val="Unknown">Unknown</button>
+            <button class="btn chip" data-val="Indeterminate">Indeterminate</button>
           </div>
         </div>
         <div class="section" data-filter-section="decomp">
           <div class="section-header"><h2 class="section-title">Decomposition code</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid five disabled" data-button-group="decomp">
-            <button class="btn chip" data-val="1">1</button><button class="btn chip" data-val="2">2</button><button class="btn chip" data-val="3">3</button><button class="btn chip" data-val="4">4</button><button class="btn chip" data-val="5">5</button>
+            <button class="btn chip" data-val="1">1</button>
+            <button class="btn chip" data-val="2">2</button>
+            <button class="btn chip" data-val="3">3</button>
+            <button class="btn chip" data-val="4">4</button>
+            <button class="btn chip" data-val="5">5</button>
           </div>
         </div>
       </section>
@@ -430,6 +406,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <div class="pill"></div>
           </div>
         </div>
+
         <div class="section" data-filter-section="debris">
           <div class="section-header"><h2 class="section-title">Marine debris</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="debris">
@@ -438,6 +415,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <div class="pill"></div>
           </div>
         </div>
+
         <div class="section" data-filter-section="boat">
           <div class="section-header"><h2 class="section-title">Boat collision</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="boat">
@@ -446,6 +424,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <div class="pill"></div>
           </div>
         </div>
+
         <div class="section" data-filter-section="dredge">
           <div class="section-header"><h2 class="section-title">Dredging</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="dredge">
@@ -454,6 +433,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <div class="pill"></div>
           </div>
         </div>
+
         <div class="section" data-filter-section="aggression">
           <div class="section-header"><h2 class="section-title">Aggression</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="aggression">
@@ -462,6 +442,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
             <div class="pill"></div>
           </div>
         </div>
+
         <div class="section" data-filter-section="oil">
           <div class="section-header"><h2 class="section-title">Oil / petrol</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" id="oilBtns" data-name="oil">
@@ -480,350 +461,76 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <div id="legend" class="map-overlay">
   <div class="legend-header">Legend</div>
   <div id="legendRows"></div>
+  <div class="hist" id="histogram"></div>
   <div class="legend-scale">
-    <div class="scale-line"></div>
-    <div class="scale-label">100 km</div>
+    <div class="scale-line" id="scaleLine"></div>
+    <div class="scale-label" id="scaleLabel">≈ 100 km</div>
   </div>
   <div class="legend-footer">Basemap: <span id="legendBasemap">Light</span></div>
 </div>
 
 <div id="spinner">Loading…</div>
-<div id="toast"></div>
+<div class="toast" id="toast">Layer updated</div>
 
-<!-- Hidden proxy groups (keep original IDs for pipeline) -->
-<div class="hidden-proxy" aria-hidden="true">
-  <div id="speciesGroup">
-    <label><input type="checkbox" data-group="species" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="species" value="Caretta caretta">Caretta caretta</label>
-    <label><input type="checkbox" data-group="species" value="Chelonia mydas">Chelonia mydas</label>
-    <label><input type="checkbox" data-group="species" value="Dermochelys coriacea">Dermochelys coriacea</label>
-    <label><input type="checkbox" data-group="species" value="Eretmochelys imbricata">Eretmochelys imbricata</label>
-    <label><input type="checkbox" data-group="species" value="Lepidochelys olivacea">Lepidochelys olivacea</label>
-  </div>
-
-  <div id="stageGroup">
-    <label><input type="checkbox" data-group="stage" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="stage" value="Adult">Adult</label>
-    <label><input type="checkbox" data-group="stage" value="Juvenile">Juvenile</label>
-    <label><input type="checkbox" data-group="stage" value="Hatchling">Hatchling</label>
-    <label><input type="checkbox" data-group="stage" value="Unknown">Unknown</label>
-  </div>
-
-  <div id="sexGroup">
-    <label><input type="checkbox" data-group="sex" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="sex" value="Female">Female</label>
-    <label><input type="checkbox" data-group="sex" value="Male">Male</label>
-    <label><input type="checkbox" data-group="sex" value="Unknown">Unknown</label>
-  </div>
-
-  <div id="seasonGroup">
-    <label><input type="checkbox" data-group="season" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="season" value="Autumn">Autumn</label>
-    <label><input type="checkbox" data-group="season" value="Spring">Spring</label>
-    <label><input type="checkbox" data-group="season" value="Summer">Summer</label>
-    <label><input type="checkbox" data-group="season" value="Winter">Winter</label>
-    <label><input type="checkbox" data-group="season" value="Unknown">Unknown</label>
-  </div>
-
-  <div id="humanGroup">
-    <label><input type="checkbox" data-group="Fishing" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Fishing" value="Yes">Fishing: Yes</label>
-    <label><input type="checkbox" data-group="Fishing" value="No">Fishing: No</label>
-
-    <label><input type="checkbox" data-group="Marine_Debris" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Marine_Debris" value="Yes">Marine Debris: Yes</label>
-    <label><input type="checkbox" data-group="Marine_Debris" value="No">Marine Debris: No</label>
-
-    <label><input type="checkbox" data-group="Aggression" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Aggression" value="Yes">Aggression: Yes</label>
-    <label><input type="checkbox" data-group="Aggression" value="No">Aggression: No</label>
-
-    <label><input type="checkbox" data-group="Boat_collision" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Boat_collision" value="Yes">Boat collision: Yes</label>
-    <label><input type="checkbox" data-group="Boat_collision" value="No">Boat collision: No</label>
-
-    <label><input type="checkbox" data-group="Dredging" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Dredging" value="Yes">Dredging: Yes</label>
-    <label><input type="checkbox" data-group="Dredging" value="No">Dredging: No</label>
-
-    <label><input type="checkbox" data-group="Oil" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Oil" value="Yes">Oil: Yes</label>
-    <label><input type="checkbox" data-group="Oil" value="No">Oil: No</label>
-
-    <label><input type="checkbox" data-group="Petrol" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="Petrol" value="Yes">Petrol: Yes</label>
-    <label><input type="checkbox" data-group="Petrol" value="No">Petrol: No</label>
-  </div>
-
-  <div id="decompGroup">
-    <label><input type="checkbox" data-group="decomposition_code" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="decomposition_code" value="1">1</label>
-    <label><input type="checkbox" data-group="decomposition_code" value="2">2</label>
-    <label><input type="checkbox" data-group="decomposition_code" value="3">3</label>
-    <label><input type="checkbox" data-group="decomposition_code" value="4">4</label>
-    <label><input type="checkbox" data-group="decomposition_code" value="5">5</label>
-  </div>
-
-  <!-- Production year & month controls kept for pipeline (we sync from visual sliders) -->
-  <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
-  <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
-  <div id="yearGroup"><label><input type="checkbox" data-group="year" value="__ALL__" checked>(All)</label></div>
-  <div id="monthGroup">
-    <label><input type="checkbox" data-group="month" value="__ALL__" checked>(All)</label>
-    <label><input type="checkbox" data-group="month" value="1">1</label><label><input type="checkbox" data-group="month" value="2">2</label><label><input type="checkbox" data-group="month" value="3">3</label><label><input type="checkbox" data-group="month" value="4">4</label><label><input type="checkbox" data-group="month" value="5">5</label><label><input type="checkbox" data-group="month" value="6">6</label><label><input type="checkbox" data-group="month" value="7">7</label><label><input type="checkbox" data-group="month" value="8">8</label><label><input type="checkbox" data-group="month" value="9">9</label><label><input type="checkbox" data-group="month" value="10">10</label><label><input type="checkbox" data-group="month" value="11">11</label><label><input type="checkbox" data-group="month" value="12">12</label>
-  </div>
-
-  <!-- Layer controls proxies -->
-  <input id="opacity" type="range" min="0.30" max="0.90" step="0.01" value="0.65">
-  <input type="checkbox" id="top10">
-</div>
+<!-- Hidden bridge inputs (pipeline compatibility) -->
+<select id="resolution" style="display:none">
+  <option value="r3">≈ 60 km</option>
+  <option value="r4" selected>≈ 22.6 km</option>
+  <option value="r5">≈ 8.6 km</option>
+  <option value="r6">≈ 3.2 km</option>
+</select>
+<select id="counttype" style="display:none">
+  <option value="weight" selected>At-sea mortality of observed strandings</option>
+  <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+  <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+  <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
+</select>
+<input id="opacity" type="range" min="0.30" max="0.90" step="0.01" value="0.65" style="display:none">
+<input id="top10" type="checkbox" style="display:none">
 
 <script>
-/* ====== MAP SETUP ====== */
-const map = L.map('map',{zoomSnap:0.25, worldCopyJump:true, zoomAnimation:true}).setView([-24,-45],5);
-
-/* Basemaps (open & free) */
-const basemaps = {
-  'Light':   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}),
-  'Dark':    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap, &copy; CARTO'}),
-  'Terrain': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap'}),
-  'Satellite': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap (satellite placeholder)'}) // replace when you have an actual satellite provider
+/* =================== MAP & BASEMAPS =================== */
+const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
+const BASEMAPS = {
+  Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }),
+  Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors &copy; CARTO' }),
+  Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{ attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)' }),
+  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
 };
-let baseLayer = basemaps['Light'].addTo(map);
-const legendBasemap = document.getElementById('legendBasemap');
+let baseLayer = null;
+function setBasemap(name){
+  const next = BASEMAPS[name] || BASEMAPS.Light;
+  if(baseLayer) map.removeLayer(baseLayer);
+  baseLayer = next.addTo(map);
+  const lb = document.getElementById('legendBasemap');
+  if(lb) lb.textContent = name;
+}
+setBasemap('Light');
+L.control.scale({ metric:true, imperial:false }).addTo(map);
 
-/* Scale bar */
-L.control.scale({metric:true, imperial:false, position:'bottomleft'}).addTo(map);
-
-/* ===== UI HELPERS ===== */
+/* =================== UTILS =================== */
 const $ = (id)=>document.getElementById(id);
-const toast = $('toast'), spinner=$('spinner');
+const toast=$('toast'), spinner=$('spinner');
+const bumpToast = (msg='Layer updated')=>{
+  toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1100);
+};
 const showSpinner=(m='Loading…')=>{ spinner.textContent=m; spinner.style.display='block'; };
 const hideSpinner=()=>{ spinner.style.display='none'; };
-const showToast=(m,ms=1800)=>{ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none',ms); };
-
-/* Theme toggle */
-const themeBtn = document.getElementById('themeBtn');
-const themeIcon = document.getElementById('themeIcon');
-themeBtn.addEventListener('click',()=>{
-  const dark = document.body.getAttribute('data-theme') === 'dark';
-  if(dark){ document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon'); }
-  else { document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun'); }
-  document.querySelectorAll('.seg').forEach(syncSegPill);
-});
-
-/* Rail tabs (visual only) */
-const drawer = document.getElementById('drawer');
-const railBtns=[...document.querySelectorAll('.rail-btn')];
-const panes=[...document.querySelectorAll('.tabpane')];
-railBtns.forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const tab = btn.dataset.tab;
-    railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-    panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
-  });
-});
-
-/* Basemap switching (does not touch data layer) */
-document.getElementById('basemapBtns').addEventListener('click',e=>{
-  const b = e.target.closest('button'); if(!b) return;
-  [...e.currentTarget.querySelectorAll('button')].forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  const name = b.dataset.map;
-  if(baseLayer) map.removeLayer(baseLayer);
-  baseLayer = basemaps[name].addTo(map);
-  if(legendBasemap) legendBasemap.textContent = name;
-});
-
-/* ----- Hidden proxies: group helpers ----- */
-function syncAllCheckbox(groupEl){
-  const boxes = Array.from(groupEl.querySelectorAll('input[type="checkbox"][data-group]'));
-  const allBox = boxes.find(b=>b.value==='__ALL__');
-  const selected = boxes.filter(b=>b.checked && b.value!=='__ALL__');
-  if (selected.length===0 && allBox && !allBox.checked) allBox.checked = true;
-  if (selected.length>0 && allBox && allBox.checked) allBox.checked = false;
-}
-
-/* Species chips -> proxy checkboxes */
-const speciesBox = $('speciesChips');
-const speciesAll = $('speciesAll');
-const speciesNone = $('speciesNone');
-speciesBox.addEventListener('click',e=>{
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  const section = $('speciesSection');
-  if(section.classList.contains('disabled')) return;
-  chip.classList.toggle('active');
-});
-speciesAll.addEventListener('click',()=>{ speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.add('active')); });
-speciesNone.addEventListener('click',()=>{ speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); });
-
-/* Taxonomic group show/hide species */
-const taxonSelect = $('taxonSelect');
-function updateTaxonVisibility(){
-  const v = taxonSelect.value;
-  const sec = $('speciesSection');
-  sec.style.display = (v==='turtles')? '' : 'none';
-}
-taxonSelect.addEventListener('change',updateTaxonVisibility);
-updateTaxonVisibility();
-
-/* Toggles for section enable/disable + reset visuals */
-document.querySelectorAll('.filter-toggle').forEach(label=>{
-  const toggle = label.querySelector('.toggle-input');
-  const section = label.closest('[data-filter-section]');
-  const content = section?.querySelector('.section-content');
-  const resetVisual = ()=>{
-    if(!content) return;
-    content.querySelectorAll('.btn.active,.chip.active').forEach(b=>b.classList.remove('active'));
-    content.querySelectorAll('input[type="radio"]').forEach(r=> r.checked=false);
-    if(section.dataset.filterSection==='layer'){
-      const sel=content.querySelector('select'); if(sel) sel.value='observed';
-      updateEstimationVisibility();
-    }
-    document.querySelectorAll('.seg').forEach(syncSegPill);
-  };
-  if(toggle && !toggle.checked){ content?.classList.add('disabled'); }
-  toggle?.addEventListener('change',()=>{
-    content?.classList.toggle('disabled',!toggle.checked);
-    if(!toggle.checked) resetVisual();
-  });
-});
-
-/* Grid size (feeds resolution proxy at Apply) */
-const gridSel = $('grid-size-selector');
-gridSel.addEventListener('click',e=>{
-  const btn = e.target.closest('button'); if(!btn) return;
-  [...gridSel.querySelectorAll('button')].forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-});
-
-/* Layer type segmented visibility */
-const layerSel = $('layer-type-select');
-const estimation = $('estimation-options');
-function syncSegPill(seg){
-  const radios=[...seg.querySelectorAll('input[type="radio"]')];
-  const labels=[...seg.querySelectorAll('label')];
-  const pill=seg.querySelector('.pill'); if(!pill) return;
-  const idx = radios.findIndex(r=>r.checked);
-  if(idx<0){ pill.style.opacity='0'; return; }
-  const lab = labels[idx];
-  const segRect=seg.getBoundingClientRect();
-  const labRect=lab.getBoundingClientRect();
-  const left = labRect.left - segRect.left;
-  const width = labRect.width;
-  pill.style.opacity='1';
-  pill.style.width = width + 'px';
-  pill.style.transform = `translateX(${left}px)`;
-}
-function updateEstimationVisibility(){
-  const on = layerSel.value==='estimation';
-  estimation.classList.toggle('disabled', !on);
-  syncSegPill(estimation);
-}
-layerSel.addEventListener('change',updateEstimationVisibility);
-document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()=> syncSegPill(seg)));
-document.querySelectorAll('.seg').forEach(syncSegPill);
-updateEstimationVisibility();
-
-/* Season buttons -> month slider preview */
-const seasons={ summer:[12,1,2], autumn:[3,4,5], winter:[6,7,8], spring:[9,10,11] };
-const seasonBox=document.getElementById('seasonBtns');
-seasonBox.addEventListener('click',e=>{
-  const btn=e.target.closest('.btn'); if(!btn || seasonBox.classList.contains('disabled')) return;
-  btn.classList.toggle('active');
-  const act=[...seasonBox.querySelectorAll('.btn.active')].map(b=> b.dataset.season);
-  if(act.length===0) return;
-  const months=[...new Set(act.flatMap(k=>seasons[k]))].sort((a,b)=>a-b);
-  const ms=Math.min(...months), me=Math.max(...months);
-  setMonthSliderBySpan(ms, me);
-});
-
-/* Year & Month visual sliders (values synced into proxies on Apply) */
-const YEAR_MIN_DEF=2015, YEAR_MAX_DEF=2025;
-const yWrap=$('yearWrap'), yHL=$('yHL'), yStart=$('yStart'), yEnd=$('yEnd'), yStartL=$('yStartL'), yEndL=$('yEndL');
-const mWrap=$('monthWrap'), mHL=$('mHL'), mStart=$('mStart'), mEnd=$('mEnd'), mStartL=$('mStartL'), mEndL=$('mEndL');
-let DATA_YEAR_MIN=YEAR_MIN_DEF, DATA_YEAR_MAX=YEAR_MAX_DEF;
-
-function monthLabel(m){ return new Date(2000,m-1).toLocaleString('en-US',{month:'short'}); }
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-
-function makeRange(wrap, hl, startHandle, endHandle, onUpdate, minVal, maxVal, steps){
-  if(!wrap || !hl || !startHandle || !endHandle) return;
-  function positions(){ const rect=wrap.getBoundingClientRect(); const W=rect.width-20; const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||W); return {W,s,e}; }
-  function draw(){ const {s,e}=positions(); hl.style.left=(s+10)+'px'; hl.style.width=(e-s)+'px'; onUpdate && onUpdate(); }
-  function drag(handle,isStart){
-    let active=false;
-    const move=(e)=>{ if(!active) return; e.preventDefault(); const rect=wrap.getBoundingClientRect(); const W=rect.width-20;
-      let x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left-10; x=clamp(x,0,W);
-      const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? W:'0'));
-      if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
-      handle.style.left=x+'px'; draw(); };
-    const up=()=>{ active=false; document.removeEventListener('mousemove',move); document.removeEventListener('touchmove',move); };
-    const down=()=>{ active=true; document.addEventListener('mousemove',move); document.addEventListener('touchmove',move,{passive:false}); };
-    handle.addEventListener('mousedown',down); handle.addEventListener('touchstart',down,{passive:true});
-    document.addEventListener('mouseup',up); document.addEventListener('touchend',up);
-    handle.addEventListener('keydown',(e)=>{ const {W}=positions(); const step=W/(steps-1); let x=parseFloat(handle.style.left||'0');
-      if(e.key==='ArrowLeft') x-=step; if(e.key==='ArrowRight') x+=step; x=clamp(x,0,W);
-      const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? W:'0'));
-      if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other; handle.style.left=x+'px'; draw(); });
-  }
-  function jumpTo(e){ if(e.target!==wrap) return; const rect=wrap.getBoundingClientRect(); const W=rect.width-20; let x=e.clientX-rect.left-10; x=clamp(x,0,W);
-    const s=parseFloat(startHandle.style.left||'0'); const en=parseFloat(endHandle.style.left||W);
-    const target=(Math.abs(x-s) < Math.abs(x-en)? startHandle : endHandle); target.style.left=x+'px'; draw(); }
-  wrap.addEventListener('mousedown',jumpTo);
-  const rect=wrap.getBoundingClientRect(); const W=rect.width-20; startHandle.style.left='0px'; endHandle.style.left=W+'px'; draw();
-  drag(startHandle,true); drag(endHandle,false);
-}
-
-function updateYearLabels(){
-  if(!yWrap) return;
-  const rect=yWrap.getBoundingClientRect(); const W=rect.width-20;
-  const s=clamp(parseFloat(yStart.style.left||'0'),0,W), e=clamp(parseFloat(yEnd.style.left||W),0,W);
-  const ys=Math.round(DATA_YEAR_MIN + (s/W)*(DATA_YEAR_MAX-DATA_YEAR_MIN));
-  const ye=Math.round(DATA_YEAR_MIN + (e/W)*(DATA_YEAR_MAX-DATA_YEAR_MIN));
-  yStartL.textContent=String(clamp(ys, DATA_YEAR_MIN, DATA_YEAR_MAX));
-  yEndL.textContent=String(clamp(ye, DATA_YEAR_MIN, DATA_YEAR_MAX));
-}
-function updateMonthLabels(){
-  if(!mWrap) return;
-  const rect=mWrap.getBoundingClientRect(); const W=rect.width-20;
-  const s=clamp(parseFloat(mStart.style.left||'0'),0,W), e=clamp(parseFloat(mEnd.style.left||W),0,W);
-  const ms=clamp(Math.round(1 + (s/W)*11),1,12);
-  const me=clamp(Math.round(1 + (e/W)*11),1,12);
-  mStartL.textContent=monthLabel(ms);
-  mEndL.textContent=monthLabel(me);
-}
-function setMonthSliderBySpan(ms, me){
-  const rect=mWrap.getBoundingClientRect(); const W=rect.width-20;
-  mStart.style.left=((ms-1)/11*W)+'px';
-  mEnd.style.left=((me-1)/11*W)+'px';
-  const s=parseFloat(mStart.style.left||'0'), en=parseFloat(mEnd.style.left||W);
-  mHL.style.left=(s+10)+'px'; mHL.style.width=(en - s)+'px'; updateMonthLabels();
-}
-makeRange(yWrap, yHL, yStart, yEnd, updateYearLabels, YEAR_MIN_DEF, YEAR_MAX_DEF, 11);
-makeRange(mWrap, mHL, mStart, mEnd, updateMonthLabels, 1, 12, 12);
-window.addEventListener('resize',()=>{ updateYearLabels(); updateMonthLabels(); document.querySelectorAll('.seg').forEach(syncSegPill); });
-
-/* ======== DATA PIPELINE (kept; minimal changes) ======== */
+window.addEventListener('error', hideSpinner);
+window.addEventListener('unhandledrejection', hideSpinner);
 
 /* Decoder shim */
 (function ensureDecoders(){
-  var VT = (window.VectorTile) ||
-           (window.vectorTile && window.vectorTile.VectorTile) ||
-           (window.mapbox_vector_tile && window.mapbox_vector_tile.VectorTile) || null;
-  var PBF = (window.Pbf) ||
-            (window.pbf && window.pbf.Pbf) || null;
+  var VT = (window.VectorTile) || (window.vectorTile&&window.vectorTile.VectorTile) || (window.mapbox_vector_tile&&window.mapbox_vector_tile.VectorTile) || null;
+  var PBF = (window.Pbf) || (window.pbf&&window.pbf.Pbf) || null;
   if (!window.VectorTile && VT) window.VectorTile = VT;
   if (!window.Pbf && PBF) window.Pbf = PBF;
-  window.__VT__ = VT || window.VectorTile || null;
-  window.__PBF__ = PBF || window.Pbf || null;
-  if (!window.__VT__ || !window.__PBF__) {
-    console.warn('Decoder globals missing:', (!window.__VT__?'vector-tile.js ':'') + (!window.__PBF__?'pbf.js':''));
-  }
 })();
 
 /* pmtiles fetch shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250812'; }
+function pmUrlWithBust(file){ return file + '?v=20250813b'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -841,31 +548,252 @@ window.fetch = async (input, init) => {
       const t  = await pm.getZxy(+z,+x,+y);
       if(!t || !t.data){ return new Response(null,{status:204}); }
       return new Response(t.data);
-    }catch(e){
-      console.warn('Tile fetch failed for', archive, z, x, y);
-      return new Response(null,{status:204});
-    }
+    }catch(e){ return new Response(null,{status:204}); }
   }
   return origFetch(input, init);
 };
 
-/* Utils */
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
-const clampNum=(v,a,b)=>Math.max(a,Math.min(b,v));
-function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
-function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
-function tileRangeForBounds(b,z){
-  const nw=b.getNorthWest(), se=b.getSouthEast();
-  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
-  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
-  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[minY,maxY]=[minY,maxY];
-  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
-  return {minX,maxX,minY,maxY};
+/* =================== UI (v15) =================== */
+const drawer = $('drawer');
+const panel = $('panel');
+const panes = [...document.querySelectorAll('.tabpane')];
+const railBtns = [...document.querySelectorAll('.rail-btn')];
+const applyBtn = $('applyBtn');
+const resetBtn = $('resetBtn');
+let dirty=false;
+function markDirty(){ if(!dirty){ dirty=true; applyBtn && applyBtn.removeAttribute('disabled'); } }
+
+function clearSection(sectionEl){
+  const content = sectionEl.querySelector('.section-content');
+  if(!content) return;
+  content.querySelectorAll('.btn, .chip').forEach(b=> b.classList.remove('active'));
+  content.querySelectorAll('input[type="radio"]').forEach(r=> r.checked=false);
+  const sel=content.querySelector('select');
+  if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
-const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+
+railBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab = btn.dataset.tab;
+    if(!tab) return;
+    const isSame = drawer.dataset.tab === tab && drawer.classList.contains('open');
+    const rect = btn.getBoundingClientRect();
+    const anchor = rect.top + rect.height/2;
+    if(panel) panel.style.setProperty('--anchorY', anchor+'px');
+    railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+    panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
+    drawer.dataset.tab = tab;
+    if(isSame){ drawer.classList.remove('open'); }
+    else {
+      drawer.classList.add('open');
+      requestAnimationFrame(()=>{ reflowSliders(); });
+    }
+  });
+});
+
+/* Theme toggle */
+const themeBtn = $('themeBtn'), themeIcon = $('themeIcon');
+themeBtn?.addEventListener('click',()=>{
+  const dark = document.body.getAttribute('data-theme') === 'dark';
+  if(dark){ document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon'); }
+  else { document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun'); }
+  document.querySelectorAll('.seg').forEach(syncSegPill);
+  setTimeout(()=> map.invalidateSize(), 80);
+});
+
+/* Section toggles: disable + clear selection visuals */
+document.querySelectorAll('.filter-toggle').forEach(label=>{
+  const toggle=label.querySelector('.toggle-input');
+  const section=label.closest('[data-filter-section]');
+  if(!section) return;
+  const content=section.querySelector('.section-content');
+  if(toggle && !toggle.checked){ content && content.classList.add('disabled'); }
+  toggle && toggle.addEventListener('change',()=>{
+    const on = toggle.checked;
+    content && content.classList.toggle('disabled',!on);
+    if(!on){ clearSection(section); }
+    markDirty();
+  });
+});
+
+/* Hex size selection -> #resolution */
+const gridSel = $('grid-size-selector');
+gridSel && gridSel.addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  [...gridSel.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const val = btn.dataset.val;
+  if(val){ $('resolution').value = val; }
+  markDirty();
+});
+
+/* Basemap buttons */
+const baseBox=$('basemapBtns');
+baseBox && baseBox.addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  [...baseBox.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  setBasemap(btn.dataset.map);
+  markDirty();
+});
+
+/* Map layer selection -> #counttype */
+const layerSel=$('layer-type-select');
+const estimation=$('estimation-options');
+function syncSegPill(seg){
+  const radios=[...seg.querySelectorAll('input[type="radio"]')];
+  const labels=[...seg.querySelectorAll('label')];
+  const pill=seg.querySelector('.pill');
+  if(!pill) return;
+  const idx=radios.findIndex(r=>r.checked);
+  if(idx<0){ pill.style.opacity='0'; return; }
+  const lab=labels[idx];
+  const segRect=seg.getBoundingClientRect();
+  const labRect=lab.getBoundingClientRect();
+  const left=labRect.left - segRect.left;
+  const width=labRect.width;
+  pill.style.opacity='1';
+  pill.style.width = width + 'px';
+  pill.style.transform = `translateX(${left}px)`;
+}
+function updateEstimationVisibility(){
+  const on = (layerSel?.value === 'estimation');
+  estimation?.classList.toggle('disabled', !on);
+  if(on) syncSegPill(estimation);
+}
+layerSel && layerSel.addEventListener('change',()=>{ updateEstimationVisibility(); markDirty(); });
+document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()=>{ syncSegPill(seg); markDirty(); }));
+document.querySelectorAll('.seg').forEach(syncSegPill);
+updateEstimationVisibility();
+
+/* Taxonomic group -> toggles species availability */
+const taxonChips = $('taxonChips');
+function syncSpeciesVisibility(){
+  const secSpecies = document.querySelector('[data-filter-section="species"] .section-content');
+  const hasSeaTurtles = !!(taxonChips && taxonChips.querySelector('.chip.active[data-group="Sea turtles"]'));
+  if(secSpecies){
+    secSpecies.classList.toggle('disabled', !hasSeaTurtles);
+    if(!hasSeaTurtles){
+      secSpecies.querySelectorAll('.chip').forEach(c=> c.classList.remove('active'));
+    } else {
+      secSpecies.querySelectorAll('.chip').forEach(c=> c.classList.add('active'));
+    }
+  }
+}
+taxonChips && taxonChips.addEventListener('click', e=>{
+  const btn=e.target.closest('.chip'); if(!btn) return;
+  btn.classList.toggle('active');
+  syncSpeciesVisibility();
+  markDirty();
+});
+syncSpeciesVisibility();
+
+/* Species chips */
+const speciesBox=$('speciesChips');
+const speciesAll=$('speciesAll');
+speciesBox && speciesBox.addEventListener('click',e=>{
+  const btn=e.target.closest('.chip'); if(!btn) return;
+  const secContent = speciesBox.closest('.section-content');
+  if(secContent && secContent.classList.contains('disabled')) return;
+  const activeCount=speciesBox.querySelectorAll('.chip.active').length;
+  if(btn.classList.contains('active') && activeCount<=1){ bumpToast('At least one species required'); return; }
+  btn.classList.toggle('active'); markDirty();
+});
+speciesAll && speciesAll.addEventListener('click',()=>{ speciesBox && speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.add('active')); markDirty(); });
+
+/* Bio multi-select chips */
+document.querySelectorAll('[data-button-group]').forEach(group=>{
+  group.addEventListener('click',e=>{
+    const btn=e.target.closest('.chip'); if(!btn || group.classList.contains('disabled')) return;
+    btn.classList.toggle('active'); markDirty();
+  });
+});
+
+/* Dual-range sliders (fractional, robust) */
+function makeRange(wrap, hl, startHandle, endHandle, onUpdate){
+  if(!wrap||!hl||!startHandle||!endHandle) return;
+  let W=0;
+  function calcW(){ const r=wrap.getBoundingClientRect(); W=Math.max(20,(r.width-20)||0); return W; }
+  function draw(){ calcW(); const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`); hl.style.left=(s+10)+'px'; hl.style.width=(e-s)+'px'; onUpdate && onUpdate(); }
+  function setFracs(sf,ef){ calcW(); sf=Math.max(0,Math.min(1,sf)); ef=Math.max(sf,Math.min(1,ef)); startHandle.style.left=(sf*W)+'px'; endHandle.style.left=(ef*W)+'px'; wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw(); }
+  function getFracs(){ calcW(); const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`); return {sf:(s/W)||0, ef:(e/W)||1}; }
+  function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
+  function attach(handle,isStart){
+    let active=false;
+    const move=(e)=>{ if(!active) return; e.preventDefault();
+      calcW(); let x=(e.touches?e.touches[0].clientX:e.clientX)-wrap.getBoundingClientRect().left-10;
+      x=clamp(x,0,W);
+      const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0'));
+      if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
+      handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
+    };
+    const up=()=>{ active=false; document.removeEventListener('mousemove',move); document.removeEventListener('touchmove',move); };
+    const down=()=>{ active=true; document.addEventListener('mousemove',move); document.addEventListener('touchmove',move,{passive:false}); };
+    handle.addEventListener('mousedown',down); handle.addEventListener('touchstart',down,{passive:true});
+    document.addEventListener('mouseup',up); document.addEventListener('touchend',up);
+    handle.addEventListener('keydown',(e)=>{
+      calcW(); const step=W/20; let x=parseFloat(handle.style.left||'0');
+      if(e.key==='ArrowLeft') x-=step; if(e.key==='ArrowRight') x+=step;
+      x=clamp(x,0,W);
+      const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0'));
+      if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
+      handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
+    });
+  }
+  wrap.addEventListener('mousedown',(e)=>{
+    if(e.target!==wrap) return;
+    calcW(); let x=e.clientX-wrap.getBoundingClientRect().left-10; x=clamp(x,0,W);
+    const s=parseFloat(startHandle.style.left||'0'); const en=parseFloat(endHandle.style.left||`${W}`);
+    const target=(Math.abs(x-s) < Math.abs(x-en)? startHandle : endHandle);
+    target.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
+  });
+  // Public reflow
+  wrap._reflow = ()=>{ const sf=parseFloat(wrap.dataset.startFrac||'0'); const ef=parseFloat(wrap.dataset.endFrac||'1'); setFracs(sf,ef); };
+  // Init
+  attach(startHandle,true); attach(endHandle,false); wrap._reflow();
+}
+const YEAR = {min:2015, max:2024};
+const yWrap=$('yearWrap'), yHL=$('yHL'), yStart=$('yStart'), yEnd=$('yEnd'), yStartL=$('yStartL'), yEndL=$('yEndL');
+function updateYearLabels(){
+  if(!yWrap) return;
+  const sf=parseFloat(yWrap.dataset.startFrac||'0'); const ef=parseFloat(yWrap.dataset.endFrac||'1');
+  const ys=Math.round(YEAR.min + sf*(YEAR.max-YEAR.min));
+  const ye=Math.round(YEAR.min + ef*(YEAR.max-YEAR.min));
+  yStartL.textContent=ys; yEndL.textContent=ye;
+}
+makeRange(yWrap,yHL,yStart,yEnd,updateYearLabels);
+
+const mWrap=$('monthWrap'), mHL=$('mHL'), mStart=$('mStart'), mEnd=$('mEnd'), mStartL=$('mStartL'), mEndL=$('mEndL');
+function monthLabel(m){ return new Date(2000,m-1).toLocaleString('en-US',{month:'short'}); }
+function updateMonthLabels(){
+  if(!mWrap) return;
+  const sf=parseFloat(mWrap.dataset.startFrac||'0'); const ef=parseFloat(mWrap.dataset.endFrac||'1');
+  const ms=Math.max(1,Math.min(12, Math.round(1 + sf*11)));
+  const me=Math.max(1,Math.min(12, Math.round(1 + ef*11)));
+  mStartL.textContent=monthLabel(ms); mEndL.textContent=monthLabel(me);
+}
+makeRange(mWrap,mHL,mStart,mEnd,updateMonthLabels);
+function reflowSliders(){ yWrap && yWrap._reflow && yWrap._reflow(); updateYearLabels(); mWrap && mWrap._reflow && mWrap._reflow(); updateMonthLabels(); }
+window.addEventListener('resize',()=>{ reflowSliders(); document.querySelectorAll('.seg').forEach(syncSegPill); });
+
+/* Seasons -> month slider union */
+const seasons={ summer:[12,1,2], autumn:[3,4,5], winter:[6,7,8], spring:[9,10,11] };
+const seasonBox=$('seasonBtns');
+seasonBox && seasonBox.addEventListener('click',e=>{
+  const btn=e.target.closest('.btn'); if(!btn || seasonBox.classList.contains('disabled')) return;
+  btn.classList.toggle('active');
+  const act=[...seasonBox.querySelectorAll('.btn.active')].map(b=> b.dataset.season);
+  if(act.length===0){ markDirty(); return; }
+  const months=[...new Set(act.flatMap(k=>seasons[k]))].sort((a,b)=>a-b);
+  const ms=Math.min(...months), me=Math.max(...months);
+  const sf=(ms-1)/11, ef=(me-1)/11;
+  mWrap.dataset.startFrac=sf; mWrap.dataset.endFrac=ef; reflowSliders(); markDirty();
+});
+
+/* =================== DATA PIPELINE =================== */
 function fileFor(res, ct){ return pmUrlWithBust(`hexgrid_${res}_${ct}.pmtiles`); }
 
-/* Color ramps */
+/* Color ramps per species */
 const ramps={
   'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
   'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
@@ -875,15 +803,15 @@ const ramps={
   'multi':['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15']
 };
 function currentRamp(){
-  const s = [...speciesBox.querySelectorAll('.chip.active')].map(b=>b.dataset.species);
-  return (s.length===1 && ramps[s[0]])? ramps[s[0]] : ramps['multi'];
+  const sp = getSpecies(); 
+  return (sp.length===1 && ramps[sp[0]])? ramps[sp[0]] : ramps['multi'];
 }
 
 /* Canonicalization */
 const canonMaps = {
   season:{ 'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter','autumn':'Autumn','spring':'Spring','summer':'Summer','winter':'Winter' },
-  sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','indefinido':'Unknown','unknown':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
-  stage:{ 'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','unknown':'Unknown' },
+  sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','undefined':'Unknown','indefinido':'Unknown','unknown':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
+  stage:{ 'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','indeterminate':'Unknown','unknown':'Unknown' },
   yesno:{ 'sim':'Yes','não':'No','nao':'No','yes':'Yes','no':'No' }
 };
 function toCanon(str,kind){
@@ -891,52 +819,42 @@ function toCanon(str,kind){
   const s = String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const map = canonMaps[kind]; return (map && map[s]) ? map[s] : (kind==='season'||kind==='sex'||kind==='stage' ? (s? s[0].toUpperCase()+s.slice(1):'Unknown') : String(str));
 }
-function canonYear(y){
-  if(y==null) return '';
-  const s=String(y).trim(); return s.endsWith('.0')? s.slice(0,-2) : s;
-}
-
-/* Proxies—read checked (from hidden checkboxes) */
-function getChecked(group){
-  const parent = ({
-    species:'speciesGroup', stage:'stageGroup', sex:'sexGroup', season:'seasonGroup',
-    Fishing:'humanGroup', Marine_Debris:'humanGroup', Aggression:'humanGroup',
-    Boat_collision:'humanGroup', Dredging:'humanGroup', Oil:'humanGroup', Petrol:'humanGroup',
-    decomposition_code:'decompGroup', year:'yearGroup', month:'monthGroup'
-  }[group]);
-  if(!parent) return [];
-  const boxes = Array.from($(parent).querySelectorAll(`input[type="checkbox"][data-group="${group}"]`));
-  const all = boxes.find(b=>b.value==='__ALL__');
-  const picked = boxes.filter(b=>b.checked && b.value!=='__ALL__').map(b=>b.value);
-  if(picked.length===0 && all && all.checked) return [];
-  return picked;
-}
+function canonYear(y){ if(y==null) return ''; const s=String(y).trim(); return s.endsWith('.0')? s.slice(0,-2) : s; }
 
 /* Capability probe */
+let header=null;
 async function capabilityProbe(pmFile, layerName){
-  const caps = { hasYear:false, hasMonth:false, hasSex:false, hasStage:false, hasSeason:false, hasUID:false, observedYears:new Set() };
+  const caps = { hasYear:false, observedYears:new Set(), hasMonth:false, hasSex:false, hasStage:false, hasSeason:false };
   try{
     const pm = await getPM(pmFile);
-    const hdr = await pm.getHeader();
-    const z = Math.min(Math.max(6,hdr.minZoom), hdr.maxZoom);
-    const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), z);
+    const hdr = header || await pm.getHeader();
+    const z = Math.max(6, hdr.minZoom);
+    const bounds = map.getBounds();
+    const {minX,maxX,minY,maxY} = (function(b,z){
+      function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+      function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+      const nw=b.getNorthWest(), se=b.getSouthEast();
+      let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+      let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+      if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+      const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+      return {minX,maxX,minY,maxY};
+    })(bounds,z);
     let checked=0;
-    for(let x=minX; x<=maxX && checked<4; x++){
-      for(let y=minY; y<=maxY && checked<4; y++){
-        const r = await pm.getZxy(z, wrapX(x,z), y);
+    for(let x=minX;x<=maxX && checked<5;x++){
+      for(let y=minY;y<=maxY && checked<5;y++){
+        const r = await pm.getZxy(z, ((x%Math.pow(2,z))+Math.pow(2,z))%Math.pow(2,z), y);
         if(!r || !r.data) continue;
-        const vt = new window.__VT__(new window.__PBF__(r.data));
+        const vt = new window.VectorTile(new window.Pbf(r.data));
         const lyr = vt.layers[layerName]; if(!lyr) continue;
-        const take = Math.min(lyr.length, 16);
+        const take = Math.min(lyr.length, 30);
         for(let i=0;i<take;i++){
           const p = lyr.feature(i).properties||{};
-          const cy=canonYear(p.year);
-          if('year' in p){ caps.hasYear=true; if(cy && +cy) caps.observedYears.add(+cy); }
+          if('year' in p){ caps.hasYear=true; const cy=+canonYear(p.year); if(cy) caps.observedYears.add(cy); }
           if('month' in p) caps.hasMonth=true;
-          if('sex' in p || 'Sexo' in p) caps.hasSex=true;
+          if('sex' in p) caps.hasSex=true;
           if('development_stage' in p) caps.hasStage=true;
           if('season' in p) caps.hasSeason=true;
-          if('turtle_id' in p) caps.hasUID=true;
         }
         checked++;
       }
@@ -945,49 +863,82 @@ async function capabilityProbe(pmFile, layerName){
   return caps;
 }
 
-/* Metric candidates (unchanged) */
-const metricCandidates = {
-  weight: ['weight','sum_val'],
-  new_weight: ['new_weight','sum_val'],
-  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
-  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
-  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
-};
-let metricField='sum_val';
-function lockMetricField(sampleList, ct){
-  const cands = metricCandidates[ct] || ['sum_val'];
-  for(const k of cands){
-    let finite=0;
-    for(const p of sampleList){ const v = Number(p[k]); if(Number.isFinite(v)) { finite++; if(finite>3){ metricField = k; return; } } }
-  }
-  metricField='sum_val';
+/* Selection helpers */
+function sectionEnabled(key){
+  const el = document.querySelector(`[data-filter-section="${key}"] .section-content`);
+  return el && !el.classList.contains('disabled');
+}
+function getSpecies(){
+  if(!sectionEnabled('species')) return [];
+  return [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> b.dataset.species);
+}
+function getBioSet(group){
+  if(!sectionEnabled(group)) return [];
+  return [...document.querySelectorAll(`[data-filter-section="${group}"] .section-content .chip.active`)].map(b=> b.dataset.val);
+}
+function getSeasons(){
+  if(!sectionEnabled('season')) return [];
+  return [...document.querySelectorAll('#seasonBtns .btn.active')].map(b=> b.dataset.season);
+}
+function getAnthRadio(name){
+  const box = document.querySelector(`[data-name="${name}"]`);
+  if(!box || box.classList.contains('disabled')) return null;
+  const r = box.querySelector('input:checked'); return r ? r.value : null;
+}
+function getYearRange(){
+  if(!sectionEnabled('year')) return null;
+  const ys = +$('yStartL').textContent; const ye = +$('yEndL').textContent;
+  const arr=[]; for(let y=ys;y<=ye;y++) arr.push(String(y));
+  return arr;
+}
+function getMonthRange(){
+  if(!sectionEnabled('month')) return null;
+  const mapMon={"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,"Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12};
+  const s = mapMon[$('mStartL').textContent]||1;
+  const e = mapMon[$('mEndL').textContent]||12;
+  const arr=[]; for(let m=s;m<=e;m++) arr.push(String(m));
+  return arr;
 }
 
-/* Filters -> predicate */
+/* Predicate construction */
 function readFilterSelections(caps){
   const sel = {
-    species: new Set(getChecked('species')),
-    development_stage: new Set(getChecked('stage')),
-    sex: new Set(getChecked('sex')),
-    season: new Set(getChecked('season')),
-    Fishing: new Set(getChecked('Fishing').map(v=>toCanon(v,'yesno'))),
-    Marine_Debris: new Set(getChecked('Marine_Debris').map(v=>toCanon(v,'yesno'))),
-    Aggression: new Set(getChecked('Aggression').map(v=>toCanon(v,'yesno'))),
-    Boat_collision: new Set(getChecked('Boat_collision').map(v=>toCanon(v,'yesno'))),
-    Dredging: new Set(getChecked('Dredging').map(v=>toCanon(v,'yesno'))),
-    Oil: new Set(getChecked('Oil').map(v=>toCanon(v,'yesno'))),
-    Petrol: new Set(getChecked('Petrol').map(v=>toCanon(v,'yesno'))),
-    decomposition_code: new Set(getChecked('decomposition_code')),
-    year: new Set(getChecked('year').map(canonYear)),
-    month: new Set(getChecked('month'))
+    species: new Set(getSpecies()),
+    development_stage: new Set(getBioSet('stage').map(v=> v==='Indeterminate' ? 'Unknown' : v)),
+    sex: new Set(getBioSet('sex').map(v=> v==='Undefined' ? 'Unknown' : v)),
+    season: new Set(getSeasons().map(s=> toCanon(s,'season'))),
+    decomposition_code: new Set(getBioSet('decomp')),
+    year: new Set(getYearRange() || []),
+    month: new Set(getMonthRange() || []),
+    Fishing: new Set(),
+    Marine_Debris: new Set(),
+    Aggression: new Set(),
+    Boat_collision: new Set(),
+    Dredging: new Set(),
+    Oil: new Set(),
+    Petrol: new Set()
   };
+
+  // Anthropogenic binaries
+  const mapBin = [['fish','Fishing'],['debris','Marine_Debris'],['boat','Boat_collision'],['dredge','Dredging'],['aggression','Aggression']];
+  mapBin.forEach(([name,key])=>{
+    const v = getAnthRadio(name);
+    if(v==='Yes'||v==='No') sel[key].add(v);
+  });
+  // Oil / petrol combined
+  const oilVal = getAnthRadio('oil');
+  if(oilVal==='Oil'){ sel.Oil.add('Yes'); }
+  else if(oilVal==='Petrol'){ sel.Petrol.add('Yes'); }
+  else if(oilVal==='None'){ sel.Oil.add('No'); sel.Petrol.add('No'); }
+
+  // Field availability guards
   const ignored=[];
   if(!caps.hasYear && sel.year.size){ sel.year.clear(); ignored.push('Year'); }
   if(!caps.hasMonth && sel.month.size){ sel.month.clear(); ignored.push('Month'); }
   if(!caps.hasSex && sel.sex.size){ sel.sex.clear(); ignored.push('Sex'); }
   if(!caps.hasStage && sel.development_stage.size){ sel.development_stage.clear(); ignored.push('Stage'); }
   if(!caps.hasSeason && sel.season.size){ sel.season.clear(); ignored.push('Season'); }
-  if(ignored.length) showToast(ignored.join(', ')+' filter ignored for this dataset (field missing).');
+  if(ignored.length) bumpToast(ignored.join(', ')+' ignored for this dataset');
   return sel;
 }
 function makePredicate(sel){
@@ -999,7 +950,7 @@ function makePredicate(sel){
     const season = toCanon(props.season,'season');
     const year = canonYear(props.year);
     const month = String(props.month||'').trim();
-    const human = {
+    const h = {
       Fishing: toCanon(props.Fishing,'yesno'),
       Marine_Debris: toCanon(props.Marine_Debris,'yesno'),
       Aggression: toCanon(props.Agression || props.Aggression,'yesno'),
@@ -1015,42 +966,59 @@ function makePredicate(sel){
       pass(sel.year, year) &&
       pass(sel.month, month) &&
       pass(sel.decomposition_code, String(props.decomposition_code||'')) &&
-      pass(sel.Fishing, human.Fishing) &&
-      pass(sel.Marine_Debris, human.Marine_Debris) &&
-      pass(sel.Aggression, human.Aggression) &&
-      pass(sel.Boat_collision, human.Boat_collision) &&
-      pass(sel.Dredging, human.Dredging) &&
-      pass(sel.Oil, human.Oil) &&
-      pass(sel.Petrol, human.Petrol);
+      pass(sel.Fishing, h.Fishing) &&
+      pass(sel.Marine_Debris, h.Marine_Debris) &&
+      pass(sel.Aggression, h.Aggression) &&
+      pass(sel.Boat_collision, h.Boat_collision) &&
+      pass(sel.Dredging, h.Dredging) &&
+      pass(sel.Oil, h.Oil) &&
+      pass(sel.Petrol, h.Petrol);
   };
 }
 
-/* Aggregation state */
-let vtLayer=null, lastGoodLayer=null;
-let layerName='', header=null;
-const aggByHex = new Map(); // h3 -> { sum, uids:Set, byUID: Map(uid->{sexCounts,stageCounts,seasonCounts,yearCounts,monthCounts}), rowCount }
-let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'], histogramCounts=[0,0,0,0,0], top10Threshold=null, isolatedBin=-1;
+/* Aggregation & breaks */
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
-/* Binning knobs — ensure floor >= 1 and slightly larger lowest bin */
-const JENKS_CLASSES=5;
-const WINSOR_TAIL=0.02;
-const FIRST_BIN_FLOOR=1.0;       // never below 1
-const FIRST_BIN_MAX_SHARE=0.60;  // keep more mass in first bin than default
-const FIRST_CUT_MIN_ADJ=0.65;    // allow a bit more widening
-const FIRST_CUT_STEP=0.05;
-const HYBRID_CUTS=[0.25,0.5,0.75,0.95];
-const TRANSFORM_MODE="log1p";
+let vtLayer=null;
+let currentSourceKey=null;
+let layerName='', metricField='sum_val';
+let aggByHex = new Map();
+let jenksBreaks=[0,1,2,3,4,5], activeRamp=['#fee','#fca','#fb6','#d22','#a10'], histogramCounts=[0,0,0,0,0], top10Threshold=null;
 
-/* Breaks helpers */
-function computeLegendCounts(values, breaks){
-  const counts=[0,0,0,0,0];
-  const n=breaks.length-1;
-  for(const v of values){
-    const idx = computeBinIndex(v, breaks);
-    if(idx>=0 && idx<n) counts[idx]++; 
+const metricCandidates = {
+  weight: ['weight','sum_val'],
+  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
+  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
+  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
+};
+function lockMetricField(sample, ct){
+  const cands = metricCandidates[ct] || ['sum_val'];
+  for(const k of cands){
+    let seen=0; for(const p of sample){ const v=Number(p[k]); if(Number.isFinite(v)) { seen++; if(seen>3){ metricField=k; return; } } }
   }
-  return counts;
+  metricField='sum_val';
 }
+
+/* Unique-per-individual counters inside each hex */
+function ensureSet(map, key){ let s=map.get(key); if(!s){ s=new Set(); map.set(key,s); } return s; }
+function addUidOncePerCategory(entry, uid, value, cat){
+  // prefer first non-Unknown; if we already stored a non-Unknown, keep it
+  const store = entry.uidChosen[cat];
+  const prev = store.get(uid);
+  const val = value || 'Unknown';
+  if(!prev){
+    store.set(uid, val);
+    ensureSet(entry.countSets[cat], val).add(uid);
+  }else{
+    if(prev==='Unknown' && val!=='Unknown'){
+      // move uid from Unknown -> val
+      ensureSet(entry.countSets[cat], 'Unknown').delete(uid);
+      store.set(uid, val);
+      ensureSet(entry.countSets[cat], val).add(uid);
+    }
+  }
+}
+
 function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
   const n = breaks.length-1; if(n<=0) return -1;
@@ -1063,152 +1031,139 @@ function computeBinIndex(v, breaks){
   }
   return -1;
 }
-function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, mode=TRANSFORM_MODE){
-  const arr = values.filter(v=>Number.isFinite(v)); if(arr.length<5) return null;
-  const sorted = arr.slice().sort((a,b)=>a-b);
-  const qLo = ss.quantileSorted(sorted, tail);
-  const qHi = ss.quantileSorted(sorted, 1-tail);
-  const w = sorted.map(v => clampNum(v, qLo, qHi)).sort((a,b)=>a-b);
-  const wt = w.map(v => mode==="log1p"? Math.log1p(Math.max(0,v)) : Math.sqrt(Math.max(0,v))).sort((a,b)=>a-b);
-  const probs = [0].concat(cuts, 1);
-  let edgesT = probs.map(p => ss.quantileSorted(wt, p));
-  const epsT = (edgesT[edgesT.length-1]-edgesT[0] || 1)*1e-9;
-  for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1] > edgesT[i])) edgesT[i+1] = edgesT[i] + epsT; }
-  let edges = edgesT.map(v => mode==="log1p"? Math.expm1(v) : v*v);
-  edges[0] = Math.max(FIRST_BIN_FLOOR, w[0]);     // enforce floor >= 1
-  edges[edges.length-1] = w[w.length-1];
-  const eps = (edges[edges.length-1]-edges[0] || 1)*1e-9;
-  for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1] > edges[i])) edges[i+1] = edges[i] + eps; }
-  return edges;
-}
-function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
-  let e = edges.slice().sort((a,b)=>a-b);
-  const rng = (maxVal - minVal) || 1;
-  const eps = rng * 1e-6;
-  e[0] = Math.max(Math.max(FIRST_BIN_FLOOR, e[0]), minVal);
-  e[e.length-1] = Math.min(e[e.length-1], maxVal);
-  for(let i=1;i<e.length;i++){
-    if(!(e[i] > e[i-1])) e[i] = Math.min(maxVal, e[i-1] + eps);
+function computeLegendCounts(values, breaks){
+  const counts=[0,0,0,0,0];
+  const n=breaks.length-1;
+  for(const v of values){
+    const idx = computeBinIndex(v, breaks);
+    if(idx>=0 && idx<n) counts[idx]++;
   }
-  while(e.length > k+1) e.splice(e.length-2,1);
-  while(e.length < k+1){
-    const i = e.length-1;
-    e.splice(i,0,(e[i-1]+e[i])/2);
-  }
-  return e;
-}
-function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=FIRST_BIN_FLOOR){
-  const v = values.filter(Number.isFinite); if(v.length<5) return null;
-  const s = v.slice().sort((a,b)=>a-b);
-  const qLo = ss.quantileSorted(s, tail);
-  const qHi = ss.quantileSorted(s, 1-tail);
-  const w = s.map(x=>clampNum(x,qLo,qHi));
-  const minVal = w[0], maxVal = w[w.length-1];
-
-  const lowerEdge = Math.max(floor, minVal); // always enforce floor
-  const edges = [lowerEdge];
-  let current = w.slice();
-
-  for(let i=1; i<k; i++){
-    if(current.length<2) break;
-    const mean = current.reduce((a,b)=>a+b,0)/current.length;
-    const prev = edges[edges.length-1];
-    let m = (mean > prev)? mean : prev + (maxVal - prev) * 0.25;
-    edges.push(m);
-    current = current.filter(x=>x>=m);
-  }
-  edges.push(maxVal);
-  let safe = ensureMonotonic(edges, minVal, maxVal, k);
-  return { edges: safe, firstFloorApplied: (lowerEdge>minVal) };
-}
-function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIRST_CUT_MIN_ADJ, step=FIRST_CUT_STEP){
-  const e = edges.slice();
-  if(e.length<3) return {edges:e, adjusted:false};
-  const min = e[0]; const orig = e[1];
-  let adj = 0.95;
-  while(adj >= minAdj){
-    e[1] = min + (orig - min) * adj;
-    const c = computeLegendCounts(values, e);
-    const share = c[0] / values.length;
-    if(share <= targetShare) return {edges:ensureMonotonic(e, e[0], e[e.length-1], e.length-1), adjusted:true};
-    adj -= step;
-  }
-  return {edges:ensureMonotonic(edges, edges[0], edges[edges.length-1], edges.length-1), adjusted:false};
+  return counts;
 }
 function p90(values){
   const s=values.slice().sort((a,b)=>a-b);
   const q=ss.quantileSorted(s,0.9);
   return Number.isFinite(q)? q : null;
 }
+function quantileBreaks(values){
+  const sorted=values.slice().sort((a,b)=>a-b);
+  return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+}
+/* Winsorized + log hybrid with heavier first bin and very tight top bin */
+function winsorizedLogHybridBreaks(values){
+  const tail=0.02; // winsorize 2% tails
+  // Heavier first bin (~40%), then 70%, 90%, with last 1.5–2% as top extreme
+  const cuts=[0.40,0.70,0.90,0.985];
+  const arr=values.filter(Number.isFinite); if(arr.length<5) return null;
+  const s=arr.slice().sort((a,b)=>a-b);
+  const qLo=ss.quantileSorted(s,tail), qHi=ss.quantileSorted(s,1-tail);
+  const w=s.map(v=>Math.max(qLo, Math.min(qHi, v))).sort((a,b)=>a-b);
+  const wt=w.map(v=>Math.log1p(Math.max(0,v))).sort((a,b)=>a-b);
+  const probs=[0].concat(cuts,1);
+  let edgesT=probs.map(p=> ss.quantileSorted(wt,p));
+  const epsT=(edgesT[edgesT.length-1]-edgesT[0]||1)*1e-9;
+  for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1]>edgesT[i])) edgesT[i+1]=edgesT[i]+epsT; }
+  let edges=edgesT.map(v=>Math.expm1(v));
+  edges[0]=w[0]; edges[edges.length-1]=w[w.length-1];
+  const eps=(edges[edges.length-1]-edges[0]||1)*1e-9;
+  for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1]>edges[i])) edges[i+1]=edges[i]+eps; }
+  return edges;
+}
 
-/* Aggregate viewport with per-UID tallies for hover (does not change heatmetric sums) */
+/* Tiles in view */
+function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
+function tileRangeForBounds(b,z){
+  const nw=b.getNorthWest(), se=b.getSouthEast();
+  let minX=lon2tile(nw.lng,z), maxX=lon2tile(se.lng,z);
+  let minY=lat2tile(nw.lat,z), maxY=lat2tile(se.lat,z);
+  if(maxX<minX)[minX,maxX]=[maxX,minX]; if(maxY<minY)[maxY,minY]=[minY,maxY];
+  const n=Math.pow(2,z); minY=Math.max(0,Math.min(n-1,minY)); maxY=Math.max(0,Math.min(n-1,maxY));
+  return {minX,maxX,minY,maxY};
+}
+const wrapX=(x,z)=>{const n=Math.pow(2,z);return((x%n)+n)%n;};
+
+async function detectLayerName(pmFile){
+  try{
+    const pm = await getPM(pmFile);
+    header = await pm.getHeader();
+    const md = await pm.getMetadata();
+    if (md && md.json){
+      const j = (typeof md.json==='string') ? JSON.parse(md.json) : md.json;
+      if (j && j.vector_layers){
+        if (Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
+        const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
+      }
+    }
+    const z = Math.max(6, header.minZoom);
+    const {minX,maxX,minY,maxY}=tileRangeForBounds(map.getBounds(), z);
+    for(let x=minX;x<=maxX;x++){
+      for(let y=minY;y<=maxY;y++){
+        const r = await pm.getZxy(z, wrapX(x,z), y);
+        if(!r || !r.data) continue;
+        const vt = new window.VectorTile(new window.Pbf(r.data));
+        const names = Object.keys(vt.layers||{}); if(names.length) return names[0];
+      }
+    }
+  }catch(e){}
+  return 'hexgrid';
+}
+
+/* Aggregate current viewport once (kept stable until Apply/Reset) */
 async function aggregateViewport(pmFile, layerName, predicate, ct){
-  aggByHex.clear();
+  aggByHex = new Map();
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
   const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
   const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
+  let sampleProps=[];
+  for(let x=minX;x<=maxX;x++){
+    for(let y=minY;y<=maxY;y++){
+      const resp = await pm.getZxy(zView, wrapX(x,zView), y);
+      if(!resp || !resp.data) continue;
+      const vt = new window.VectorTile(new window.Pbf(resp.data));
+      const lyr = vt.layers[layerName]; if(!lyr) continue;
+      for(let i=0;i<lyr.length;i++){
+        const f=lyr.feature(i); const props=f.properties||{};
+        if(sampleProps.length<50) sampleProps.push(props);
+        const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
+        if(!predicate(props)) continue;
 
-  let stride=1;
-  const tilesX=maxX-minX+1, tilesY=maxY-minY+1;
-  if(tilesX*tilesY>80){ const f=Math.ceil(Math.sqrt((tilesX*tilesY)/80)); stride=Math.max(1,f); }
+        // init hex entry
+        let entry = aggByHex.get(key);
+        if(!entry){
+          entry={
+            sum:0,
+            uids:new Set(),
+            rowCount:0,
+            uidChosen:{sex:new Map(), stage:new Map(), season:new Map()},
+            countSets:{sex:new Map(), stage:new Map(), season:new Map()}
+          };
+          aggByHex.set(key,entry);
+        }
 
-  let discovered=false, sampleProps=[];
-  async function scan(withStride){
-    const jobs=[];
-    outer:
-    for(let x=minX;x<=maxX;x+=withStride){
-      for(let y=minY;y<=maxY;y+=withStride){
-        jobs.push(pm.getZxy(zView, wrapX(x,zView), y).then(resp=>{
-          if(!resp || !resp.data) return;
-          const vt = new window.__VT__(new window.__PBF__(resp.data));
-          const lyr = vt.layers[layerName]; if(!lyr) return;
-          for(let i=0;i<lyr.length;i++){
-            const f=lyr.feature(i), p=f.properties||{};
-            if(sampleProps.length<40) sampleProps.push(p);
-            if(!discovered){ lockMetricField(sampleProps, ct); discovered=true; }
-            if(!predicate(p)) continue;
+        // metric sum (per row)
+        const val = Number(props[metricField]);
+        if(Number.isFinite(val)) entry.sum += val;
 
-            const key = p.h3_index ?? p.h3 ?? p.id; if(!key) continue;
-            const val = Number(p[metricField]);
-            const uid = (p.turtle_id!=null) ? String(p.turtle_id) :
-                        String(p.uid ?? p.individual_id ?? p.id ?? '');
+        // unique individual id
+        const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
+        if(uid) entry.uids.add(uid); else entry.rowCount++;
 
-            const sex = toCanon(p.sex,'sex');
-            const stage = toCanon(p.development_stage,'stage');
-            const season = toCanon(p.season,'season');
-            const year = canonYear(p.year);
-            const month = String(p.month||'').trim();
-
-            let entry = aggByHex.get(key);
-            if(!entry){
-              entry = { sum:0, uids:new Set(), byUID:new Map(), rowCount:0 };
-              aggByHex.set(key, entry);
-            }
-            if(Number.isFinite(val)) entry.sum += val;
-            if(uid) entry.uids.add(uid); else entry.rowCount++;
-
-            /* Per-UID tallies for hover ratios (count once per UID later) */
-            if(uid){
-              let rec = entry.byUID.get(uid);
-              if(!rec) { rec = { sexCounts:{}, stageCounts:{}, seasonCounts:{}, yearCounts:{}, monthCounts:{} }; entry.byUID.set(uid, rec); }
-              rec.sexCounts[sex] = (rec.sexCounts[sex]||0)+1;
-              rec.stageCounts[stage] = (rec.stageCounts[stage]||0)+1;
-              rec.seasonCounts[season] = (rec.seasonCounts[season]||0)+1;
-              if(year) rec.yearCounts[year] = (rec.yearCounts[year]||0)+1;
-              if(month) rec.monthCounts[month]=(rec.monthCounts[month]||0)+1;
-            }
-          }
-        }).catch(()=>{}));
-        if(aggByHex.size > 3000) break outer;
+        // unique-per-individual categories (first non-Unknown wins)
+        const ssex = toCanon(props.sex,'sex');
+        const sstage = toCanon(props.development_stage,'stage');
+        const sseason = toCanon(props.season,'season');
+        if(uid){
+          addUidOncePerCategory(entry, uid, ssex, 'sex');
+          addUidOncePerCategory(entry, uid, sstage, 'stage');
+          addUidOncePerCategory(entry, uid, sseason, 'season');
+        }
       }
     }
-    await Promise.all(jobs);
   }
-
-  await scan(stride);
-  if(aggByHex.size===0 && stride>1) await scan(1);
-  return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
+  lockMetricField(sampleProps, $('counttype').value);
+  return Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
 }
 
 /* Legend render */
@@ -1219,371 +1174,270 @@ function updateLegendFrozen(cfg){
   for(let i=0;i<n;i++){
     const a=brks[i], b=brks[i+1];
     const row=document.createElement('div'); row.className='legend-row';
-    const sw=document.createElement('div'); sw.className='legend-swatch'; sw.style.background=ramp[i];
-    sw.title=`${nf(a)} – ${nf(b)}`; sw.style.cursor='pointer';
-    sw.addEventListener('click',()=>{ isolatedBin = (isolatedBin===i ? -1 : i); if(vtLayer) vtLayer.redraw(); });
-    const lab=document.createElement('span');
-    if(i===0 && a<=FIRST_BIN_FLOOR) lab.textContent = `≤ ${nf(b)}`;
-    else lab.textContent = `${nf(a)} – ${nf(b)}`;
-    row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
+    const sw=document.createElement('div'); sw.className='legend-swatch'; sw.style.background = ramp[i];
+    const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
+    row.appendChild(sw); row.appendChild(lab);
+    rows.appendChild(row);
   }
+  const hist=$('histogram'); hist.innerHTML='';
+  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
 }
 
-/* Mode helper */
-function topMode(countsObj, numeric=false){
-  let bestKey=null, bestCnt=-1;
-  for(const k in countsObj){
-    const cnt=countsObj[k];
-    if(cnt>bestCnt) { bestCnt=cnt; bestKey=k; }
-    else if(cnt===bestCnt){ if(numeric){ if(+k > +bestKey) bestKey=k; } else { if(String(k) > String(bestKey)) bestKey=k; } }
-  }
-  return { key:bestKey, count:bestCnt };
-}
-
-/* Build layer (only on Apply / explicit changes; not on zoom) */
-let cachedCap=null;
+/* Build / update layer (kept stable after) */
+let styleConfig = null;
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
   try{
-    /* Map layer + resolution from visual UI -> production fields */
-    const gridBtn = document.querySelector('#grid-size-selector .btn.active');
-    const res = gridBtn ? gridBtn.dataset.val : 'r4'; // default r4 as requested
-
-    const layerType = $('layer-type-select').value;
-    let ct = 'weight'; // default for observed
-    if(layerType==='estimation'){
-      const est = document.querySelector('#estimation-options input:checked')?.value || 'Mean';
-      ct = (est==='Low')? 'new_mortality_est_bf_low' : (est==='High'? 'new_mortality_est_bf_high' : 'new_mortality_est_bf_mean');
-    } else {
-      ct = 'weight'; // At-sea mortality of observed strandings
-    }
-
+    const res=$('resolution').value, ct=$('counttype').value;
     const pmFile = fileFor(res, ct);
-    layerName = await (async ()=>{
-      try{
-        const pm = await getPM(pmFile); header = await pm.getHeader();
-        const md = await pm.getMetadata();
-        if(md && md.json){
-          const j = (typeof md.json==='string')? JSON.parse(md.json) : md.json;
-          if(j && j.vector_layers){
-            if(Array.isArray(j.vector_layers) && j.vector_layers.length) return j.vector_layers[0].id || 'hexgrid';
-            const keys = Object.keys(j.vector_layers); if(keys.length) return keys[0];
-          }
-        }
-      }catch(e){}
-      return 'hexgrid';
-    })();
+    const sourceKey = `${pmFile}`;
 
-    cachedCap = await capabilityProbe(pmFile, layerName);
-    /* Sync dataset year bounds to slider labels (for clamping) */
-    const years = Array.from(cachedCap.observedYears.values()).sort((a,b)=>a-b);
-    DATA_YEAR_MIN = years.length? years[0] : YEAR_MIN_DEF;
-    DATA_YEAR_MAX = years.length? years[years.length-1] : (YEAR_MAX_DEF-1);
-    updateYearLabels();
-
-    /* Push VISUAL selections into hidden proxy checkboxes so pipeline keeps working */
-    // Species
-    const selSpecies = [...speciesBox.querySelectorAll('.chip.active')].map(b=>b.dataset.species);
-    const sg = $('speciesGroup'); sg.querySelectorAll('input[data-group="species"]').forEach(cb=>{
-      if(cb.value==='__ALL__') cb.checked = selSpecies.length===0;
-      else cb.checked = selSpecies.includes(cb.value);
-    });
-    syncAllCheckbox(sg);
-
-    // Sex (bio tab chips)
-    const sexSel = [...document.querySelectorAll('[data-button-group="sex"] .chip.active')].map(b=>b.dataset.val);
-    const sexG = $('sexGroup'); sexG.querySelectorAll('input[data-group="sex"]').forEach(cb=>{
-      if(cb.value==='__ALL__') cb.checked = sexSel.length===0;
-      else cb.checked = sexSel.includes(cb.value);
-    }); syncAllCheckbox(sexG);
-
-    // Stage
-    const stSel = [...document.querySelectorAll('[data-button-group="stage"] .chip.active')].map(b=>b.dataset.val);
-    const stG = $('stageGroup'); stG.querySelectorAll('input[data-group="stage"]').forEach(cb=>{
-      if(cb.value==='__ALL__') cb.checked = stSel.length===0;
-      else cb.checked = stSel.includes(cb.value);
-    }); syncAllCheckbox(stG);
-
-    // Decomp
-    const dSel = [...document.querySelectorAll('[data-button-group="decomp"] .chip.active')].map(b=>b.dataset.val);
-    const dG = $('decompGroup'); dG.querySelectorAll('input[data-group="decomposition_code"]').forEach(cb=>{
-      if(cb.value==='__ALL__') cb.checked = dSel.length===0;
-      else cb.checked = dSel.includes(cb.value);
-    }); syncAllCheckbox(dG);
-
-    // Seasons (visual pills) -> seasonGroup
-    const sSel = [...document.querySelectorAll('#seasonBtns .btn.active')].map(b=>({
-      summer:'Summer', autumn:'Autumn', winter:'Winter', spring:'Spring'
-    }[b.dataset.season]));
-    const seG=$('seasonGroup'); seG.querySelectorAll('input[data-group="season"]').forEach(cb=>{
-      if(cb.value==='__ALL__') cb.checked = sSel.length===0;
-      else cb.checked = sSel.includes(cb.value);
-    }); syncAllCheckbox(seG);
-
-    // Year range visual -> proxy yearMin/yearMax sliders (and yearGroup is populated dynamically later)
-    const yMin = parseInt(yStartL.textContent,10);
-    const yMax = parseInt(yEndL.textContent,10);
-    $('yearMin').value = clampNum(yMin, DATA_YEAR_MIN, DATA_YEAR_MAX);
-    $('yearMax').value = clampNum(yMax, DATA_YEAR_MIN, DATA_YEAR_MAX);
-
-    // Months visual -> monthGroup (span)
-    function monthFromLabel(lbl){
-      return new Date(Date.parse(lbl +' 1, 2000')).getMonth()+1;
+    if(!layerName || currentSourceKey!==sourceKey){
+      layerName = await detectLayerName(pmFile);
+      currentSourceKey = sourceKey;
     }
-    const ms = monthFromLabel(mStartL.textContent);
-    const me = monthFromLabel(mEndL.textContent);
-    const mg=$('monthGroup'); mg.querySelectorAll('input[data-group="month"]').forEach(cb=>{
-      if(cb.value==='__ALL__') cb.checked = (ms===1 && me===12);
-      else{
-        const v = +cb.value;
-        cb.checked = v>=ms && v<=me;
-      }
-    }); syncAllCheckbox(mg);
+    const caps = await capabilityProbe(pmFile, layerName);
 
-    /* Read selections into predicate */
-    const sel = readFilterSelections(cachedCap);
+    // Sync year domain
+    const years = Array.from(caps.observedYears.values()).sort((a,b)=>a-b);
+    if(years.length){
+      YEAR.min = years[0]; YEAR.max = years[years.length-1];
+      $('yStartL').textContent=YEAR.min; $('yEndL').textContent=YEAR.max;
+      yWrap.dataset.startFrac = Math.max(0,Math.min(1, parseFloat(yWrap.dataset.startFrac||'0')));
+      yWrap.dataset.endFrac   = Math.max(parseFloat(yWrap.dataset.startFrac), Math.min(1, parseFloat(yWrap.dataset.endFrac||'1')));
+      reflowSliders();
+    }
+
+    const sel = readFilterSelections(caps);
     const predicate = makePredicate(sel);
 
     const values = await aggregateViewport(pmFile, layerName, predicate, ct);
-    if(!values || values.length===0){
-      showToast('No data in view—zoom out or change filters.');
-      hideSpinner();
-      return;
-    }
+    if(!values || values.length===0){ bumpToast('No data in view'); hideSpinner(); return; }
 
-    // Breaks: winsorized head/tail with enforced floor >= 1, then gentle widening of first cut
-    let ht = headTailWinsorBreaks(values, JENKS_CLASSES, WINSOR_TAIL, FIRST_BIN_FLOOR);
-    let brks = ht ? ht.edges : null;
-    if(!brks){
-      brks = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE);
-    }
-    if(brks){
-      const tuned = tuneFirstCut(brks, values, FIRST_BIN_MAX_SHARE, FIRST_CUT_MIN_ADJ, FIRST_CUT_STEP);
-      brks = tuned.edges;
-      const realMax = Math.max(...values);
-      if(Number.isFinite(realMax)) brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
-    }
+    // Breaks (winsorized + log hybrid, heavier first bin, tight top)
+    let brks = winsorizedLogHybridBreaks(values) || quantileBreaks(values);
+    const realMax = Math.max(...values);
+    if(brks && brks.length) brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
 
     activeRamp = currentRamp();
     jenksBreaks = brks.slice();
     histogramCounts = computeLegendCounts(values, brks);
     top10Threshold = p90(values);
 
-    const cfg = Object.freeze({
-      breaks: brks.slice(),
+    styleConfig = {
+      breaks: jenksBreaks.slice(),
       ramp: activeRamp.slice(),
-      opacity: parseFloat($('opacity').value),
-      highlightTop10: $('top10').checked,
-      top10Threshold
-    });
+      opacity: parseFloat($('opacity').value)
+    };
 
-    if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
-
-    /* VectorGrid — slight simplification for perf */
-    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-      rendererFactory: L.canvas.tile,
-      interactive:true,
-      extent:4096,
-      buffer:24,         // a bit smaller than default 64
-      tolerance:5,       // more simplification
-      vectorTileLayerStyles: {
-        [layerName]: (props)=>{
-          const key = props.h3_index || props.h3 || props.id;
-          const agg = key ? aggByHex.get(key) : undefined;
-          const v = agg ? agg.sum : undefined;
-          if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
-          const idx = computeBinIndex(v, cfg.breaks);
-          if(isolatedBin>=0 && idx!==isolatedBin) return {opacity:0, fillOpacity:0, interactive:false};
-          const color = cfg.ramp[Math.min(Math.max(idx,0), cfg.ramp.length-1)];
-          let fillOpacity = cfg.opacity;
-          let weight = 0.4, strokeColor = color;
-          if(cfg.highlightTop10 && cfg.top10Threshold!=null && v>=cfg.top10Threshold){
-            weight = 1.0; fillOpacity = Math.min(1, cfg.opacity + 0.08);
-          }
-          return {fill:true, fillColor:color, fillOpacity, color:strokeColor, weight};
-        }
-      },
-      getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id),
-      updateWhenZooming:false, updateWhenIdle:true
-    });
-
-    // Hover popup (per-UID ratios)
-    let locked=false;
-    function percentPartsFromUID(byUID, fieldKey){
-      const totals={}; let known=0, unknown=0;
-      for(const [uid, rec] of byUID.entries()){
-        const c = rec[fieldKey]; // e.g., sexCounts
-        // pick mode excluding Unknown when possible
-        let best=null, bestCnt=-1;
-        for(const k in c){
-          const cnt=c[k];
-          if(k==='Unknown') continue;
-          if(cnt>bestCnt){ bestCnt=cnt; best=k; }
-        }
-        if(best==null){
-          if(c['Unknown']>0) unknown++;
-          continue;
-        }
-        known++;
-        totals[best] = (totals[best]||0)+1;
-      }
-      return {totals, known, unknown};
-    }
-    function labelPerc(totals, known, a, b, cName){
-      if(!known) return '—';
-      const pa = ((totals[a]||0)/known*100).toFixed(1);
-      const pb = ((totals[b]||0)/known*100).toFixed(1);
-      if(cName){ const pc = ((totals[cName]||0)/known*100).toFixed(1); return `${pa}% ${a[0]} · ${pb}% ${b[0]} · ${pc}% ${cName[0]}`; }
-      return `${pa}% ${a[0]} · ${pb}% ${b[0]}`;
-    }
-    function topFromUID(byUID, fieldKey, numeric=false){
-      const tally={};
-      for(const [, rec] of byUID.entries()){
-        const c = rec[fieldKey];
-        const {key} = topMode(c, numeric);
-        if(!key) continue;
-        tally[key] = (tally[key]||0)+1;
-      }
-      return topMode(tally, numeric);
+    if(!vtLayer || currentSourceKey!==vtLayer.__src){
+      if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+      vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+        rendererFactory: L.canvas.tile,
+        interactive:true,
+        vectorTileLayerStyles: { [layerName]: styleFn },
+        getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+      }).addTo(map);
+      vtLayer.__src = currentSourceKey;
+      attachHover(vtLayer);
+    } else {
+      vtLayer.redraw(); // same instance, no rebuild
     }
 
-    function showPopup(e){
-      const p = e.layer?.properties || {};
-      const key = p.h3_index || p.h3 || p.id;
-      const agg = key ? aggByHex.get(key) : undefined;
-      const sum = agg ? agg.sum : undefined;
-
-      const uidCount = agg ? agg.uids.size : 0;
-      const byUID = agg ? agg.byUID : new Map();
-
-      const sexParts = percentPartsFromUID(byUID, 'sexCounts');
-      const stageParts = percentPartsFromUID(byUID, 'stageCounts');
-      const seasonParts = percentPartsFromUID(byUID, 'seasonCounts');
-      const topYear = topFromUID(byUID, 'yearCounts', true);
-      const topMonth = topFromUID(byUID, 'monthCounts', true);
-
-      const spSel = [...speciesBox.querySelectorAll('.chip.active')].map(b=>b.dataset.species);
-      const spLabel = (spSel.length===1)? spSel[0] : (spSel.length>1? 'Mixed' : 'All species');
-
-      const html = `
-      <div style="min-width:260px">
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Species</b><span>${spLabel}</span></div>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Sum (${metricField})</b><span>${Number.isFinite(sum)? nf(sum) : '-'}</span></div>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Unique turtle IDs</b><span>${nf(uidCount)}</span></div>
-        <hr/>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Sex</b>
-          <span>${sexParts.known? labelPerc(sexParts.totals, sexParts.known, 'Female','Male') : '—'}${sexParts.unknown? ` · Unknown ${nf(sexParts.unknown)}`:''}</span></div>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Stage</b>
-          <span>${stageParts.known? labelPerc(stageParts.totals, stageParts.known, 'Adult','Juvenile','Hatchling') : '—'}${stageParts.unknown? ` · Unknown ${nf(stageParts.unknown)}`:''}</span></div>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Season</b>
-          <span>${seasonParts.known? labelPerc(seasonParts.totals, seasonParts.known, 'Summer','Spring','Autumn') : '—'}${seasonParts.unknown? ` · Unknown ${nf(seasonParts.unknown)}`:''}</span></div>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Top year</b><span>${topYear.key ?? '—'}${topYear.count!=null? ` (${nf(topYear.count)})`:''}</span></div>
-        <div class="kv" style="display:flex;justify-content:space-between;gap:10px"><b>Top month</b><span>${topMonth.key ?? '—'}${topMonth.count!=null? ` (${nf(topMonth.count)})`:''}</span></div>
-        <hr/><small class="muted">h3: ${key ?? '-'}</small>
-      </div>`;
-      L.popup({autoPan:true,offset:[0,-8]}).setLatLng(e.latlng).setContent(html).openOn(map);
-    }
-    vtLayer.on('mouseover', e=>{ if(!locked) showPopup(e); });
-    vtLayer.on('click', e=>{ locked=true; showPopup(e); });
-    map.on('click', ()=>{ locked=false; map.closePopup(); });
-    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ locked=false; map.closePopup(); } });
-
-    vtLayer.addTo(map);
-    lastGoodLayer = vtLayer;
-
-    updateLegendFrozen({ breaks: cfg.breaks, ramp: cfg.ramp });
-
-    hideSpinner();
-    showToast('Layer updated', 1200);
-
-    updateSummary();
-  }catch(err){
-    console.error(err);
-    hideSpinner();
-    showToast('Failed to load layer. See console.');
-  }
+    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
+    bumpToast('Layer updated');
+  }catch(e){
+    console.error(e); bumpToast('Failed to load layer');
+  }finally{ hideSpinner(); dirty=false; applyBtn && applyBtn.setAttribute('disabled',''); }
 }
 
-/* Summary (rail) */
+function styleFn(props){
+  const key = props.h3_index || props.h3 || props.id;
+  const agg = key ? aggByHex.get(key) : undefined;
+  const v = agg ? agg.sum : undefined;
+  if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
+  const idx = computeBinIndex(v, styleConfig.breaks);
+  const color = styleConfig.ramp[Math.min(Math.max(idx,0), styleConfig.ramp.length-1)];
+  return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
+}
+
+/* Hover info — unique individuals */
+let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
+function attachHover(vtg){
+  vtg.on('mouseover', showHover);
+  vtg.on('mousemove', showHover);
+  vtg.on('mouseout', ()=> map.closePopup(hoverPopup));
+}
+function objCountsFromSets(mapOfSets){
+  const out={};
+  for(const [k,set] of mapOfSets.entries()){ out[k]=set.size; }
+  return out;
+}
+function showHover(e){
+  const p = e.layer && e.layer.properties || {};
+  const key = p.h3_index || p.h3 || p.id;
+  const agg = key ? aggByHex.get(key) : null;
+  if(!agg){ map.closePopup(hoverPopup); return; }
+  const v = agg.sum;
+  const sex = objCountsFromSets(agg.countSets.sex);
+  const stage = objCountsFromSets(agg.countSets.stage);
+  const season = objCountsFromSets(agg.countSets.season);
+  const html = `
+    <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
+    <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || 0}</div>
+    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+  `;
+  hoverPopup.setLatLng(e.latlng).setContent(html);
+  if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
+}
+
+/* Scale label in legend (shows ≈ km) */
+function updateScaleLabel(){
+  const line = $('scaleLine'), lab=$('scaleLabel');
+  if(!line||!lab) return;
+  const px = 120;
+  const size = map.getSize();
+  const centerPx = L.point(size.x/2, size.y/2);
+  const p1 = map.containerPointToLatLng(centerPx);
+  const p2 = map.containerPointToLatLng(centerPx.add([px,0]));
+  const meters = map.distance(p1,p2);
+  const km = meters/1000;
+  const pow = Math.pow(10, Math.floor(Math.log10(km||1)));
+  const mant = km/pow;
+  const niceMant = mant<1.5?1:mant<3?2:mant<7?5:10;
+  const niceKm = niceMant*pow;
+  const nicePx = px*(niceKm/km);
+  line.style.width = `${Math.max(40, Math.min(200, nicePx))}px`;
+  lab.textContent = `≈ ${nf(niceKm)} km`;
+}
+map.on('zoomend moveend resize', updateScaleLabel);
+updateScaleLabel();
+
+/* =================== APPLY, RESET & SUMMARY =================== */
+function getText(el){ return el?.textContent?.trim() || ''; }
+function abbrSpecies(name){ const [g,s]=name.split(' '); return (g&&s)? `${g[0]}. ${s}` : name; }
+
+function collectFilters(){
+  const out={};
+  // grid
+  const gbtn = document.querySelector('#grid-size-selector .btn.active');
+  out.grid = gbtn ? getText(gbtn.querySelector('.hex-label')) : null;
+  // basemap
+  const baseBtn = document.querySelector('#basemapBtns .btn.active'); out.basemap = getText(baseBtn);
+  // layer
+  const lv = layerSel?.value;
+  if(lv==='observed') out.layer='At-sea mortality of observed strandings';
+  else{
+    const r=document.querySelector('#estimation-options input:checked');
+    out.layer = `Mortality estimation${r? ' — '+r.value : ''}`;
+  }
+  // species
+  if(sectionEnabled('species')){
+    out.species = [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> getText(b));
+  }
+  // bio
+  ['sex','stage','decomp'].forEach(k=>{
+    if(sectionEnabled(k)){
+      out[k] = [...document.querySelectorAll(`[data-filter-section="${k}"] .chip.active`)].map(b=> getText(b));
+    }
+  });
+  // anth
+  [['fish','Fishing'],['debris','Debris'],['boat','Boat'],['dredge','Dredge'],['aggression','Aggression']].forEach(([n,lab])=>{
+    const v = getAnthRadio(n); if(v) out[lab]=v;
+  });
+  const oil = getAnthRadio('oil'); if(oil) out.OilPetrol = oil;
+  // time
+  if(sectionEnabled('year')) out.year = [$('yStartL').textContent, $('yEndL').textContent];
+  if(sectionEnabled('month')) out.month = [$('mStartL').textContent, $('mEndL').textContent];
+  if(sectionEnabled('season')) out.seasons = getSeasons();
+  return out;
+}
+
 function updateSummary(){
+  const f=collectFilters();
   const rows=[];
-  // Layer
-  const layerType = $('layer-type-select').value;
-  if(layerType==='observed') rows.push(`Layer: At-sea mortality of observed strandings`);
-  else {
-    const est = document.querySelector('#estimation-options input:checked')?.value || 'Mean';
-    rows.push(`Layer: Mortality estimation — ${est}`);
+  if(f.layer) rows.push(`Layer: ${f.layer}`);
+  if(f.grid) rows.push(`Cell size: ${f.grid}`);
+  if(Array.isArray(f.species)){
+    const allNames=["Caretta caretta","Chelonia mydas","Dermochelys coriacea","Eretmochelys imbricata","Lepidochelys olivacea"];
+    const allSelected = f.species.length === allNames.length;
+    if(allSelected) rows.push('Species: All species');
+    else if(f.species.length){ rows.push('Species: ' + f.species.map(abbrSpecies).join(', ')); }
   }
-  // Grid
-  const gridBtn = document.querySelector('#grid-size-selector .btn.active');
-  if(gridBtn) rows.push(`Cell size: ${gridBtn.querySelector('.hex-label').textContent}`);
-  // Basemap
-  const baseBtn=document.querySelector('#basemapBtns .btn.active'); if(baseBtn) rows.push(`Basemap: ${baseBtn.textContent.trim()}`);
-
-  // Taxon
-  const taxon = $('taxonSelect').value;
-  rows.push(`Taxon: ${taxon==='turtles'?'Sea turtles':taxon==='mammals'?'Marine mammals':'Seabirds'}`);
-
-  // Species
-  if(taxon==='turtles'){
-    const sp=[...speciesBox.querySelectorAll('.chip.active')].map(b=>b.textContent.trim());
-    if(sp.length===0) rows.push('Species: (none)');
-    else if(sp.length===5) rows.push('Species: All sea turtles');
-    else rows.push('Species: ' + sp.join(', '));
-  }
-
-  // Year
-  const y1=$('yStartL').textContent, y2=$('yEndL').textContent;
-  const ySec = document.querySelector('[data-filter-section="year"] .section-content');
-  if(ySec && !ySec.classList.contains('disabled')) rows.push(`Year: ${y1}–${y2}`);
-
-  // Month
-  const ms=$('mStartL').textContent, me=$('mEndL').textContent;
-  const mSec = document.querySelector('[data-filter-section="month"] .section-content');
-  if(mSec && !mSec.classList.contains('disabled')) rows.push(`Month: ${ms}–${me}`);
-
-  // Seasons (visual)
-  const seasonsAct = [...document.querySelectorAll('#seasonBtns .btn.active')].map(b=>b.dataset.season);
-  const sSec = document.querySelector('[data-filter-section="season"] .section-content');
-  if(sSec && !sSec.classList.contains('disabled') && seasonsAct.length) rows.push('Seasons: ' + seasonsAct.join(', '));
-
-  const railSummary = $('railSummary');
-  railSummary.innerHTML = rows.map(r=>`<li>${r}</li>`).join('');
+  if(f.sex?.length) rows.push(`Sex: ${f.sex.join(', ')}`);
+  if(f.stage?.length) rows.push(`Stage: ${f.stage.join(', ')}`);
+  if(f.decomp?.length) rows.push(`Decomp: ${f.decomp.join(', ')}`);
+  if(f.Fishing) rows.push(`Fishing: ${f.Fishing}`);
+  if(f.Debris) rows.push(`Debris: ${f.Debris}`);
+  if(f.Boat) rows.push(`Boat: ${f.Boat}`);
+  if(f.Dredge) rows.push(`Dredge: ${f.Dredge}`);
+  if(f.Aggression) rows.push(`Aggression: ${f.Aggression}`);
+  if(f.OilPetrol) rows.push(`Oil/Petrol: ${f.OilPetrol}`);
+  if(f.year) rows.push(`Year: ${f.year[0]}–${f.year[1]}`);
+  if(f.month) rows.push(`Month: ${f.month[0]}–${f.month[1]}`);
+  if(f.seasons?.length) rows.push(`Seasons: ${f.seasons.join(', ')}`);
+  const rs=$('railSummary'); if(rs) rs.innerHTML = rows.map(r=>`<li>${r}</li>`).join('');
+  const legendBasemap=$('legendBasemap'); if(legendBasemap && f.basemap) legendBasemap.textContent = f.basemap;
 }
 
-/* Apply / Reset */
-$('applyBtn').addEventListener('click',()=>{ buildLayer(); $('applyBtn').setAttribute('disabled',''); });
-$('resetBtn').addEventListener('click',()=>{
-  // Reset visual selections to defaults
-  document.querySelectorAll('.btn.active,.chip.active').forEach(b=>b.classList.remove('active'));
-  document.querySelector('#grid-size-selector [data-val="r4"]').classList.add('active'); // default r4
-  $('layer-type-select').value='observed'; updateEstimationVisibility();
-  document.querySelectorAll('#seasonBtns .btn').forEach(b=>b.classList.remove('active'));
-  taxonSelect.value='turtles'; updateTaxonVisibility();
-  speciesAll.click(); // activate all species
-  // Reset sliders visually
-  makeRange(yWrap, yHL, yStart, yEnd, updateYearLabels, DATA_YEAR_MIN, DATA_YEAR_MAX, 11);
-  makeRange(mWrap, mHL, mStart, mEnd, updateMonthLabels, 1, 12, 12);
-  updateYearLabels(); updateMonthLabels();
+/* Reset all -> defaults (r4 + observed) */
+function resetAll(){
+  document.querySelectorAll('[data-filter-section]').forEach(sec=>{
+    const toggle = sec.querySelector('.toggle-input');
+    const content= sec.querySelector('.section-content');
+    const key = sec.dataset.filterSection;
+    const on = (key==='grid' || key==='layer' || key==='basemap' || key==='taxon' || key==='species');
+    if(toggle){ toggle.checked = on; }
+    if(content){ content.classList.toggle('disabled', !on); }
+    clearSection(sec);
+  });
+
+  // grid r4
+  gridSel.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.val==='r4'));
+  $('resolution').value='r4';
+
+  // layer: observed
+  layerSel.value='observed';
+  updateEstimationVisibility();
+  $('counttype').value='weight';
+
+  // basemap: keep current visually Light
+  baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
+
+  // taxon & species
+  document.querySelectorAll('#taxonChips .chip').forEach(c=> c.classList.toggle('active', c.dataset.group==='Sea turtles'));
+  syncSpeciesVisibility();
+
+  // year/month/season off, sliders full span
+  yWrap.dataset.startFrac='0'; yWrap.dataset.endFrac='1';
+  mWrap.dataset.startFrac='0'; mWrap.dataset.endFrac='1';
+  reflowSliders();
+
   updateSummary();
+  markDirty();
+}
+resetBtn && resetBtn.addEventListener('click', resetAll);
+
+/* Apply -> bridge UI to hidden selects, then build */
+applyBtn && applyBtn.addEventListener('click',()=>{
+  if(layerSel?.value==='observed') $('counttype').value='weight';
+  else{
+    const lev = (document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase();
+    $('counttype').value = `new_mortality_est_bf_${lev}`;
+  }
+  updateSummary();
+  drawer.classList.remove('open');
+  buildLayer();
 });
 
-/* Initial build with defaults: r4 + observed */
-(function init(){
-  updateSummary();
-  buildLayer();
-})();
+/* Initial defaults (r4 + observed) */
+updateSummary();
+buildLayer();
 
-/* Permalink — keep only camera/hash (no rebuild on zoom, just write) */
-function writeHash(){
-  const h = new URLSearchParams({
-    z: map.getZoom().toFixed(2),
-    lat: map.getCenter().lat.toFixed(6),
-    lng: map.getCenter().lng.toFixed(6)
-  }).toString();
-  location.hash = h;
-}
-map.on('moveend', ()=> writeHash());
+/* Keep layer stable on zoom/pan (no rebuild). We still update the scale label. */
+// (intentionally no buildLayer() on move/zoom)
 </script>
 </body>
 </html>
