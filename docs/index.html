@@ -6,7 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <!-- Avoid favicon 404 -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3C/svg%3E'>
+
+<!-- Inter font for v15 look -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- Leaflet (local, CSP-safe) -->
 <link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
@@ -20,47 +23,102 @@
 <script src="./vendor/simple-statistics.min.js?v=20250812"></script>
 
 <style>
+/* ===== Base (kept) ===== */
 :root{
   --bg:#0b1220;--panel:#fff;--panel-weak:#f8fafc;--text:#0f172a;--muted:#64748b;--ring:#93c5fd;
   --shadow:0 10px 30px rgba(2,6,23,.25);--brand:#0ea5e9;--danger:#e11d48;--ok:#16a34a;
 }
-*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+/* v15 skin: light/dark variable sets */
+html,body{height:100%}
+*{box-sizing:border-box}
+html[data-theme="dark"]{
+  --bg:#0b1220;
+  --panel:#111418;
+  --panel-weak:#151a20;
+  --text:#E8EAED;
+  --muted:#B6BDC7;
+  --ring:#5ea0ff;
+  --shadow:0 16px 48px rgba(0,0,0,.35);
+  --chip:#2B3037;
+  --chip-hover:#323841;
+  --chip-border:rgba(255,255,255,.12);
+  --accent:#0ea5e9;
+}
+html:not([data-theme="dark"]){
+  --bg:#e9eef2;
+  --panel:#ffffff;
+  --panel-weak:#f8fafc;
+  --text:#0f172a;
+  --muted:#6e6e73;
+  --chip:#eef2f6;
+  --chip-hover:#e6ebf2;
+  --chip-border:rgba(0,0,0,.10);
+  --accent:#0ea5e9;
+}
+
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial;font-size:13px}
 #map{position:absolute;inset:0}
 
-/* Panel */
-#panel{position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:92vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid #e2e8f0}
+/* ===== Panel (restyled to demo) ===== */
+#panel{position:absolute;top:14px;left:14px;z-index:1000;width:380px;max-height:92vh;overflow:auto;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--chip-border)}
 #panel.collapsed{height:46px;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e2e8f0;background:var(--panel-weak);position:sticky;top:0;z-index:5}
-.topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px}
-.iconbtn{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:600}
-.iconbtn:hover{filter:brightness(0.98)}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--chip-border);background:var(--panel-weak);position:sticky;top:0;z-index:5}
+.topbar h1{font-size:15px;margin:0;font-weight:800;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{background:var(--chip);border:1px solid var(--chip-border);color:var(--text);border-radius:10px;padding:6px 10px;cursor:pointer;font-weight:700}
+.iconbtn:hover{background:var(--chip-hover)}
+.iconbtn:active{transform:scale(.98)}
+#themeBtn{min-width:38px}
+
+/* Section container */
 .section{padding:10px 14px}
 .row{margin-bottom:10px}
-label{display:block;font-weight:700;margin:6px 0 4px;font-size:13px}
+label{display:block;font-weight:700;margin:6px 0 4px;font-size:12px;color:var(--muted)}
 select, input[type="range"]{width:100%}
-select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+select{padding:10px 12px;border:1px solid var(--chip-border);border-radius:10px;background:#fff;font-weight:700}
+html[data-theme="dark"] select{background:#151a20;color:var(--text)}
 select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
-details{border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+
+details{border:1px solid var(--chip-border);border-radius:12px;background:transparent;overflow:hidden}
 details+details{margin-top:10px}
-summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:#f8fafc;border-radius:12px;position:sticky;top:46px;z-index:4}
+summary{list-style:none;cursor:pointer;padding:10px 12px;font-weight:800;background:var(--panel-weak);position:sticky;top:46px;z-index:4;display:flex;align-items:center;gap:8px}
 summary::-webkit-details-marker{display:none}
 details .content{padding:10px 12px}
+
 .controls-footer{display:flex;gap:10px;justify-content:space-between;margin-top:6px}
-#resetBtn,#applyBtn{flex:1;background:var(--brand);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+#resetBtn,#applyBtn{flex:1;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
 #resetBtn{background:var(--danger)}
 
-/* Checkbox groups */
-.chk-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.chk{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 8px}
-.chk input{accent-color:var(--brand)}
-.small{font-size:12px;color:var(--muted)}
+/* v15 section titles inline labels */
+.v15-title{margin:10px 0 6px;font-size:12px;font-weight:800;color:var(--muted);display:flex;align-items:center;gap:8px}
 
-/* Legend bottom-right */
-#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;min-width:240px;max-width:320px}
+/* Chips (checkbox groups as pills) */
+.chk-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chk{display:flex;align-items:center;gap:8px;background:var(--chip);border:1px solid var(--chip-border);border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+.chk:hover{background:var(--chip-hover)}
+.chk input{accent-color:var(--accent)}
+.small{font-size:11px;color:var(--muted)}
+
+/* Segmented controls (for Map layer & H3 size) */
+.seg{display:flex;align-items:stretch;background:var(--chip);border-radius:12px;padding:3px;gap:3px}
+.seg input{display:none}
+.seg label{flex:1;text-align:center;padding:8px 8px;font-size:12px;font-weight:800;border-radius:10px;cursor:pointer;color:var(--muted);border:1px solid transparent}
+.seg input:checked + label{background:#fff;color:#0f172a;border:1px solid rgba(0,0,0,.14);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+html[data-theme="dark"] .seg input:checked + label{background:#23262b;color:var(--accent);border:1px solid rgba(255,255,255,.22);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+
+/* Basemap buttons */
+.bm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bm{background:var(--chip);border:1px solid var(--chip-border);border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer;text-align:center}
+.bm:hover{background:var(--chip-hover)}
+.bm.active{outline:2px solid var(--accent)}
+
+/* Legend (restyled + footer) */
+#legend{position:absolute;bottom:18px;right:14px;z-index:1000;background:var(--panel);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--chip-border);padding:10px 12px;font-size:13px;min-width:240px;max-width:320px}
 .leghdr{font-weight:800;margin-bottom:6px}
 .legend-row{display:flex;align-items:center;justify-content:space-between;margin:4px 0;gap:8px}
 .swatch{width:28px;height:12px;border-radius:3px;border:1px solid #94a3b8}
 .legend-hint{margin-top:6px;color:var(--muted);font-size:11px}
+.legend-footer{margin-top:8px;font-size:11px;color:var(--muted)}
 
 /* Histogram */
 .hist{display:flex;align-items:flex-end;gap:4px;margin-top:6px;height:42px}
@@ -68,7 +126,7 @@ details .content{padding:10px 12px}
 .hist div.active{background:#94a3b8}
 
 /* Spinner + toast */
-#spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
+#spinner{position:absolute;top:14px;right:14px;z-index:1000;display:none;background:var(--panel);border:1px solid var(--chip-border);border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px}
 #toast{position:absolute;top:60px;right:14px;z-index:1000;display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;box-shadow:var(--shadow);font-size:13px;max-width:340px}
 
 /* Hover/selection polish */
@@ -78,6 +136,16 @@ details .content{padding:10px 12px}
 .leaflet-popup-content{margin:8px 12px}
 .kv{display:flex;justify-content:space-between;gap:10px}.kv b{color:#0f172a}
 small.muted{color:#64748b}
+
+/* v15: Selected filters summary + author credit */
+#railSummary{list-style:none;margin:8px 0 0;padding:0;border-top:1px dashed var(--chip-border);max-height:34vh;overflow:auto}
+#railSummary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--chip-border)}
+.author{margin:8px 2px 12px;font-size:10px;color:var(--muted);text-align:left}
+
+/* Scale control harmonized */
+.leaflet-control-scale{background:rgba(255,255,255,.82);border-radius:8px;border:1px solid var(--chip-border);padding:2px 6px}
+html[data-theme="dark"] .leaflet-control-scale{background:rgba(0,0,0,.35);color:#fff}
+.leaflet-control-scale-line{background:none;border:1px solid currentColor;border-top:none;color:inherit}
 </style>
 </head>
 <body>
@@ -86,42 +154,76 @@ small.muted{color:#64748b}
 <!-- Filter Panel -->
 <div id="panel">
   <div class="topbar">
-    <h1>Sea Turtle Mortality</h1>
+    <h1>Marine Megafauna Mortality</h1>
     <div style="display:flex;gap:8px">
+      <button id="themeBtn" class="iconbtn" title="Toggle light/dark">🌙</button>
       <button id="permalink" class="iconbtn" title="Copy link">🔗 Share</button>
       <button id="collapseBtn" class="iconbtn" title="Collapse">–</button>
     </div>
   </div>
 
   <div class="section">
+    <!-- Visual labels per v15 (presentation-only) -->
+    <div class="v15-title">Main</div>
+
+    <!-- HEX SIZE (segmented mirrors #resolution) -->
     <div class="row">
-      <label for="resolution">Grid cell size (H3)</label>
-      <select id="resolution">
+      <label class="v15-title" style="margin-top:0">Cell size (H3)</label>
+      <div class="seg" id="segH3">
+        <input type="radio" id="h3-r3" name="h3" value="r3">
+        <label for="h3-r3">60 km</label>
+        <input type="radio" id="h3-r4" name="h3" value="r4">
+        <label for="h3-r4">22.6 km</label>
+        <input type="radio" id="h3-r5" name="h3" value="r5" checked>
+        <label for="h3-r5">8.6 km</label>
+        <input type="radio" id="h3-r6" name="h3" value="r6">
+        <label for="h3-r6">3.2 km</label>
+      </div>
+
+      <!-- Keep original select (hidden) so your JS keeps working -->
+      <select id="resolution" style="display:none">
         <option value="r3">≈ 60 km edge</option>
         <option value="r4">≈ 22.6 km</option>
         <option value="r5" selected>≈ 8.6 km</option>
         <option value="r6">≈ 3.2 km</option>
       </select>
-      <div class="small">Tip: start coarse (r3/r4) for speed; switch to r6 when zoomed in.</div>
+      <div class="small">The segmented control mirrors <code>#resolution</code>.</div>
     </div>
 
+    <!-- MAP LAYER (segmented mirrors #counttype) -->
     <div class="row">
-      <label for="counttype">Count Type</label>
-      <select id="counttype">
-        <option value="weight" selected>Mortality position (weight)</option>
-        <option value="new_weight">Mortality position (new_weight)</option>
-        <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
+      <label class="v15-title">Map layer</label>
+      <div class="seg" id="segLayer">
+        <input type="radio" id="lyr-observed" name="lyrtype" value="observed">
+        <label for="lyr-observed">Observed strandings</label>
+        <input type="radio" id="lyr-estimation" name="lyrtype" value="estimation" checked>
+        <label for="lyr-estimation">Mortality estimation</label>
+      </div>
+      <div class="seg" id="segMortality" style="margin-top:6px">
+        <input type="radio" id="est-low" name="estlevel" value="low">
+        <label for="est-low">Low</label>
+        <input type="radio" id="est-mean" name="estlevel" value="mean" checked>
+        <label for="est-mean">Mean</label>
+        <input type="radio" id="est-high" name="estlevel" value="high">
+        <label for="est-high">High</label>
+      </div>
+
+      <!-- Keep original select (hidden). Removed new_weight -->
+      <select id="counttype" aria-label="Count Type" style="display:none">
+        <option value="weight">Observed strandings</option>
         <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
+        <option value="new_mortality_est_bf_mean" selected>Mortality estimation (mean)</option>
         <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
       </select>
     </div>
 
-    <!-- Species -->
+    <!-- SPECIES -->
+    <div class="v15-title">Species</div>
     <details open>
       <summary>Species</summary>
       <div class="content">
         <div class="chk-group" id="speciesGroup">
-          <!-- All toggle + species -->
+          <!-- All toggle + species (unchanged IDs/values) -->
           <label class="chk"><input type="checkbox" data-group="species" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="species" value="Caretta caretta">Caretta caretta</label>
           <label class="chk"><input type="checkbox" data-group="species" value="Chelonia mydas">Chelonia mydas</label>
@@ -132,7 +234,57 @@ small.muted{color:#64748b}
       </div>
     </details>
 
-    <!-- Stage / Sex / Season -->
+    <!-- BASEMAP (new) -->
+    <div class="v15-title">Basemap</div>
+    <div class="bm-grid" id="basemapButtons">
+      <button class="bm active" data-map="Light">Light</button>
+      <button class="bm" data-map="Dark">Dark</button>
+      <button class="bm" data-map="Terrain">Terrain</button>
+      <button class="bm" data-map="Satellite">Satellite</button>
+    </div>
+
+    <!-- Temporal & Biology sections (unchanged structure; v15 labels added) -->
+    <div class="v15-title" style="margin-top:12px">Year</div>
+    <details>
+      <summary>Environment & time</summary>
+      <div class="content">
+        <div class="row">
+          <label>Year range</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;margin-bottom:6px">
+            <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
+            <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
+          </div>
+          <div class="small">Years: <span id="yearRangeLabel">2015–2024</span>
+            <button id="resetYearRange" class="iconbtn" style="margin-left:8px;padding:4px 8px">Reset range</button>
+          </div>
+        </div>
+
+        <label style="margin-top:8px">Year (checkboxes)</label>
+        <div class="chk-group" id="yearGroup">
+          <label class="chk"><input type="checkbox" data-group="year" value="__ALL__" checked>(All)</label>
+          <!-- Years populated dynamically -->
+        </div>
+
+        <label class="v15-title" style="margin-top:8px">Month</label>
+        <div class="chk-group" id="monthGroup">
+          <label class="chk"><input type="checkbox" data-group="month" value="__ALL__" checked>(All)</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="1">1</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="2">2</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="3">3</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="4">4</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="5">5</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="6">6</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="7">7</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="8">8</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="9">9</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="10">10</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="11">11</label>
+          <label class="chk"><input type="checkbox" data-group="month" value="12">12</label>
+        </div>
+      </div>
+    </details>
+
+    <div class="v15-title" style="margin-top:12px">Biological parameters</div>
     <details>
       <summary>Biology</summary>
       <div class="content">
@@ -153,7 +305,7 @@ small.muted{color:#64748b}
           <label class="chk"><input type="checkbox" data-group="sex" value="Unknown">Unknown</label>
         </div>
 
-        <label style="margin-top:8px">Season</label>
+        <label style="margin-top:8px">Season <span class="small">Southern hemisphere</span></label>
         <div class="chk-group" id="seasonGroup">
           <label class="chk"><input type="checkbox" data-group="season" value="__ALL__" checked>(All)</label>
           <label class="chk"><input type="checkbox" data-group="season" value="Autumn">Autumn</label>
@@ -165,7 +317,7 @@ small.muted{color:#64748b}
       </div>
     </details>
 
-    <!-- Human interactions (English only) + Decomposition -->
+    <div class="v15-title" style="margin-top:12px">Anthropogenic interactions</div>
     <details>
       <summary>Human interactions & condition</summary>
       <div class="content">
@@ -212,47 +364,8 @@ small.muted{color:#64748b}
       </div>
     </details>
 
-    <!-- Environment & time -->
-    <details>
-      <summary>Environment & time</summary>
-      <div class="content">
-        <div class="row">
-          <label>Year range</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;margin-bottom:6px">
-            <input id="yearMin" type="range" min="2015" max="2024" value="2015" step="1">
-            <input id="yearMax" type="range" min="2015" max="2024" value="2024" step="1">
-          </div>
-          <div class="small">Years: <span id="yearRangeLabel">2015–2024</span>
-            <button id="resetYearRange" class="iconbtn" style="margin-left:8px;padding:4px 8px">Reset range</button>
-          </div>
-        </div>
-
-        <label style="margin-top:8px">Year (checkboxes)</label>
-        <div class="chk-group" id="yearGroup">
-          <label class="chk"><input type="checkbox" data-group="year" value="__ALL__" checked>(All)</label>
-          <!-- Years will be populated dynamically based on observed data min/max -->
-        </div>
-
-        <label style="margin-top:8px">Month</label>
-        <div class="chk-group" id="monthGroup">
-          <label class="chk"><input type="checkbox" data-group="month" value="__ALL__" checked>(All)</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="1">1</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="2">2</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="3">3</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="4">4</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="5">5</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="6">6</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="7">7</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="8">8</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="9">9</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="10">10</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="11">11</label>
-          <label class="chk"><input type="checkbox" data-group="month" value="12">12</label>
-        </div>
-      </div>
-    </details>
-
     <!-- Layer controls -->
+    <div class="v15-title" style="margin-top:12px">Map layer options</div>
     <details>
       <summary>Layer controls</summary>
       <div class="content">
@@ -270,6 +383,12 @@ small.muted{color:#64748b}
       <button id="resetBtn">Reset</button>
       <button id="applyBtn">Apply</button>
     </div>
+
+    <!-- Selected filters summary -->
+    <div class="v15-title" style="margin-top:8px">Selected filters</div>
+    <ul id="railSummary"></ul>
+
+    <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
 </div>
 
@@ -279,6 +398,8 @@ small.muted{color:#64748b}
   <div id="legendRows"></div>
   <div class="hist" id="histogram"></div>
   <div class="legend-hint">Breaks based on visible, filtered hexes.</div>
+  <!-- v15: legend footer shows basemap -->
+  <div class="legend-footer">Basemap: <span id="legendBasemap">Light</span></div>
 </div>
 
 <div id="spinner">Loading…</div>
@@ -303,11 +424,37 @@ small.muted{color:#64748b}
   }
 })();
 
-/* ===== Map ===== */
+/* ===== Map (add baseLayer + scale) ===== */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 
-/* ===== UI helpers ===== */
+// v15: basemap layers (open & free)
+const BASEMAPS = {
+  Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors'
+  }),
+  Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors &copy; CARTO'
+  }),
+  Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{
+    attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)'
+  }),
+  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics'
+  })
+};
+let baseLayer;
+function setBasemap(name){
+  const next = BASEMAPS[name] || BASEMAPS.Light;
+  if(baseLayer) map.removeLayer(baseLayer);
+  baseLayer = next.addTo(map);
+  const lb = document.getElementById('legendBasemap');
+  if(lb) lb.textContent = name;
+}
+setBasemap('Light'); // default
+// v15: add scale bar
+L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+/* ===== UI helpers (kept) ===== */
 const $ = id => document.getElementById(id);
 const spinner=$('spinner'), toast=$('toast');
 const showSpinner = (m='Loading…') => { spinner.textContent=m; spinner.style.display='block'; };
@@ -317,7 +464,20 @@ $('collapseBtn').addEventListener('click',()=>$('panel').classList.toggle('colla
 window.addEventListener('error',()=>hideSpinner());
 window.addEventListener('unhandledrejection',()=>hideSpinner());
 
-/* ===== Checkbox “All” logic ===== */
+/* ===== Theme toggle (v15) ===== */
+(function themeInit(){
+  const html=document.documentElement, btn=$('themeBtn');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  btn.addEventListener('click', ()=>{
+    const d = html.getAttribute('data-theme')==='dark';
+    html.setAttribute('data-theme', d ? 'light' : 'dark');
+    btn.textContent = d ? '🌙' : '☀️';
+    setTimeout(()=>map.invalidateSize(), 50);
+  });
+})();
+
+/* ===== Checkbox “All” logic (kept) ===== */
 function syncAllCheckbox(groupEl){
   const boxes = Array.from(groupEl.querySelectorAll('input[type="checkbox"][data-group]'));
   const allBox = boxes.find(b=>b.value==='__ALL__');
@@ -561,7 +721,7 @@ async function detectLayerName(pmFile){
 /* ===== Metric detection (strict) ===== */
 const metricCandidates = {
   weight: ['weight','sum_val'],
-  new_weight: ['new_weight','sum_val'],
+  /* removed new_weight */
   new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
   new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
   new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
@@ -645,7 +805,7 @@ function makePredicate(sel){
   };
 }
 
-/* ===== Aggregation + breaks ===== */
+/* ===== Aggregation + breaks (kept) ===== */
 const JENKS_CLASSES = 5;
 const EXACT_MAX = 3000;
 const SAMPLE_TARGET = 1500;
@@ -654,19 +814,17 @@ const MAX_HEXES_STATS  = 3000;
 
 /* ---- TUNING ---- */
 const WINSOR_TAIL = 0.02;
-const FIRST_BIN_FLOOR = 1;           // desired floor
-const FLOOR_APPLY_FRAC_OF_MAX = 0.98;// FIX: only apply floor if < 98% of max
+const FIRST_BIN_FLOOR = 1;           
+const FLOOR_APPLY_FRAC_OF_MAX = 0.98;
 const FIRST_BIN_MAX_SHARE = 0.55;
 const FIRST_CUT_MIN_ADJ = 0.70;
 const FIRST_CUT_STEP = 0.05;
 const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95];
 const TRANSFORM_MODE = "log1p";
 
-/* transform helpers */
 function tforward(v, mode){ const x=Math.max(0,v); return mode==="log1p"? Math.log1p(x) : mode==="sqrt"? Math.sqrt(x) : x; }
 function tinverse(v, mode){ return mode==="log1p"? Math.expm1(v) : mode==="sqrt"? v*v : v; }
 
-/* basics */
 function prettyBreaks(min, max){
   if (!isFinite(min) || !isFinite(max)) return null;
   if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
@@ -697,8 +855,6 @@ function reservoir(values, k){
   for(;i<values.length;i++){ const j = Math.floor(Math.random()*(i+1)); if(j<k) out[j]=values[i]; }
   return out;
 }
-
-/* winsorized log-quantile hybrid (fallback) */
 function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, mode=TRANSFORM_MODE){
   const arr = values.filter(v=>Number.isFinite(v)); if(arr.length<5) return null;
   const sorted = arr.slice().sort((a,b)=>a-b);
@@ -717,8 +873,6 @@ function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, m
   for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1] > edges[i])) edges[i+1] = edges[i] + eps; }
   return edges;
 }
-
-/* FIX: monotonic guard */
 function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
   let e = edges.slice().sort((a,b)=>a-b);
   const rng = (maxVal - minVal) || 1;
@@ -728,7 +882,6 @@ function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
   for(let i=1;i<e.length;i++){
     if(!(e[i] > e[i-1])) e[i] = Math.min(maxVal, e[i-1] + eps);
   }
-  // trim/pad to k+1
   while(e.length > k+1) e.splice(e.length-2,1);
   while(e.length < k+1){
     const i = e.length-1;
@@ -736,8 +889,6 @@ function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
   }
   return e;
 }
-
-/* NEW: winsorized Head/Tail with safe floor */
 function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=FIRST_BIN_FLOOR){
   const v = values.filter(Number.isFinite); if(v.length<5) return null;
   const s = v.slice().sort((a,b)=>a-b);
@@ -745,35 +896,27 @@ function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=F
   const qHi = ss.quantileSorted(s, 1-tail);
   const w = s.map(x=>clamp(x,qLo,qHi));
   const minVal = w[0], maxVal = w[w.length-1];
-
-  // FIX: only apply the 1.0 floor if it is meaningfully below the visible max
   const canApplyFloor = (floor <= maxVal * FLOOR_APPLY_FRAC_OF_MAX);
   const lowerEdge = canApplyFloor ? Math.max(floor, minVal) : minVal;
   const firstApplied = canApplyFloor && (lowerEdge > minVal + (maxVal-minVal)*1e-9);
-
   const edges = [lowerEdge];
   let current = w.slice();
-
   for(let i=1; i<k; i++){
     if(current.length<2) break;
     const mean = current.reduce((a,b)=>a+b,0)/current.length;
     const prev = edges[edges.length-1];
     let m = mean;
     if(!(m > prev)){
-      // FIX: if mean is not above prev, nudge forward but never backward
       if(prev < maxVal) m = prev + (maxVal - prev) * 0.25;
-      else m = prev; // stuck at max
+      else m = prev;
     }
     edges.push(m);
     current = current.filter(x=>x>=m);
   }
   edges.push(maxVal);
-
   let safe = ensureMonotonic(edges, minVal, maxVal, k);
   return { edges: safe, firstFloorApplied:firstApplied };
 }
-
-/* tiny adaptive nudge of first cut */
 function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIRST_CUT_MIN_ADJ, step=FIRST_CUT_STEP){
   const e = edges.slice();
   if(e.length<3) return {edges:e, adjusted:false};
@@ -788,8 +931,6 @@ function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIR
   }
   return {edges:ensureMonotonic(edges, edges[0], edges[edges.length-1], edges.length-1), adjusted:false};
 }
-
-/* Hardened binning using frozen breaks */
 function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
   const n = breaks.length-1; if(n<=0) return -1;
@@ -872,7 +1013,7 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
 }
 
-/* ===== Compute breaks + histogram + top10 ===== */
+/* ===== Compute legend + histogram + top10 ===== */
 function computeLegendCounts(values, breaks){
   const counts=[0,0,0,0,0];
   const n=breaks.length-1;
@@ -917,7 +1058,7 @@ function updateLegendFrozen(cfg){
   });
 }
 
-/* ===== Popup aggregation ===== */
+/* ===== Popup helpers ===== */
 function percentParts(counts){
   const totalKnown = Object.entries(counts).filter(([k])=>k!=='Unknown').reduce((a,[,v])=>a+v,0);
   const uCount = counts['Unknown']||0;
@@ -937,7 +1078,7 @@ function topMode(countsObj, numeric=false){
   return { key:bestKey, count:bestCnt };
 }
 
-/* ===== Build / Rebuild ===== */
+/* ===== Build / Rebuild (kept) ===== */
 function speciesRamp(){ return currentRamp(); }
 
 async function buildLayer(){
@@ -990,7 +1131,7 @@ async function buildLayer(){
       firstFloorApplied = false;
     }
 
-    // Show the real maximum in legend (but keep classification)
+    // Show the real maximum in legend
     const realMax = Math.max(...values);
     if(Number.isFinite(realMax) && brks && brks.length){
       brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
@@ -1095,14 +1236,14 @@ async function buildLayer(){
   }
 }
 
-/* ===== Apply / changes ===== */
+/* ===== Apply / changes (kept) ===== */
 $('applyBtn').addEventListener('click',()=>buildLayer());
 $('resolution').addEventListener('change',()=>buildLayer());
 $('counttype').addEventListener('change',()=>buildLayer());
 $('opacity').addEventListener('input',()=>{ if(vtLayer) vtLayer.redraw(); });
 $('top10').addEventListener('change',()=>{ if(vtLayer) vtLayer.redraw(); });
 
-/* ===== Permalink ===== */
+/* ===== Permalink (kept) ===== */
 function selectionsToObj(){
   const obj={
     z: map.getZoom().toFixed(2),
@@ -1158,6 +1299,10 @@ function restoreFromHash(){
     syncAllCheckbox($(parentId));
   }
   ['species','stage','sex','season','year','month','Fishing','Marine_Debris','Aggression','Boat_collision','Dredging','Oil','Petrol','decomposition_code'].forEach(g=>setChecks(g,h.get(g)||''));
+
+  // reflect the segmented UI from the restored selects
+  reflectLayerSegFromSelect();
+  reflectH3SegFromSelect();
 }
 
 /* ===== Init ===== */
@@ -1170,6 +1315,132 @@ function restoreFromHash(){
 
 /* ===== Save state on moveend ===== */
 map.on('moveend', ()=>{ writeHash(); });
+
+/* ===== v15 BRIDGES (visual controls -> existing inputs) ===== */
+
+/* H3 segmented <-> #resolution */
+function reflectH3SegFromSelect(){
+  const sel=$('resolution'), seg=$('segH3');
+  if(!sel||!seg) return;
+  const v=sel.value;
+  const n=seg.querySelector(`input[value="${v}"]`);
+  if(n){ n.checked = true; }
+}
+(function wireH3Seg(){
+  const seg=$('segH3'), sel=$('resolution');
+  if(!seg||!sel) return;
+  reflectH3SegFromSelect();
+  seg.addEventListener('change', ()=>{
+    const v = seg.querySelector('input:checked')?.value;
+    if(!v) return;
+    sel.value=v;
+    sel.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  sel.addEventListener('change', reflectH3SegFromSelect);
+})();
+
+/* Map layer segmented <-> #counttype */
+function reflectLayerSegFromSelect(){
+  const sel=$('counttype'), segL=$('segLayer'), segM=$('segMortality');
+  if(!sel||!segL||!segM) return;
+  const v=sel.value;
+  if(v==='weight'){
+    segL.querySelector('#lyr-observed').checked = true;
+  }else{
+    segL.querySelector('#lyr-estimation').checked = true;
+    segM.querySelector('#est-low').checked  = /_low$/.test(v);
+    segM.querySelector('#est-mean').checked = /_mean$/.test(v);
+    segM.querySelector('#est-high').checked = /_high$/.test(v);
+  }
+}
+(function wireLayerSeg(){
+  const segL=$('segLayer'), segM=$('segMortality'), sel=$('counttype');
+  if(!segL||!segM||!sel) return;
+
+  reflectLayerSegFromSelect();
+
+  segL.addEventListener('change', ()=>{
+    const mode = segL.querySelector('input:checked')?.value;
+    if(mode==='observed'){
+      sel.value='weight';
+    }else{
+      const current = sel.value.match(/^new_mortality_est_bf_(low|mean|high)$/)?.[1] || 'mean';
+      sel.value = 'new_mortality_est_bf_'+current;
+    }
+    sel.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  segM.addEventListener('change', ()=>{
+    const lev = segM.querySelector('input:checked')?.value || 'mean';
+    sel.value = 'new_mortality_est_bf_'+lev;
+    sel.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  sel.addEventListener('change', reflectLayerSegFromSelect);
+})();
+
+/* Basemap buttons */
+(function wireBasemaps(){
+  const box=$('basemapButtons');
+  if(!box) return;
+  box.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-map]');
+    if(!btn) return;
+    box.querySelectorAll('.bm').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    setBasemap(btn.dataset.map);
+  });
+})();
+
+/* ===== Selected filters summary (read-only; updates on Apply) ===== */
+function abbrSpecies(name){
+  const [g,s] = String(name).split(' ');
+  return (g && s) ? `${g[0]}. ${s}` : String(name);
+}
+function updateSummary(){
+  const rows=[];
+  // Layer
+  const ct = $('counttype').value;
+  const layerLabel = (ct==='weight')
+    ? 'Observed strandings'
+    : ('Mortality estimation — ' + (/_low$/.test(ct)?'Low':/_high$/.test(ct)?'High':'Mean'));
+  rows.push(`Layer: ${layerLabel}`);
+
+  // H3 cell size
+  const resMap={r3:'60 km', r4:'22.6 km', r5:'8.6 km', r6:'3.2 km'};
+  rows.push(`Cell size: ${resMap[$('resolution').value] || $('resolution').value}`);
+
+  // Species
+  const sp = getChecked('species');
+  if(sp.length===0) rows.push('Species: All species');
+  else rows.push('Species: ' + sp.map(abbrSpecies).join(', '));
+
+  // Year range
+  rows.push(`Year: ${$('yearMin').value}–${$('yearMax').value}`);
+
+  // Month (if specific)
+  const months = getChecked('month').map(Number).sort((a,b)=>a-b);
+  if(months.length) rows.push(`Month: ${months[0]}–${months[months.length-1]}`);
+
+  // Season
+  const seasons = getChecked('season');
+  if(seasons.length) rows.push(`Seasons: ${seasons.join(', ')}`);
+
+  // Biology
+  const sex = getChecked('sex'); if(sex.length) rows.push(`Sex: ${sex.join(', ')}`);
+  const stage = getChecked('stage'); if(stage.length) rows.push(`Stage: ${stage.join(', ')}`);
+  const decomp = getChecked('decomposition_code'); if(decomp.length) rows.push(`Decomp: ${decomp.join(', ')}`);
+
+  // Anthropogenic
+  ['Fishing','Marine_Debris','Aggression','Boat_collision','Dredging','Oil','Petrol'].forEach(k=>{
+    const v = getChecked(k);
+    if(v.length) rows.push(`${k.replace('_',' ')}: ${v.join(', ')}`);
+  });
+
+  const ul = $('railSummary');
+  if(ul){ ul.innerHTML = rows.map(r=>`<li>${r}</li>`).join(''); }
+}
+$('applyBtn').addEventListener('click', updateSummary);
+// initial summary
+updateSummary();
 
 </script>
 </body>
