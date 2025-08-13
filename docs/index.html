@@ -461,7 +461,6 @@ function getChecked(group){
 function setYearCheckboxes(minY, maxY){
   const yg=$('yearGroup'); yg.innerHTML='';
   const mk = (val, label, checked=true, disabled=false)=>{
-    const id='y'+val;
     const outer=document.createElement('label'); outer.className='chk';
     const input=document.createElement('input'); input.type='checkbox'; input.dataset.group='year'; input.value=val; input.checked=checked; input.disabled=disabled;
     outer.appendChild(input); outer.appendChild(document.createTextNode(label));
@@ -489,7 +488,7 @@ let vtLayer = null, lastGoodLayer = null;
 let layerName='', header=null;
 const aggByHex = new Map(); // h3 -> { sum, uids:Set, counts:{sex,stage,season,year,month}, rowCount }
 let metricField = 'sum_val';
-let cachedCap = null; // capability probe result
+let cachedCap = null;
 let jenksBreaks = [0,1,2,3,4,5];
 let activeRamp = ramps['multi'];
 let histogramCounts = [0,0,0,0,0];
@@ -653,12 +652,13 @@ const SAMPLE_TARGET = 1500;
 const MAX_TILES_STATS = 90;
 const MAX_HEXES_STATS  = 3000;
 
-/* ---- NEW robust break settings ---- */
+/* ---- robust break settings ---- */
 const WINSOR_TAIL = 0.02;                    // clamp each tail at 2%
-const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95]; // bottom 25% ... top 5%
-const TRANSFORM_MODE = "log1p";              // "log1p" (strong), "sqrt" (milder), or "none"
+const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95]; // fallback cuts for log-hybrid
+const TRANSFORM_MODE = "log1p";              // fallback transform
+const FIRST_BIN_FLOOR = 1;                   // first bin lower edge never below this
 
-/* helpers for transforms */
+/* helpers for transforms (fallback method) */
 function tforward(v, mode){
   const x = Math.max(0, v);
   if(mode==="log1p") return Math.log1p(x);
@@ -671,12 +671,10 @@ function tinverse(v, mode){
   return v;
 }
 
+/* basic breaks (fallbacks) */
 function prettyBreaks(min, max){
   if (!isFinite(min) || !isFinite(max)) return null;
-  if (min===max) {
-    const eps = min===0 ? 1 : Math.abs(min)*0.1;
-    min -= eps; max += eps;
-  }
+  if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
   const step=(max-min)/JENKS_CLASSES, arr=[min];
   for(let i=1;i<=JENKS_CLASSES;i++) arr.push(min+i*step);
   return arr;
@@ -686,8 +684,7 @@ function quantileBreaks(values){
   return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
 }
 function tryJenks(values){
-  const n=values.length;
-  if(n<8) return null;
+  const n=values.length; if(n<8) return null;
   const arr = (n<=EXACT_MAX)? values : reservoir(values, SAMPLE_TARGET);
   try {
     const edges = ss.jenks(arr, JENKS_CLASSES);
@@ -702,50 +699,87 @@ function tryJenks(values){
 function reservoir(values, k){
   const out=[]; let i=0;
   for(;i<values.length && i<k;i++) out[i]=values[i];
-  for(;i<values.length;i++){
-    const j = Math.floor(Math.random()*(i+1));
-    if(j<k) out[j]=values[i];
-  }
+  for(;i<values.length;i++){ const j = Math.floor(Math.random()*(i+1)); if(j<k) out[j]=values[i]; }
   return out;
 }
 
-/* ---- NEW: winsorized log-quantile hybrid ----
-   1) sort & winsorize to [Q_tail, Q_1-tail]
-   2) transform with log1p (or sqrt), compute quantiles at [0, cuts..., 1]
-   3) inverse-transform edges; cap final edge at winsorized high (Q_1-tail)
-*/
+/* ---- winsorized log-quantile hybrid (fallback) ---- */
 function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, mode=TRANSFORM_MODE){
   const arr = values.filter(v=>Number.isFinite(v));
   if(arr.length<5) return null;
   const sorted = arr.slice().sort((a,b)=>a-b);
-
   const qLo = ss.quantileSorted(sorted, tail);
   const qHi = ss.quantileSorted(sorted, 1-tail);
-
   const w = sorted.map(v => clamp(v, qLo, qHi)).sort((a,b)=>a-b);
   const wt = w.map(v => tforward(v, mode)).sort((a,b)=>a-b);
-
   const probs = [0].concat(cuts, 1);
   let edgesT = probs.map(p => ss.quantileSorted(wt, p));
-  // monotonic guard
   const epsT = (edgesT[edgesT.length-1]-edgesT[0] || 1)*1e-9;
-  for(let i=0;i<edgesT.length-1;i++){
-    if(!(edgesT[i+1] > edgesT[i])) edgesT[i+1] = edgesT[i] + epsT;
-  }
-
-  // back-transform
+  for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1] > edgesT[i])) edgesT[i+1] = edgesT[i] + epsT; }
   let edges = edgesT.map(v => tinverse(v, mode));
-
-  // ensure first/last equal to winsorized bounds (prevents huge last bin)
-  edges[0] = w[0];                       // = qLo after winsor
-  edges[edges.length-1] = w[w.length-1]; // = qHi after winsor
-
-  // monotonic guard in original scale too
+  edges[0] = w[0];
+  edges[edges.length-1] = w[w.length-1];
   const eps = (edges[edges.length-1]-edges[0] || 1)*1e-9;
-  for(let i=0;i<edges.length-1;i++){
-    if(!(edges[i+1] > edges[i])) edges[i+1] = edges[i] + eps;
-  }
+  for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1] > edges[i])) edges[i+1] = edges[i] + eps; }
   return edges;
+}
+
+/* ---- NEW: Winsorized Head/Tail breaks with first-bin floor ---- */
+function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=FIRST_BIN_FLOOR){
+  const v = values.filter(Number.isFinite);
+  if(v.length<5) return null;
+  const s = v.slice().sort((a,b)=>a-b);
+  const qLo = ss.quantileSorted(s, tail);
+  const qHi = ss.quantileSorted(s, 1-tail);
+  const w = s.map(x=>clamp(x,qLo,qHi));
+  const minVal = w[0], maxVal = w[w.length-1];
+
+  const edges = [];
+  let firstApplied = false;
+
+  // enforce legend floor (labels) but keep assigning <floor into first bin
+  const lowerEdge = Math.max(floor, minVal);
+  if (lowerEdge > minVal) firstApplied = true;
+  edges.push(lowerEdge);
+
+  // recursive means on the tail
+  let current = w.slice();
+  for(let i=1; i<k; i++){
+    if(current.length<2) break;
+    const mean = current.reduce((a,b)=>a+b,0)/current.length;
+    // guard monotonicity
+    const prev = edges[edges.length-1];
+    const m = mean > prev ? mean : prev + (maxVal-prev)*1e-9;
+    edges.push(m);
+    // next tail: values >= mean
+    current = current.filter(x=>x>=mean);
+  }
+
+  // top edge fixed at winsorized high
+  edges.push(maxVal);
+
+  // ensure we have exactly k+1 edges; if less, pad with quantiles
+  if(edges.length < k+1){
+    const need = (k+1) - edges.length;
+    const qs = [];
+    for(let i=1;i<=need;i++){
+      qs.push(ss.quantileSorted(w, (i)/(need+1)));
+    }
+    // merge and sort then dedupe tiny gaps
+    const tmp = edges.concat(qs).sort((a,b)=>a-b);
+    const out=[tmp[0]];
+    for(let i=1;i<tmp.length;i++){
+      if(tmp[i] > out[out.length-1] + (maxVal-minVal)*1e-9) out.push(tmp[i]);
+    }
+    while(out.length > k+1) out.splice(out.length-2,1); // remove near-top duplicates if any
+    while(out.length < k+1) out.splice(out.length-1,0,(out[out.length-2]+out[out.length-1])/2);
+    return { edges: out, firstFloorApplied:firstApplied };
+  }
+
+  // limit to k+1 edges if we created extra
+  if(edges.length > k+1) edges.length = k+1;
+
+  return { edges, firstFloorApplied:firstApplied };
 }
 
 /* Hardened binning using frozen breaks */
@@ -753,7 +787,7 @@ function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
   const n = breaks.length-1; if(n<=0) return -1;
   if(v < breaks[0]) return 0;
-  if(v > breaks[n]) return n-1; // values above winsorized max fall in top bin
+  if(v > breaks[n]) return n-1;
   for(let i=0;i<n;i++){
     const a=breaks[i], b=breaks[i+1];
     if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
@@ -784,7 +818,6 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
   let discovered=false, sampleProps=[];
   async function scan(withStride){
     const jobs=[];
-    let tilesVisited=0;
     outer:
     for(let x=minX;x<=maxX;x+=withStride){
       for(let y=minY;y<=maxY;y+=withStride){
@@ -792,7 +825,6 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
           if(!resp || !resp.data) return;
           const vt = new window.__VT__(new window.__PBF__(resp.data));
           const lyr = vt.layers[layerName]; if(!lyr) return;
-          tilesVisited++;
           for(let i=0;i<lyr.length;i++){
             const f = lyr.feature(i), props = f.properties||{};
             sampleProps.length<50 && sampleProps.push(props);
@@ -825,13 +857,11 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
       }
     }
     await Promise.all(jobs);
-    return tilesVisited;
   }
 
-  const tiles1 = await scan(stride);
-  if(aggByHex.size===0 && stride>1){
-    await scan(1);
-  }
+  await scan(stride);
+  if(aggByHex.size===0 && stride>1) await scan(1);
+
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(v=>Number.isFinite(v));
 }
 
@@ -866,7 +896,9 @@ function updateLegendFrozen(cfg){
       isolatedBin = (isolatedBin===i ? -1 : i);
       if(vtLayer) vtLayer.redraw();
     });
-    const lab=document.createElement('span'); lab.textContent = `${nf(a)} – ${nf(b)}`;
+    const lab=document.createElement('span');
+    if(i===0 && cfg.firstFloorApplied) lab.textContent = `≤ ${nf(b)}`;
+    else lab.textContent = `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab);
     rows.appendChild(row);
   }
@@ -891,21 +923,14 @@ function topMode(countsObj, numeric=false){
     const cnt=countsObj[k];
     if(cnt>bestCnt) { bestCnt=cnt; bestKey=k; }
     else if(cnt===bestCnt){
-      if(numeric){
-        if(+k > +bestKey) bestKey=k;
-      } else {
-        if(String(k) > String(bestKey)) bestKey=k;
-      }
+      if(numeric){ if(+k > +bestKey) bestKey=k; }
+      else { if(String(k) > String(bestKey)) bestKey=k; }
     }
   }
   return { key:bestKey, count:bestCnt };
 }
 
 /* ===== Build / Rebuild ===== */
-function getSelectionsSummaryName(){
-  const sp=getChecked('species');
-  return (sp.length===1)? sp[0] : (sp.length>1? 'Multiple species' : 'All species');
-}
 function speciesRamp(){ return currentRamp(); }
 
 async function buildLayer(){
@@ -932,20 +957,31 @@ async function buildLayer(){
     const predicate = makePredicate(sel);
 
     const values = await aggregateViewport(pmFile, layerName, predicate, ct);
-
     if(!values || values.length===0){
       showToast('No data in view—zoom out or change filters.');
       hideSpinner();
       return;
     }
 
-    // ---- NEW: Prefer winsorized log-quantile hybrid; then fallback
-    let brks = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE)
-            || tryJenks(values)
-            || quantileBreaks(values)
-            || prettyBreaks(Math.min(...values), Math.max(...values));
+    // Primary: Head/Tail winsorized with first-bin floor; fallback to log-hybrid
+    let ht = headTailWinsorBreaks(values, JENKS_CLASSES, WINSOR_TAIL, FIRST_BIN_FLOOR);
+    let brks = ht ? ht.edges : null;
+    let firstFloorApplied = ht ? ht.firstFloorApplied : false;
 
-    if(!brks || brks.length<2){ showToast('Could not compute breaks. Keeping previous layer.'); hideSpinner(); return; }
+    // Validate distribution property: bottom bin larger than top bin
+    if(brks){
+      const counts = computeLegendCounts(values, brks);
+      const bottom = counts[0], top = counts[counts.length-1];
+      if(!(bottom > top)){ // if not satisfied, fall back to log-hybrid
+        const alt = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE);
+        if(alt){ brks = alt; firstFloorApplied = (FIRST_BIN_FLOOR>Math.min(...values)); }
+      }
+    }
+
+    if(!brks || brks.length<2){
+      brks = tryJenks(values) || quantileBreaks(values) || prettyBreaks(Math.min(...values), Math.max(...values));
+      firstFloorApplied = false;
+    }
 
     activeRamp = speciesRamp();
     jenksBreaks = brks.slice();
@@ -958,7 +994,8 @@ async function buildLayer(){
       opacity: parseFloat($('opacity').value),
       highlightTop10: $('top10').checked,
       top10Threshold: top10Threshold,
-      isolatedBin: isolatedBin
+      isolatedBin: isolatedBin,
+      firstFloorApplied: firstFloorApplied
     });
 
     if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
@@ -1035,7 +1072,7 @@ async function buildLayer(){
     vtLayer.addTo(map);
     lastGoodLayer = vtLayer;
 
-    updateLegendFrozen({ breaks: cfg.breaks, ramp: cfg.ramp, histCounts: histogramCounts });
+    updateLegendFrozen({ breaks: cfg.breaks, ramp: cfg.ramp, histCounts: histogramCounts, firstFloorApplied: cfg.firstFloorApplied });
 
   }catch(err){
     console.error('buildLayer error', err);
