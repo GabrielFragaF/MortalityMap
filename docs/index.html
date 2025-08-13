@@ -652,20 +652,21 @@ const SAMPLE_TARGET = 1500;
 const MAX_TILES_STATS = 90;
 const MAX_HEXES_STATS  = 3000;
 
-/* ---- TUNING (tiny knobs) ---- */
-const WINSOR_TAIL = 0.02;                    // clamp each tail at 2%
-const FIRST_BIN_FLOOR = 1;                   // never show first lower edge < 1
-const FIRST_BIN_MAX_SHARE = 0.55;            // aim: ≤55% of cells in first bin
-const FIRST_CUT_MIN_ADJ = 0.70;              // don’t shrink more than 30% toward min
-const FIRST_CUT_STEP = 0.05;                 // shrink step for first cut when needed
-const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95]; // fallback cuts for log-hybrid
-const TRANSFORM_MODE = "log1p";              // fallback transform
+/* ---- TUNING ---- */
+const WINSOR_TAIL = 0.02;
+const FIRST_BIN_FLOOR = 1;           // desired floor
+const FLOOR_APPLY_FRAC_OF_MAX = 0.98;// FIX: only apply floor if < 98% of max
+const FIRST_BIN_MAX_SHARE = 0.55;
+const FIRST_CUT_MIN_ADJ = 0.70;
+const FIRST_CUT_STEP = 0.05;
+const HYBRID_CUTS = [0.25, 0.5, 0.75, 0.95];
+const TRANSFORM_MODE = "log1p";
 
-/* transform helpers (fallback) */
+/* transform helpers */
 function tforward(v, mode){ const x=Math.max(0,v); return mode==="log1p"? Math.log1p(x) : mode==="sqrt"? Math.sqrt(x) : x; }
 function tinverse(v, mode){ return mode==="log1p"? Math.expm1(v) : mode==="sqrt"? v*v : v; }
 
-/* basic breaks (fallbacks) */
+/* basics */
 function prettyBreaks(min, max){
   if (!isFinite(min) || !isFinite(max)) return null;
   if (min===max) { const eps = min===0 ? 1 : Math.abs(min)*0.1; min -= eps; max += eps; }
@@ -697,7 +698,7 @@ function reservoir(values, k){
   return out;
 }
 
-/* fallback: winsorized log-quantile hybrid */
+/* winsorized log-quantile hybrid (fallback) */
 function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, mode=TRANSFORM_MODE){
   const arr = values.filter(v=>Number.isFinite(v)); if(arr.length<5) return null;
   const sorted = arr.slice().sort((a,b)=>a-b);
@@ -717,7 +718,26 @@ function winsorizedLogHybridBreaks(values, tail=WINSOR_TAIL, cuts=HYBRID_CUTS, m
   return edges;
 }
 
-/* NEW: winsorized Head/Tail breaks (first bin floor) */
+/* FIX: monotonic guard */
+function ensureMonotonic(edges, minVal, maxVal, k=JENKS_CLASSES){
+  let e = edges.slice().sort((a,b)=>a-b);
+  const rng = (maxVal - minVal) || 1;
+  const eps = rng * 1e-6;
+  e[0] = Math.max(e[0], minVal);
+  e[e.length-1] = Math.min(e[e.length-1], maxVal);
+  for(let i=1;i<e.length;i++){
+    if(!(e[i] > e[i-1])) e[i] = Math.min(maxVal, e[i-1] + eps);
+  }
+  // trim/pad to k+1
+  while(e.length > k+1) e.splice(e.length-2,1);
+  while(e.length < k+1){
+    const i = e.length-1;
+    e.splice(i,0,(e[i-1]+e[i])/2);
+  }
+  return e;
+}
+
+/* NEW: winsorized Head/Tail with safe floor */
 function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=FIRST_BIN_FLOOR){
   const v = values.filter(Number.isFinite); if(v.length<5) return null;
   const s = v.slice().sort((a,b)=>a-b);
@@ -726,54 +746,47 @@ function headTailWinsorBreaks(values, k=JENKS_CLASSES, tail=WINSOR_TAIL, floor=F
   const w = s.map(x=>clamp(x,qLo,qHi));
   const minVal = w[0], maxVal = w[w.length-1];
 
-  const edges = [];
-  let firstApplied = false;
-  const lowerEdge = Math.max(floor, minVal);
-  if (lowerEdge > minVal) firstApplied = true;
-  edges.push(lowerEdge);
+  // FIX: only apply the 1.0 floor if it is meaningfully below the visible max
+  const canApplyFloor = (floor <= maxVal * FLOOR_APPLY_FRAC_OF_MAX);
+  const lowerEdge = canApplyFloor ? Math.max(floor, minVal) : minVal;
+  const firstApplied = canApplyFloor && (lowerEdge > minVal + (maxVal-minVal)*1e-9);
 
+  const edges = [lowerEdge];
   let current = w.slice();
+
   for(let i=1; i<k; i++){
     if(current.length<2) break;
     const mean = current.reduce((a,b)=>a+b,0)/current.length;
     const prev = edges[edges.length-1];
-    const m = mean > prev ? mean : prev + (maxVal-prev)*1e-9;
+    let m = mean;
+    if(!(m > prev)){
+      // FIX: if mean is not above prev, nudge forward but never backward
+      if(prev < maxVal) m = prev + (maxVal - prev) * 0.25;
+      else m = prev; // stuck at max
+    }
     edges.push(m);
-    current = current.filter(x=>x>=mean);
+    current = current.filter(x=>x>=m);
   }
   edges.push(maxVal);
 
-  if(edges.length < k+1){
-    const need = (k+1) - edges.length;
-    const qs = [];
-    for(let i=1;i<=need;i++){ qs.push(ss.quantileSorted(w, (i)/(need+1))); }
-    const tmp = edges.concat(qs).sort((a,b)=>a-b);
-    const out=[tmp[0]];
-    for(let i=1;i<tmp.length;i++){
-      if(tmp[i] > out[out.length-1] + (maxVal-minVal)*1e-9) out.push(tmp[i]);
-    }
-    while(out.length > k+1) out.splice(out.length-2,1);
-    while(out.length < k+1) out.splice(out.length-1,0,(out[out.length-2]+out[out.length-1])/2);
-    return { edges: out, firstFloorApplied:firstApplied };
-  }
-  if(edges.length > k+1) edges.length = k+1;
-  return { edges, firstFloorApplied:firstApplied };
+  let safe = ensureMonotonic(edges, minVal, maxVal, k);
+  return { edges: safe, firstFloorApplied:firstApplied };
 }
 
-/* tiny adaptive nudge: shrink first interior cut if bottom bin too large */
+/* tiny adaptive nudge of first cut */
 function tuneFirstCut(edges, values, targetShare=FIRST_BIN_MAX_SHARE, minAdj=FIRST_CUT_MIN_ADJ, step=FIRST_CUT_STEP){
   const e = edges.slice();
   if(e.length<3) return {edges:e, adjusted:false};
   const min = e[0]; const orig = e[1];
-  let adj = 0.95; // small change first
+  let adj = 0.95;
   while(adj >= minAdj){
-    e[1] = min + (orig - min) * adj; // move toward min -> threshold down -> fewer in bin0
+    e[1] = min + (orig - min) * adj;
     const c = computeLegendCounts(values, e);
     const share = c[0] / values.length;
-    if(share <= targetShare) return {edges:e, adjusted:true};
+    if(share <= targetShare) return {edges:ensureMonotonic(e, e[0], e[e.length-1], e.length-1), adjusted:true};
     adj -= step;
   }
-  return {edges:edges, adjusted:false};
+  return {edges:ensureMonotonic(edges, edges[0], edges[edges.length-1], edges.length-1), adjusted:false};
 }
 
 /* Hardened binning using frozen breaks */
@@ -957,18 +970,18 @@ async function buildLayer(){
       return;
     }
 
-    // Primary: HT winsorized + floor
+    // Primary: HT winsorized + safe floor
     let ht = headTailWinsorBreaks(values, JENKS_CLASSES, WINSOR_TAIL, FIRST_BIN_FLOOR);
     let brks = ht ? ht.edges : null;
     let firstFloorApplied = ht ? ht.firstFloorApplied : false;
 
-    // Tiny adaptive nudge so bin0 isn’t over-dominant
+    // Adaptive first cut
     if(brks){
       const tuned = tuneFirstCut(brks, values, FIRST_BIN_MAX_SHARE, FIRST_CUT_MIN_ADJ, FIRST_CUT_STEP);
       brks = tuned.edges;
     }
 
-    // Fallbacks if something went off
+    // Fallbacks if needed
     if(!brks || brks.length<2){
       brks = winsorizedLogHybridBreaks(values, WINSOR_TAIL, HYBRID_CUTS, TRANSFORM_MODE)
           || tryJenks(values)
