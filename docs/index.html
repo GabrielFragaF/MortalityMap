@@ -10,7 +10,7 @@
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Leaflet + deps (use your local copies) -->
+<!-- Leaflet + deps (use your local copies if you have them) -->
 <link rel="stylesheet" href="./vendor/leaflet.css?v=20250812"/>
 <script src="./vendor/leaflet.js?v=20250812"></script>
 <script src="./vendor/pmtiles.js?v=20250812"></script>
@@ -77,13 +77,16 @@ body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
 .rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
-.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:40vh;border-top:1px solid var(--border)}
+.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:34vh;border-top:1px solid var(--border)}
 .rail-summary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--border)}
-.apply-btn{margin:8px 8px 2px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
+.control-row{display:flex;gap:8px;margin:8px 8px 2px}
+.btn-small{padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
+.btn-small[disabled]{opacity:.5;cursor:not-allowed}
+body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:var(--pill-border)}
+.apply-btn{margin:8px 8px 10px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
 .apply-btn[disabled]{opacity:.5;cursor:not-allowed}
 .apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
 body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
-.apply-btn{margin-top:auto}
 .author{margin:6px 8px 8px;font-size:10px;color:var(--text-secondary)}
 
 /* Animated panel */
@@ -117,6 +120,7 @@ body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
 
 /* Grids */
 .grid{display:grid;gap:8px}
+.grid.one{grid-template-columns:1fr}
 .grid.two{grid-template-columns:repeat(2,1fr)}
 .grid.three{grid-template-columns:repeat(3,1fr)}
 .grid.four{grid-template-columns:repeat(4,1fr)}
@@ -135,6 +139,12 @@ select:focus{outline:none;box-shadow:0 0 0 3px var(--focus)}
 #layer-type-select{
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><polyline points='4,7 10,13 16,7'/></svg>");
   background-repeat:no-repeat;background-position:right 10px center;background-size:16px
+}
+/* Dark theme select styling */
+body[data-theme="dark"] select{
+  background:#23262b;
+  color:var(--text-primary);
+  border:1px solid var(--pill-border);
 }
 
 /* Hex buttons */
@@ -177,15 +187,18 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .hist div{flex:1;background:#cbd5e1;border-radius:3px}
 .hist div.active{background:#94a3b8}
 
-/* Toast & spinner */
+/* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
 .toast.show{opacity:1;transform:none}
 #spinner{position:absolute;top:16px;right:16px;background:var(--panel-bg);border:1px solid var(--border);border-radius:10px;padding:6px 10px;box-shadow:0 4px 14px rgba(0,0,0,.1);z-index:1004;display:none}
+.leaflet-popup-hover{pointer-events:none}
+.leaflet-popup-hover .leaflet-popup-content-wrapper{background:var(--panel-bg);backdrop-filter:blur(14px);border:1px solid var(--border)}
+.leaflet-popup-hover .leaflet-popup-content{margin:8px 10px;font-size:12px}
 </style>
 </head>
 <body>
 
-<!-- Inline icon set from demo -->
+<!-- Icons -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
@@ -199,7 +212,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 
 <div id="map"></div>
 
-<!-- Drawer (rail + animated panel) -->
+<!-- Drawer -->
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
     <div class="brand">
@@ -222,6 +235,9 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
     <div class="rail-summary-title">Selected filters</div>
     <ul id="railSummary" class="rail-summary"></ul>
 
+    <div class="control-row">
+      <button id="resetBtn" class="btn-small">Reset all</button>
+    </div>
     <button id="applyBtn" class="apply-btn" disabled>Apply</button>
     <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
@@ -253,7 +269,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
           <div class="section-content grid" id="map-layer-selector" style="gap:10px">
             <select id="layer-type-select">
-              <option value="observed">Observed strandings</option>
+              <option value="observed">At-sea mortality of observed strandings</option>
               <option value="estimation" selected>Mortality estimation</option>
             </select>
             <div class="seg" id="estimation-options">
@@ -279,7 +295,18 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           </div>
         </div>
 
-        <!-- Species -->
+        <!-- Taxonomic group -->
+        <div class="section" data-filter-section="taxon">
+          <div class="section-header">
+            <h2 class="section-title">Taxonomic group</h2>
+            <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
+          </div>
+          <div class="section-content grid one" id="taxonChips">
+            <button class="btn chip active" data-group="Sea turtles">Sea turtles</button>
+          </div>
+        </div>
+
+        <!-- Species (shown when Sea turtles is active) -->
         <div class="section" data-filter-section="species">
           <div class="section-header">
             <h2 class="section-title">Species</h2>
@@ -304,7 +331,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           <div class="section-header"><h2 class="section-title">Year</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="yStartL">2015</span><span id="yEndL">2024</span></div>
-            <div class="track-wrap" id="yearWrap">
+            <div class="track-wrap" id="yearWrap" data-start-frac="0" data-end-frac="1">
               <div class="track"></div>
               <div class="hl" id="yHL"></div>
               <div class="handle" id="yStart" role="slider" aria-label="Start year" tabindex="0"></div>
@@ -318,7 +345,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           <div class="section-header"><h2 class="section-title">Month</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="mStartL">Jan</span><span id="mEndL">Dec</span></div>
-            <div class="track-wrap" id="monthWrap">
+            <div class="track-wrap" id="monthWrap" data-start-frac="0" data-end-frac="1">
               <div class="track"></div>
               <div class="hl" id="mHL"></div>
               <div class="handle" id="mStart" role="slider" aria-label="Start month" tabindex="0"></div>
@@ -431,14 +458,14 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
   </div>
 </div>
 
-<!-- Legend (dynamic) -->
+<!-- Legend -->
 <div id="legend" class="map-overlay">
   <div class="legend-header">Legend</div>
   <div id="legendRows"></div>
   <div class="hist" id="histogram"></div>
   <div class="legend-scale">
-    <div class="scale-line"></div>
-    <div class="scale-label">Scale</div>
+    <div class="scale-line" id="scaleLine"></div>
+    <div class="scale-label" id="scaleLabel">≈ 100 km</div>
   </div>
   <div class="legend-footer">Basemap: <span id="legendBasemap">Light</span></div>
 </div>
@@ -446,7 +473,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <div id="spinner">Loading…</div>
 <div class="toast" id="toast">Layer updated</div>
 
-<!-- Hidden bridge inputs to preserve your existing pipeline -->
+<!-- Hidden bridge inputs (pipeline compatibility) -->
 <select id="resolution" style="display:none">
   <option value="r3">≈ 60 km</option>
   <option value="r4">≈ 22.6 km</option>
@@ -454,7 +481,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
   <option value="r6">≈ 3.2 km</option>
 </select>
 <select id="counttype" style="display:none">
-  <option value="weight">Observed strandings</option>
+  <option value="weight">At-sea mortality of observed strandings</option>
   <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
   <option value="new_mortality_est_bf_mean" selected>Mortality estimation (mean)</option>
   <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
@@ -482,7 +509,7 @@ function setBasemap(name){
 setBasemap('Light');
 L.control.scale({ metric:true, imperial:false }).addTo(map);
 
-/* =================== TOOLS & HELPERS =================== */
+/* =================== UTILS =================== */
 const $ = (id)=>document.getElementById(id);
 const toast=$('toast'), spinner=$('spinner');
 const bumpToast = (msg='Layer updated')=>{
@@ -490,7 +517,6 @@ const bumpToast = (msg='Layer updated')=>{
 };
 const showSpinner=(m='Loading…')=>{ spinner.textContent=m; spinner.style.display='block'; };
 const hideSpinner=()=>{ spinner.style.display='none'; };
-
 window.addEventListener('error', hideSpinner);
 window.addEventListener('unhandledrejection', hideSpinner);
 
@@ -505,7 +531,7 @@ window.addEventListener('unhandledrejection', hideSpinner);
 /* pmtiles fetch shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250812'; }
+function pmUrlWithBust(file){ return file + '?v=20250813'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -534,8 +560,27 @@ const panel = $('panel');
 const panes = [...document.querySelectorAll('.tabpane')];
 const railBtns = [...document.querySelectorAll('.rail-btn')];
 const applyBtn = $('applyBtn');
+const resetBtn = $('resetBtn');
 let dirty=false;
 function markDirty(){ if(!dirty){ dirty=true; applyBtn && applyBtn.removeAttribute('disabled'); } }
+
+function clearSection(sectionEl){
+  const content = sectionEl.querySelector('.section-content');
+  if(!content) return;
+  content.querySelectorAll('.btn, .chip').forEach(b=> b.classList.remove('active'));
+  content.querySelectorAll('input[type="radio"]').forEach(r=> r.checked=false);
+  const sel=content.querySelector('select');
+  if(sel && sel.id==='layer-type-select'){ sel.value='estimation'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
+  if(sectionEl.dataset.filterSection==='species'){
+    // keep the chips but visually unselected
+  }
+  if(sectionEl.dataset.filterSection==='basemap'){
+    // visually unselect all; keep actual basemap unchanged
+  }
+  if(sectionEl.dataset.filterSection==='grid'){
+    // visually unselect all
+  }
+}
 
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -549,7 +594,10 @@ railBtns.forEach(btn=>{
     panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
     drawer.dataset.tab = tab;
     if(isSame){ drawer.classList.remove('open'); }
-    else { drawer.classList.add('open'); }
+    else {
+      drawer.classList.add('open');
+      requestAnimationFrame(()=>{ reflowSliders(); });
+    }
   });
 });
 
@@ -563,7 +611,7 @@ themeBtn?.addEventListener('click',()=>{
   setTimeout(()=> map.invalidateSize(), 80);
 });
 
-/* Section enable/disable toggles */
+/* Section toggles: disable + clear selection visuals */
 document.querySelectorAll('.filter-toggle').forEach(label=>{
   const toggle=label.querySelector('.toggle-input');
   const section=label.closest('[data-filter-section]');
@@ -571,7 +619,9 @@ document.querySelectorAll('.filter-toggle').forEach(label=>{
   const content=section.querySelector('.section-content');
   if(toggle && !toggle.checked){ content && content.classList.add('disabled'); }
   toggle && toggle.addEventListener('change',()=>{
-    content && content.classList.toggle('disabled',!toggle.checked);
+    const on = toggle.checked;
+    content && content.classList.toggle('disabled',!on);
+    if(!on){ clearSection(section); }
     markDirty();
   });
 });
@@ -587,14 +637,14 @@ gridSel && gridSel.addEventListener('click',e=>{
   markDirty();
 });
 
-/* Basemap buttons (do NOT rebuild data layer) */
+/* Basemap buttons */
 const baseBox=$('basemapBtns');
 baseBox && baseBox.addEventListener('click',e=>{
   const btn=e.target.closest('button'); if(!btn) return;
   [...baseBox.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   setBasemap(btn.dataset.map);
-  markDirty(); // just to enable Apply summary refresh if user wants
+  markDirty();
 });
 
 /* Map layer selection -> #counttype */
@@ -626,6 +676,29 @@ document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()
 document.querySelectorAll('.seg').forEach(syncSegPill);
 updateEstimationVisibility();
 
+/* Taxonomic group -> toggles species availability */
+const taxonChips = $('taxonChips');
+function syncSpeciesVisibility(){
+  const secSpecies = document.querySelector('[data-filter-section="species"] .section-content');
+  const hasSeaTurtles = !!(taxonChips && taxonChips.querySelector('.chip.active[data-group="Sea turtles"]'));
+  if(secSpecies){
+    secSpecies.classList.toggle('disabled', !hasSeaTurtles);
+    if(!hasSeaTurtles){
+      secSpecies.querySelectorAll('.chip').forEach(c=> c.classList.remove('active'));
+    } else {
+      // default: all selected
+      secSpecies.querySelectorAll('.chip').forEach(c=> c.classList.add('active'));
+    }
+  }
+}
+taxonChips && taxonChips.addEventListener('click', e=>{
+  const btn=e.target.closest('.chip'); if(!btn) return;
+  btn.classList.toggle('active');
+  syncSpeciesVisibility();
+  markDirty();
+});
+syncSpeciesVisibility();
+
 /* Species chips */
 const speciesBox=$('speciesChips');
 const speciesAll=$('speciesAll');
@@ -647,70 +720,56 @@ document.querySelectorAll('[data-button-group]').forEach(group=>{
   });
 });
 
-/* Binary segments in Anth */
-document.querySelectorAll('#tab-anth .seg').forEach(seg=>{
-  seg.addEventListener('change',()=>{ syncSegPill(seg); markDirty(); });
-});
-
-/* Dual-range sliders */
+/* Dual-range sliders with fractional reflow (fixes 1907 bug) */
 function makeRange(wrap, hl, startHandle, endHandle, onUpdate){
   if(!wrap||!hl||!startHandle||!endHandle) return;
+  let W=0;
+  function calcW(){ const r=wrap.getBoundingClientRect(); W=Math.max(20,(r.width-20)||0); return W; }
+  function draw(){ calcW(); const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`); hl.style.left=(s+10)+'px'; hl.style.width=(e-s)+'px'; onUpdate && onUpdate(); }
+  function setFracs(sf,ef){ calcW(); sf=Math.max(0,Math.min(1,sf)); ef=Math.max(sf,Math.min(1,ef)); startHandle.style.left=(sf*W)+'px'; endHandle.style.left=(ef*W)+'px'; wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw(); }
+  function getFracs(){ calcW(); const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`); return {sf:(s/W)||0, ef:(e/W)||1}; }
   function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
-  function draw(){
-    const rect=wrap.getBoundingClientRect(); const W=rect.width-20;
-    const s=parseFloat(startHandle.style.left||'0'); const e=parseFloat(endHandle.style.left||`${W}`);
-    hl.style.left=(s+10)+'px'; hl.style.width=(e-s)+'px';
-    onUpdate && onUpdate();
-  }
   function attach(handle,isStart){
     let active=false;
     const move=(e)=>{ if(!active) return; e.preventDefault();
-      const rect=wrap.getBoundingClientRect(); const W=rect.width-20;
-      let x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left-10;
+      calcW(); let x=(e.touches?e.touches[0].clientX:e.clientX)-wrap.getBoundingClientRect().left-10;
       x=clamp(x,0,W);
       const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0'));
       if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
-      handle.style.left=x+'px'; draw();
+      handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
     };
-    const up=()=>{ if(active){ active=false; document.removeEventListener('mousemove',move); document.removeEventListener('touchmove',move); } };
+    const up=()=>{ active=false; document.removeEventListener('mousemove',move); document.removeEventListener('touchmove',move); };
     const down=()=>{ active=true; document.addEventListener('mousemove',move); document.addEventListener('touchmove',move,{passive:false}); };
     handle.addEventListener('mousedown',down); handle.addEventListener('touchstart',down,{passive:true});
     document.addEventListener('mouseup',up); document.addEventListener('touchend',up);
     handle.addEventListener('keydown',(e)=>{
-      const rect=wrap.getBoundingClientRect(); const W=rect.width-20; const step=W/12;
-      let x=parseFloat(handle.style.left||'0');
+      calcW(); const step=W/20; let x=parseFloat(handle.style.left||'0');
       if(e.key==='ArrowLeft') x-=step; if(e.key==='ArrowRight') x+=step;
       x=clamp(x,0,W);
       const other=parseFloat((isStart? endHandle.style.left : startHandle.style.left) || (isStart? `${W}`:'0'));
       if(isStart && x>=other) x=other; if(!isStart && x<=other) x=other;
-      handle.style.left=x+'px'; draw();
+      handle.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
     });
-  }
-  function init(){
-    const rect=wrap.getBoundingClientRect(); const W=rect.width-20;
-    startHandle.style.left='0px'; endHandle.style.left=W+'px'; draw();
   }
   wrap.addEventListener('mousedown',(e)=>{
     if(e.target!==wrap) return;
-    const rect=wrap.getBoundingClientRect(); const W=rect.width-20;
-    let x=e.clientX-rect.left-10; x=Math.max(0,Math.min(W,x));
+    calcW(); let x=e.clientX-wrap.getBoundingClientRect().left-10; x=clamp(x,0,W);
     const s=parseFloat(startHandle.style.left||'0'); const en=parseFloat(endHandle.style.left||`${W}`);
     const target=(Math.abs(x-s) < Math.abs(x-en)? startHandle : endHandle);
-    target.style.left=x+'px';
-    const s2=parseFloat(startHandle.style.left||'0'); const e2=parseFloat(endHandle.style.left||`${W}`);
-    hl.style.left=(s2+10)+'px'; hl.style.width=(e2 - s2)+'px';
-    onUpdate && onUpdate();
+    target.style.left=x+'px'; const {sf,ef}=getFracs(); wrap.dataset.startFrac=sf; wrap.dataset.endFrac=ef; draw();
   });
-  attach(startHandle,true); attach(endHandle,false); init();
+  // Public reflow
+  wrap._reflow = ()=>{ const sf=parseFloat(wrap.dataset.startFrac||'0'); const ef=parseFloat(wrap.dataset.endFrac||'1'); setFracs(sf,ef); };
+  // Init
+  attach(startHandle,true); attach(endHandle,false); wrap._reflow();
 }
 const YEAR = {min:2015, max:2024};
 const yWrap=$('yearWrap'), yHL=$('yHL'), yStart=$('yStart'), yEnd=$('yEnd'), yStartL=$('yStartL'), yEndL=$('yEndL');
 function updateYearLabels(){
   if(!yWrap) return;
-  const rect=yWrap.getBoundingClientRect(); const W=rect.width-20;
-  const s=parseFloat(yStart.style.left||'0'); const e=parseFloat(yEnd.style.left||`${W}`);
-  const ys=Math.round(YEAR.min + (s/W)*(YEAR.max-YEAR.min));
-  const ye=Math.round(YEAR.min + (e/W)*(YEAR.max-YEAR.min));
+  const sf=parseFloat(yWrap.dataset.startFrac||'0'); const ef=parseFloat(yWrap.dataset.endFrac||'1');
+  const ys=Math.round(YEAR.min + sf*(YEAR.max-YEAR.min));
+  const ye=Math.round(YEAR.min + ef*(YEAR.max-YEAR.min));
   yStartL.textContent=ys; yEndL.textContent=ye;
 }
 makeRange(yWrap,yHL,yStart,yEnd,updateYearLabels);
@@ -719,20 +778,16 @@ const mWrap=$('monthWrap'), mHL=$('mHL'), mStart=$('mStart'), mEnd=$('mEnd'), mS
 function monthLabel(m){ return new Date(2000,m-1).toLocaleString('en-US',{month:'short'}); }
 function updateMonthLabels(){
   if(!mWrap) return;
-  const rect=mWrap.getBoundingClientRect(); const W=rect.width-20;
-  const s=parseFloat(mStart.style.left||'0'); const e=parseFloat(mEnd.style.left||`${W}`);
-  const ms=Math.max(1,Math.min(12, Math.round(1 + (s/W)*11)));
-  const me=Math.max(1,Math.min(12, Math.round(1 + (e/W)*11)));
+  const sf=parseFloat(mWrap.dataset.startFrac||'0'); const ef=parseFloat(mWrap.dataset.endFrac||'1');
+  const ms=Math.max(1,Math.min(12, Math.round(1 + sf*11)));
+  const me=Math.max(1,Math.min(12, Math.round(1 + ef*11)));
   mStartL.textContent=monthLabel(ms); mEndL.textContent=monthLabel(me);
 }
 makeRange(mWrap,mHL,mStart,mEnd,updateMonthLabels);
+function reflowSliders(){ yWrap && yWrap._reflow && yWrap._reflow(); updateYearLabels(); mWrap && mWrap._reflow && mWrap._reflow(); updateMonthLabels(); }
+window.addEventListener('resize',()=>{ reflowSliders(); document.querySelectorAll('.seg').forEach(syncSegPill); });
 
-window.addEventListener('resize',()=>{
-  updateYearLabels(); updateMonthLabels();
-  document.querySelectorAll('.seg').forEach(syncSegPill);
-});
-
-/* Seasons -> month slider union (demo behavior) */
+/* Seasons -> month slider union */
 const seasons={ summer:[12,1,2], autumn:[3,4,5], winter:[6,7,8], spring:[9,10,11] };
 const seasonBox=$('seasonBtns');
 seasonBox && seasonBox.addEventListener('click',e=>{
@@ -742,12 +797,8 @@ seasonBox && seasonBox.addEventListener('click',e=>{
   if(act.length===0){ markDirty(); return; }
   const months=[...new Set(act.flatMap(k=>seasons[k]))].sort((a,b)=>a-b);
   const ms=Math.min(...months), me=Math.max(...months);
-  const rect=mWrap.getBoundingClientRect(); const W=rect.width-20;
-  mStart.style.left=((ms-1)/11*W)+'px';
-  mEnd.style.left=((me-1)/11*W)+'px';
-  const s=parseFloat(mStart.style.left||'0'); const en=parseFloat(mEnd.style.left||`${W}`);
-  mHL.style.left=(s+10)+'px'; mHL.style.width=(en - s)+'px';
-  updateMonthLabels(); markDirty();
+  const sf=(ms-1)/11, ef=(me-1)/11;
+  mWrap.dataset.startFrac=sf; mWrap.dataset.endFrac=ef; reflowSliders(); markDirty();
 });
 
 /* =================== DATA PIPELINE =================== */
@@ -823,7 +874,7 @@ async function capabilityProbe(pmFile, layerName){
   return caps;
 }
 
-/* UI -> selections */
+/* Selection helpers */
 function sectionEnabled(key){
   const el = document.querySelector(`[data-filter-section="${key}"] .section-content`);
   return el && !el.classList.contains('disabled');
@@ -941,9 +992,10 @@ const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 let vtLayer=null, lastGoodLayer=null;
+let currentSourceKey=null;
 let layerName='', metricField='sum_val';
 let aggByHex = new Map();
-let jenksBreaks=[0,1,2,3,4,5], activeRamp=ramps['multi'], histogramCounts=[0,0,0,0,0], top10Threshold=null, isolatedBin=-1;
+let jenksBreaks=[0,1,2,3,4,5], activeRamp=['#fee','#fca','#fb6','#d22','#a10'], histogramCounts=[0,0,0,0,0], top10Threshold=null, isolatedBin=-1;
 
 const metricCandidates = {
   weight: ['weight','sum_val'],
@@ -1013,7 +1065,7 @@ function winsorizedLogHybridBreaks(values){
   return edges;
 }
 
-/* Aggregate tiles in view */
+/* Tiles in view */
 function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
 function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
 function tileRangeForBounds(b,z){
@@ -1089,12 +1141,11 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
       }
     }
   }
-  // lock metric after sampling
   lockMetricField(sampleProps, $('counttype').value);
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
 }
 
-/* Legend render (demo look) */
+/* Legend render */
 function updateLegendFrozen(cfg){
   const rows = $('legendRows'); rows.innerHTML='';
   const brks = cfg.breaks, ramp = cfg.ramp;
@@ -1115,22 +1166,30 @@ function updateLegendFrozen(cfg){
   });
 }
 
-/* Build layer */
+/* Build / update layer (no flicker on zoom/pan) */
+let styleConfig = null;
 async function buildLayer(){
   showSpinner('Loading & aggregating…');
   try{
     const res=$('resolution').value, ct=$('counttype').value;
     const pmFile = fileFor(res, ct);
+    const sourceKey = `${pmFile}`;
 
-    layerName = await detectLayerName(pmFile);
+    if(!layerName || currentSourceKey!==sourceKey){
+      layerName = await detectLayerName(pmFile);
+      currentSourceKey = sourceKey;
+    }
     const caps = await capabilityProbe(pmFile, layerName);
 
-    // Sync year slider domain if data suggests different bounds
+    // Sync year domain
     const years = Array.from(caps.observedYears.values()).sort((a,b)=>a-b);
     if(years.length){
       YEAR.min = years[0]; YEAR.max = years[years.length-1];
       $('yStartL').textContent=YEAR.min; $('yEndL').textContent=YEAR.max;
-      updateYearLabels();
+      // clamp slider fractions
+      yWrap.dataset.startFrac = Math.max(0,Math.min(1, parseFloat(yWrap.dataset.startFrac||'0')));
+      yWrap.dataset.endFrac   = Math.max(parseFloat(yWrap.dataset.startFrac), Math.min(1, parseFloat(yWrap.dataset.endFrac||'1')));
+      reflowSliders();
     }
 
     const sel = readFilterSelections(caps);
@@ -1148,48 +1207,106 @@ async function buildLayer(){
     histogramCounts = computeLegendCounts(values, brks);
     top10Threshold = p90(values);
 
-    const cfg = Object.freeze({
-      breaks: brks.slice(),
+    styleConfig = {
+      breaks: jenksBreaks.slice(),
       ramp: activeRamp.slice(),
       opacity: parseFloat($('opacity').value),
       highlightTop10: $('top10').checked,
       top10Threshold
-    });
+    };
 
-    if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
-    vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
-      rendererFactory: L.canvas.tile,
-      interactive:true,
-      vectorTileLayerStyles: {
-        [layerName]: (props)=>{
-          const key = props.h3_index || props.h3 || props.id;
-          const agg = key ? aggByHex.get(key) : undefined;
-          const v = agg ? agg.sum : undefined;
-          if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
-          const idx = computeBinIndex(v, cfg.breaks);
-          const color = cfg.ramp[Math.min(Math.max(idx,0), cfg.ramp.length-1)];
-          let fillOpacity = cfg.opacity;
-          let weight = 0.5, strokeColor = color;
-          if(cfg.highlightTop10 && cfg.top10Threshold!=null && v>=cfg.top10Threshold){ weight = 1.2; fillOpacity = Math.min(1, cfg.opacity + 0.1); }
-          return {fill:true, fillColor:color, fillOpacity, color:strokeColor, weight};
-        }
-      },
-      getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
-    }).addTo(map);
-    lastGoodLayer = vtLayer;
+    // Create vector layer only if source changed
+    if(!vtLayer || currentSourceKey!==vtLayer.__src){
+      if(vtLayer){ map.removeLayer(vtLayer); vtLayer=null; }
+      vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
+        rendererFactory: L.canvas.tile,
+        interactive:true,
+        vectorTileLayerStyles: { [layerName]: styleFn },
+        getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+      }).addTo(map);
+      vtLayer.__src = currentSourceKey;
+      attachHover(vtLayer);
+    } else {
+      // Same source -> just redraw with new style config + aggregation
+      vtLayer.redraw();
+    }
 
-    updateLegendFrozen({ breaks: cfg.breaks, ramp: cfg.ramp, histCounts: histogramCounts, firstFloorApplied:false });
-
-    // Refresh summary label "Scale" with Leaflet scale control (approx)
-    const sLab = document.querySelector('.scale-label'); if(sLab){ sLab.textContent = 'Scale (dynamic)'; }
-
+    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
     bumpToast('Layer updated');
   }catch(e){
     console.error(e); bumpToast('Failed to load layer');
   }finally{ hideSpinner(); dirty=false; applyBtn && applyBtn.setAttribute('disabled',''); }
 }
 
-/* =================== APPLY & SUMMARY =================== */
+function styleFn(props){
+  const key = props.h3_index || props.h3 || props.id;
+  const agg = key ? aggByHex.get(key) : undefined;
+  const v = agg ? agg.sum : undefined;
+  if(!Number.isFinite(v)) return {opacity:0, fillOpacity:0, interactive:false};
+  const idx = computeBinIndex(v, styleConfig.breaks);
+  const color = styleConfig.ramp[Math.min(Math.max(idx,0), styleConfig.ramp.length-1)];
+  let fillOpacity = styleConfig.opacity;
+  let weight = 0.5, strokeColor = color;
+  if(styleConfig.highlightTop10 && styleConfig.top10Threshold!=null && v>=styleConfig.top10Threshold){ weight = 1.2; fillOpacity = Math.min(1, styleConfig.opacity + 0.1); }
+  return {fill:true, fillColor:color, fillOpacity, color:strokeColor, weight};
+}
+
+/* Hover info (restored) */
+let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
+function attachHover(vtg){
+  vtg.on('mouseover', e=>{
+    showHover(e);
+  });
+  vtg.on('mousemove', e=>{
+    showHover(e);
+  });
+  vtg.on('mouseout', ()=>{
+    map.closePopup(hoverPopup);
+  });
+}
+function showHover(e){
+  const p = e.layer && e.layer.properties || {};
+  const key = p.h3_index || p.h3 || p.id;
+  const agg = key ? aggByHex.get(key) : null;
+  if(!agg){ map.closePopup(hoverPopup); return; }
+  const v = agg.sum;
+  const sex = agg.counts.sex || {}, stage = agg.counts.stage || {}, season = agg.counts.season || {};
+  const top = styleConfig.top10Threshold!=null && v>=styleConfig.top10Threshold ? ' (Top decile)' : '';
+  const html = `
+    <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}${top}</div>
+    <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || agg.rowCount}</div>
+    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+  `;
+  hoverPopup.setLatLng(e.latlng).setContent(html);
+  if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
+}
+
+/* Scale label in legend (shows ≈ km) */
+function updateScaleLabel(){
+  const line = $('scaleLine'), lab=$('scaleLabel');
+  if(!line||!lab) return;
+  const px = 120; // scale line width
+  const size = map.getSize();
+  const centerPx = L.point(size.x/2, size.y/2);
+  const p1 = map.containerPointToLatLng(centerPx);
+  const p2 = map.containerPointToLatLng(centerPx.add([px,0]));
+  const meters = map.distance(p1,p2);
+  const km = meters/1000;
+  // snap to a nice number (1,2,5 * 10^n)
+  const pow = Math.pow(10, Math.floor(Math.log10(km||1)));
+  const mant = km/pow;
+  const niceMant = mant<1.5?1:mant<3?2:mant<7?5:10;
+  const niceKm = niceMant*pow;
+  const nicePx = px*(niceKm/km);
+  line.style.width = `${Math.max(40, Math.min(200, nicePx))}px`;
+  lab.textContent = `≈ ${nf(niceKm)} km`;
+}
+map.on('zoomend moveend resize', updateScaleLabel);
+updateScaleLabel();
+
+/* =================== APPLY, RESET & SUMMARY =================== */
 function getText(el){ return el?.textContent?.trim() || ''; }
 function abbrSpecies(name){ const [g,s]=name.split(' '); return (g&&s)? `${g[0]}. ${s}` : name; }
 
@@ -1202,7 +1319,7 @@ function collectFilters(){
   const baseBtn = document.querySelector('#basemapBtns .btn.active'); out.basemap = getText(baseBtn);
   // layer
   const lv = layerSel?.value;
-  if(lv==='observed') out.layer='Observed strandings';
+  if(lv==='observed') out.layer='At-sea mortality of observed strandings';
   else{
     const r=document.querySelector('#estimation-options input:checked');
     out.layer = `Mortality estimation${r? ' — '+r.value : ''}`;
@@ -1222,11 +1339,9 @@ function collectFilters(){
     const v = getAnthRadio(n); if(v) out[lab]=v;
   });
   const oil = getAnthRadio('oil'); if(oil) out.OilPetrol = oil;
-  // year
+  // time
   if(sectionEnabled('year')) out.year = [$('yStartL').textContent, $('yEndL').textContent];
-  // month
   if(sectionEnabled('month')) out.month = [$('mStartL').textContent, $('mEndL').textContent];
-  // seasons
   if(sectionEnabled('season')) out.seasons = getSeasons();
   return out;
 }
@@ -1258,9 +1373,49 @@ function updateSummary(){
   const legendBasemap=$('legendBasemap'); if(legendBasemap && f.basemap) legendBasemap.textContent = f.basemap;
 }
 
+/* Reset all -> defaults */
+function resetAll(){
+  // Turn on Main sections, off others
+  document.querySelectorAll('[data-filter-section]').forEach(sec=>{
+    const toggle = sec.querySelector('.toggle-input');
+    const content= sec.querySelector('.section-content');
+    const key = sec.dataset.filterSection;
+    const on = (key==='grid' || key==='layer' || key==='basemap' || key==='taxon' || key==='species');
+    if(toggle){ toggle.checked = on; }
+    if(content){ content.classList.toggle('disabled', !on); }
+    clearSection(sec);
+  });
+
+  // Defaults
+  // grid r5
+  gridSel.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.val==='r5'));
+  $('resolution').value='r5';
+
+  // layer: estimation mean
+  layerSel.value='estimation';
+  document.getElementById('est-mean').checked=true; syncSegPill(estimation);
+  $('counttype').value='new_mortality_est_bf_mean';
+
+  // basemap: keep current, but visually set Light
+  baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
+
+  // taxon & species
+  document.querySelectorAll('#taxonChips .chip').forEach(c=> c.classList.toggle('active', c.dataset.group==='Sea turtles'));
+  syncSpeciesVisibility();
+
+  // year/month/season off, sliders full span
+  yWrap.dataset.startFrac='0'; yWrap.dataset.endFrac='1';
+  mWrap.dataset.startFrac='0'; mWrap.dataset.endFrac='1';
+  reflowSliders();
+
+  updateSummary();
+  markDirty();
+}
+
+resetBtn && resetBtn.addEventListener('click', resetAll);
+
 /* Apply -> bridge UI to hidden selects, then build */
 applyBtn && applyBtn.addEventListener('click',()=>{
-  // Map layer bridge
   if(layerSel?.value==='observed') $('counttype').value='weight';
   else{
     const lev = (document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase();
@@ -1271,11 +1426,11 @@ applyBtn && applyBtn.addEventListener('click',()=>{
   buildLayer();
 });
 
-/* Initial state + first paint */
+/* Initial paint */
 updateSummary();
 buildLayer();
 
-/* Rebuild if map moved significantly (keep hash off for now) */
+/* Re-aggregate on quiet pan/zoom without rebuilding layer instance */
 let moveTimer=null;
 map.on('moveend',()=>{ clearTimeout(moveTimer); moveTimer=setTimeout(()=>{ if(!dirty) buildLayer(); }, 250); });
 
