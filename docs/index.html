@@ -527,7 +527,12 @@ window.addEventListener('unhandledrejection', hideSpinner);
   if (!window.Pbf && PBF) window.Pbf = PBF;
 })();
 
-/* pmtiles fetch shim */
+/* ---------- Display-only overscale: Z cap ---------- */
+const DISPLAY_Z_CAP = 9; // cap render fetches to z<=9 (visual only)
+function wrapIndex(v,z){ const n=1<<z; return ((v % n) + n) % n; }
+function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
+
+/* pmtiles fetch shim (with parent-tiling when clamped) */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
 function pmUrlWithBust(file){ return file + '?v=20250813b'; }
@@ -541,11 +546,23 @@ async function getPM(archive){
 window.fetch = async (input, init) => {
   if (typeof input === 'string' && input.startsWith('pmtiles://')) {
     const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-    if (!m) return Promise.reject(new Error('Bad pmtiles URL'));
-    const [_, archive, z, x, y] = m;
+    if (!m) return new Response(null,{status:400});
+    let [_, archive, zStr, xStr, yStr] = m;
+    let z = parseInt(zStr,10), x = parseInt(xStr,10), y = parseInt(yStr,10);
+
+    if (Number.isFinite(DISPLAY_Z_CAP) && z > DISPLAY_Z_CAP) {
+      const dz = z - DISPLAY_Z_CAP;
+      z = DISPLAY_Z_CAP;
+      x = Math.floor(x / (1 << dz));
+      y = Math.floor(y / (1 << dz));
+    }
+    // normalize indices into range for the (possibly) clamped z
+    x = wrapIndex(x, z);
+    y = clampIndex(y, z);
+
     try{
       const pm = await getPM(archive);
-      const t  = await pm.getZxy(+z,+x,+y);
+      const t  = await pm.getZxy(z, x, y);
       if(!t || !t.data){ return new Response(null,{status:204}); }
       return new Response(t.data);
     }catch(e){ return new Response(null,{status:204}); }
@@ -1002,7 +1019,6 @@ function lockMetricField(sample, ct){
 /* Unique-per-individual counters inside each hex */
 function ensureSet(map, key){ let s=map.get(key); if(!s){ s=new Set(); map.set(key,s); } return s; }
 function addUidOncePerCategory(entry, uid, value, cat){
-  // prefer first non-Unknown; if we already stored a non-Unknown, keep it
   const store = entry.uidChosen[cat];
   const prev = store.get(uid);
   const val = value || 'Unknown';
@@ -1011,7 +1027,6 @@ function addUidOncePerCategory(entry, uid, value, cat){
     ensureSet(entry.countSets[cat], val).add(uid);
   }else{
     if(prev==='Unknown' && val!=='Unknown'){
-      // move uid from Unknown -> val
       ensureSet(entry.countSets[cat], 'Unknown').delete(uid);
       store.set(uid, val);
       ensureSet(entry.countSets[cat], val).add(uid);
@@ -1052,7 +1067,6 @@ function quantileBreaks(values){
 /* Winsorized + log hybrid with heavier first bin and very tight top bin */
 function winsorizedLogHybridBreaks(values){
   const tail=0.02; // winsorize 2% tails
-  // Heavier first bin (~40%), then 70%, 90%, with last 1.5–2% as top extreme
   const cuts=[0.40,0.70,0.90,0.985];
   const arr=values.filter(Number.isFinite); if(arr.length<5) return null;
   const s=arr.slice().sort((a,b)=>a-b);
@@ -1214,7 +1228,7 @@ async function buildLayer(){
     const values = await aggregateViewport(pmFile, layerName, predicate, ct);
     if(!values || values.length===0){ bumpToast('No data in view'); hideSpinner(); return; }
 
-    // Breaks (winsorized + log hybrid, heavier first bin, tight top)
+    // Breaks
     let brks = winsorizedLogHybridBreaks(values) || quantileBreaks(values);
     const realMax = Math.max(...values);
     if(brks && brks.length) brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
@@ -1241,7 +1255,7 @@ async function buildLayer(){
       vtLayer.__src = currentSourceKey;
       attachHover(vtLayer);
     } else {
-      vtLayer.redraw(); // same instance, no rebuild
+      vtLayer.redraw();
     }
 
     updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
