@@ -121,7 +121,8 @@ body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
 .toggle-nub{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform .3s cubic-bezier(.2,1,.2,1)}
 .filter-toggle input:checked + .toggle-track{background:#34C759}
 .filter-toggle input:checked + .toggle-track .toggle-nub{transform:translateX(16px)}
-.section-content.disabled{opacity:.45;pointer-events:none;transition:opacity .25s}
+/* Allow pointer events so titles/tooltips work even when disabled */
+.section-content.disabled{opacity:.45;transition:opacity .25s}
 
 /* Grids */
 .grid{display:grid;gap:8px}
@@ -162,7 +163,7 @@ body[data-theme="dark"] select{
 .section-content.seg{max-width:230px;margin:0 auto}
 #tab-anth .section-content.seg{max-width:200px}
 .seg{display:flex;align-items:stretch;background:var(--control-bg);border-radius:10px;padding:2px;position:relative;overflow:hidden}
-.seg.disabled{opacity:.4;pointer-events:none}
+.seg.disabled{opacity:.4}
 .seg input{display:none}
 .seg label{flex:1;text-align:center;padding:5px 0;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;z-index:2}
 .seg .pill{position:absolute;top:2px;bottom:2px;left:0;background:#fff;border:1px solid var(--pill-border);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:transform .25s cubic-bezier(.2,.8,.2,1), width .2s;opacity:0;will-change:transform,width}
@@ -191,6 +192,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
 .hist div{flex:1;background:#cbd5e1;border-radius:3px}
 .hist div.active{background:#94a3b8}
+.legend-note{margin-top:6px;font-size:11px;color:var(--text-secondary)}
 
 /* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
@@ -199,13 +201,14 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .leaflet-popup-hover{pointer-events:none}
 .leaflet-popup-hover .leaflet-popup-content-wrapper{background:var(--panel-bg);backdrop-filter:blur(14px);border:1px solid var(--border)}
 .leaflet-popup-hover .leaflet-popup-content{margin:8px 10px;font-size:12px}
-body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} /* dark mode: white text */
+body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} /* dark mode popup text */
 </style>
 </head>
 <body>
 
 <!-- Icons -->
-<svg width="0" height="0" style="position:absolute">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"
+     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
     <!-- Regular hexagon (no distortion) -->
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor">
@@ -215,7 +218,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
 
-    <!-- Clear warning triangle with exclamation (danger) -->
+    <!-- Warning triangle (danger) -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
       <line x1="12" y1="8.5" x2="12" y2="13.5"/>
@@ -235,18 +238,18 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
     <div class="brand">
       Marine Megafauna Mortality
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
-        <svg width="16" height="16"><use id="themeIcon" href="#icon-moon"></use></svg>
+        <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
       </button>
     </div>
 
     <button class="rail-btn active" data-tab="main" title="Main">
-      <svg><use href="#icon-main"></use></svg><span>Main</span>
+      <svg><use href="#icon-main" xlink:href="#icon-main"></use></svg><span>Main</span>
     </button>
     <button class="rail-btn" data-tab="bio" title="Biological parameters">
-      <svg><use href="#icon-bio"></use></svg><span>Biological parameters</span>
+      <svg><use href="#icon-bio" xlink:href="#icon-bio"></use></svg><span>Biological parameters</span>
     </button>
     <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions">
-      <svg><use href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
+      <svg><use href="#icon-anth" xlink:href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
     <div class="rail-spacer"></div>
@@ -275,10 +278,10 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid four" id="grid-size-selector">
-            <button class="hex-btn btn" data-val="r3"><div class="hex-icon"><svg width="30" height="30" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">60 km</span></button>
-            <button class="hex-btn btn active" data-val="r4"><div class="hex-icon"><svg width="24" height="24" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">22.6 km</span></button>
-            <button class="hex-btn btn" data-val="r5"><div class="hex-icon"><svg width="18" height="18" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">8.6 km</span></button>
-            <button class="hex-btn btn" data-val="r6"><div class="hex-icon"><svg width="14" height="14" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">3.2 km</span></button>
+            <button class="hex-btn btn" data-val="r3"><div class="hex-icon"><svg width="30" height="30" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon" xlink:href="#icon-hexagon"></use></svg></div><span class="hex-label">60 km</span></button>
+            <button class="hex-btn btn active" data-val="r4"><div class="hex-icon"><svg width="24" height="24" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon" xlink:href="#icon-hexagon"></use></svg></div><span class="hex-label">22.6 km</span></button>
+            <button class="hex-btn btn" data-val="r5"><div class="hex-icon"><svg width="18" height="18" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon" xlink:href="#icon-hexagon"></use></svg></div><span class="hex-label">8.6 km</span></button>
+            <button class="hex-btn btn" data-val="r6"><div class="hex-icon"><svg width="14" height="14" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon" xlink:href="#icon-hexagon"></use></svg></div><span class="hex-label">3.2 km</span></button>
           </div>
         </div>
 
@@ -294,9 +297,10 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
               <option value="estimation">Mortality estimation</option>
             </select>
             <div class="seg disabled" id="estimation-options">
-              <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low">Lower estimate</label>
+              <!-- Text changed only; values stay Low/High -->
+              <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low">High</label>
               <input type="radio" id="est-mean" name="estimation" value="Mean" checked><label for="est-mean">Mean</label>
-              <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high">Higher estimate</label>
+              <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high">Low</label>
               <div class="pill"></div>
             </div>
           </div>
@@ -484,7 +488,8 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 <div id="legend" class="map-overlay">
   <div class="legend-header">Legend</div>
   <div id="legendRows"></div>
-  <div class="hist" id="histogram"></div>
+  <div class="hist" id="histogram" title="Distribution of cells across bins"></div>
+  <div class="legend-note">Distribution of cells across legend bins (current view)</div>
   <div class="legend-scale">
     <div class="scale-line" id="scaleLine"></div>
     <div class="scale-label" id="scaleLabel">≈ 100 km</div>
@@ -564,7 +569,7 @@ function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
 /* pmtiles shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250814a'; }
+function pmUrlWithBust(file){ return file + '?v=20250814b'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -640,8 +645,8 @@ setPanelTitleByTab(drawer.dataset.tab || 'main');
 const themeBtn = $('themeBtn'), themeIcon = $('themeIcon');
 themeBtn?.addEventListener('click',()=>{
   const dark = document.body.getAttribute('data-theme') === 'dark';
-  if(dark){ document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon'); }
-  else { document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun'); }
+  if(dark){ document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon'); themeIcon?.setAttribute('xlink:href','#icon-moon'); }
+  else { document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun'); themeIcon?.setAttribute('xlink:href','#icon-sun'); }
   document.querySelectorAll('.seg').forEach(syncSegPill);
   setTimeout(()=> map.invalidateSize(), 80);
 });
@@ -1037,7 +1042,6 @@ function lockMetricField(sample, ct){
   metricField='sum_val';
 }
 
-/* Percentage helpers (exclude Unknown) */
 function incObj(obj, key){ obj[key]=(obj[key]||0)+1; }
 
 function computeBinIndex(v, breaks){
@@ -1070,7 +1074,6 @@ function quantileBreaks(values){
   const sorted=values.slice().sort((a,b)=>a-b);
   return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
 }
-/* Winsorized + log hybrid; first bin 50%, enforce first edge >= 1 */
 function winsorizedLogHybridBreaks(values){
   const tail=0.02;
   const cuts=[0.50,0.70,0.90,0.985];
@@ -1277,7 +1280,7 @@ function styleFn(props){
   return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
 }
 
-/* ---------- Hover: percentages (exclude Unknown/Indetermined) ---------- */
+/* Hover popup (percentages; exclude Unknown) */
 let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
 function attachHover(vtg){
   vtg.on('mouseover', showHover);
@@ -1310,7 +1313,7 @@ function percentageStrings(countsObj, labeler, order){
 }
 function labelMonthKey(k){
   const n = parseInt(k,10);
-  if(isFinite(n) && n>=1 && n<=12) return monthLabel(n);
+  if(isFinite(n) && n>=1 && n<=12) return new Date(2000,n-1).toLocaleString('en-US',{month:'short'});
   return String(k);
 }
 function seasonOrderPercent(countsObj){
@@ -1383,8 +1386,8 @@ function collectFilters(){
   if(lv==='observed') out.layer='At-sea mortality of observed strandings';
   else{
     const r=document.querySelector('#estimation-options input:checked');
-    // Keep calculation mapping (low/mean/high) but labels are user-friendly
-    out.layer = `Mortality estimation — ${r? r.labels[0].innerText : 'Mean'}`;
+    const lab = r ? r.nextElementSibling?.innerText || 'Mean' : 'Mean';
+    out.layer = `Mortality estimation — ${lab}`;
   }
   if(sectionEnabled('species')){
     out.species = [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> getText(b));
