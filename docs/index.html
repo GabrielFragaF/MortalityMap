@@ -76,14 +76,19 @@ body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
+/* New: push bottom items to the very bottom */
+.rail-spacer{flex:1 1 auto}
+.rail-footer{display:flex;flex-direction:column;gap:8px;margin-top:auto}
 .rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
 .rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:34vh;border-top:1px solid var(--border)}
 .rail-summary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--border)}
 .control-row{display:flex;gap:8px;margin:8px 8px 2px}
+.control-row .btn-small,
+.control-row .apply-btn{flex:1}
 .btn-small{padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
 .btn-small[disabled]{opacity:.5;cursor:not-allowed}
 body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:var(--pill-border)}
-.apply-btn{margin:8px 8px 10px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
+.apply-btn{width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
 .apply-btn[disabled]{opacity:.5;cursor:not-allowed}
 .apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
 body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
@@ -203,7 +208,12 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
-    <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M7 8l5 5 5-5"/></symbol>
+    <!-- Updated: Anthropogenic icon now a "danger" symbol -->
+    <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12" y2="17"/>
+    </symbol>
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
@@ -215,7 +225,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
     <div class="brand">
-      Filters
+      Marine Megafauna Mortality
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
         <svg width="16" height="16"><use id="themeIcon" href="#icon-moon"></use></svg>
       </button>
@@ -231,18 +241,26 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
       <svg><use href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
-    <div class="rail-summary-title">Selected filters</div>
-    <ul id="railSummary" class="rail-summary"></ul>
+    <!-- Push bottom content down -->
+    <div class="rail-spacer"></div>
 
-    <div class="control-row">
-      <button id="resetBtn" class="btn-small">Reset all</button>
+    <!-- Bottom area: Selected filters + actions + author -->
+    <div class="rail-footer">
+      <div class="rail-summary-title">Selected filters</div>
+      <ul id="railSummary" class="rail-summary"></ul>
+
+      <div class="control-row">
+        <button id="resetBtn" class="btn-small">Reset all</button>
+        <button id="applyBtn" class="apply-btn" disabled>Apply</button>
+      </div>
+
+      <div class="author">Author: Gabriel Fraga da Fonseca</div>
     </div>
-    <button id="applyBtn" class="apply-btn" disabled>Apply</button>
-    <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
 
   <div class="panel" id="panel">
-    <div class="head"><h1>Marine Megafauna Mortality</h1></div>
+    <!-- Dynamic: shows active tab name -->
+    <div class="head"><h1>Main</h1></div>
     <div class="content">
       <!-- MAIN TAB -->
       <section class="section tabpane" id="tab-main">
@@ -589,6 +607,13 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
+/* Dynamic panel title: show the active tab name */
+const panelTitleEl = panel?.querySelector('.head h1');
+function setPanelTitleByTab(tabKey){
+  const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
+  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || 'Filters';
+}
+
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
     const tab = btn.dataset.tab;
@@ -600,6 +625,7 @@ railBtns.forEach(btn=>{
     railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
     drawer.dataset.tab = tab;
+    setPanelTitleByTab(tab); // update title to active tab
     if(isSame){ drawer.classList.remove('open'); }
     else {
       drawer.classList.add('open');
@@ -607,6 +633,8 @@ railBtns.forEach(btn=>{
     }
   });
 });
+// Initial title
+setPanelTitleByTab(drawer.dataset.tab || 'main');
 
 /* Theme toggle */
 const themeBtn = $('themeBtn'), themeIcon = $('themeIcon');
@@ -1296,12 +1324,18 @@ function showHover(e){
   const sex = objCountsFromSets(agg.countSets.sex);
   const stage = objCountsFromSets(agg.countSets.stage);
   const season = objCountsFromSets(agg.countSets.season);
+
+  // Build inner lists safely without nested template literals
+  const sexStr = Object.entries(sex).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
+  const stageStr = Object.entries(stage).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
+  const seasonStr = Object.entries(season).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
+
   const html = `
     <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
     <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || 0}</div>
-    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
-    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
-    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div style="margin-top:4px"><em>Sex</em>: ${sexStr}</div>
+    <div><em>Stage</em>: ${stageStr}</div>
+    <div><em>Season</em>: ${seasonStr}</div>
   `;
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
@@ -1417,7 +1451,7 @@ function resetAll(){
   updateEstimationVisibility();
   $('counttype').value='weight';
 
-  // basemap: keep current visually Light
+  // basemap: Light
   baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
 
   // taxon & species
