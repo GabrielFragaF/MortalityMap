@@ -76,25 +76,18 @@ body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
-/* Bottom cluster (selected filters + actions + author) */
-.rail-bottom{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:4px 8px 8px}
-.rail-summary-title{margin:4px 0 0;font-size:11px;color:var(--text-secondary);font-weight:600}
-.rail-summary{margin:0;list-style:none;padding:6px 0 0;overflow:auto;max-height:32vh;border-top:1px solid var(--border)}
+.rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
+.rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:34vh;border-top:1px solid var(--border)}
 .rail-summary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--border)}
-
-.action-row{display:flex;gap:8px}
-.btn-small,.apply-btn{flex:1}
-
+.control-row{display:flex;gap:8px;margin:8px 8px 2px}
 .btn-small{padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
 .btn-small[disabled]{opacity:.5;cursor:not-allowed}
 body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:var(--pill-border)}
-
-.apply-btn{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
+.apply-btn{margin:8px 8px 10px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
 .apply-btn[disabled]{opacity:.5;cursor:not-allowed}
 .apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
 body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
-
-.author{margin:2px 2px 0;font-size:10px;color:var(--text-secondary);}
+.author{margin:6px 8px 8px;font-size:10px;color:var(--text-secondary)}
 
 /* Animated panel */
 .panel{
@@ -210,12 +203,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
-    <!-- Updated: danger triangle icon for Anthropogenic tab -->
-    <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <circle cx="12" cy="17" r="1"/>
-    </symbol>
+    <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M7 8l5 5 5-5"/></symbol>
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
@@ -243,18 +231,14 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
       <svg><use href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
-    <!-- Bottom cluster moved here -->
-    <div class="rail-bottom">
-      <div class="rail-summary-title">Selected filters</div>
-      <ul id="railSummary" class="rail-summary"></ul>
+    <div class="rail-summary-title">Selected filters</div>
+    <ul id="railSummary" class="rail-summary"></ul>
 
-      <div class="action-row">
-        <button id="resetBtn" class="btn-small">Reset all</button>
-        <button id="applyBtn" class="apply-btn" disabled>Apply</button>
-      </div>
-
-      <div class="author">Author: Gabriel Fraga da Fonseca</div>
+    <div class="control-row">
+      <button id="resetBtn" class="btn-small">Reset all</button>
     </div>
+    <button id="applyBtn" class="apply-btn" disabled>Apply</button>
+    <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
 
   <div class="panel" id="panel">
@@ -330,8 +314,6 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
           <div class="section-content">
             <div class="grid two" style="margin-bottom:8px">
               <button class="btn" id="speciesAll">Select all</button>
-              <!-- NEW: select none -->
-              <button class="btn" id="speciesNone">Select none</button>
             </div>
             <div class="grid two" id="speciesChips">
               <button class="btn chip active" data-species="Caretta caretta"><em>Caretta caretta</em></button>
@@ -709,7 +691,6 @@ syncSpeciesVisibility();
 /* Species chips */
 const speciesBox=$('speciesChips');
 const speciesAll=$('speciesAll');
-const speciesNone=$('speciesNone'); /* NEW */
 speciesBox && speciesBox.addEventListener('click',e=>{
   const btn=e.target.closest('.chip'); if(!btn) return;
   const secContent = speciesBox.closest('.section-content');
@@ -719,8 +700,6 @@ speciesBox && speciesBox.addEventListener('click',e=>{
   btn.classList.toggle('active'); markDirty();
 });
 speciesAll && speciesAll.addEventListener('click',()=>{ speciesBox && speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.add('active')); markDirty(); });
-/* NEW: Select none */
-speciesNone && speciesNone.addEventListener('click',()=>{ speciesBox && speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); markDirty(); });
 
 /* Bio multi-select chips */
 document.querySelectorAll('[data-button-group]').forEach(group=>{
@@ -812,7 +791,6 @@ seasonBox && seasonBox.addEventListener('click',e=>{
 });
 
 /* =================== DATA PIPELINE =================== */
-/* (unchanged logic; only VectorGrid display options adjusted later) */
 function fileFor(res, ct){ return pmUrlWithBust(`hexgrid_${res}_${ct}.pmtiles`); }
 
 /* Color ramps per species */
@@ -1024,6 +1002,7 @@ function lockMetricField(sample, ct){
 /* Unique-per-individual counters inside each hex */
 function ensureSet(map, key){ let s=map.get(key); if(!s){ s=new Set(); map.set(key,s); } return s; }
 function addUidOncePerCategory(entry, uid, value, cat){
+  // prefer first non-Unknown; if we already stored a non-Unknown, keep it
   const store = entry.uidChosen[cat];
   const prev = store.get(uid);
   const val = value || 'Unknown';
@@ -1032,6 +1011,7 @@ function addUidOncePerCategory(entry, uid, value, cat){
     ensureSet(entry.countSets[cat], val).add(uid);
   }else{
     if(prev==='Unknown' && val!=='Unknown'){
+      // move uid from Unknown -> val
       ensureSet(entry.countSets[cat], 'Unknown').delete(uid);
       store.set(uid, val);
       ensureSet(entry.countSets[cat], val).add(uid);
@@ -1068,6 +1048,26 @@ function p90(values){
 function quantileBreaks(values){
   const sorted=values.slice().sort((a,b)=>a-b);
   return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
+}
+/* Winsorized + log hybrid with heavier first bin and very tight top bin */
+function winsorizedLogHybridBreaks(values){
+  const tail=0.02; // winsorize 2% tails
+  // Heavier first bin (~40%), then 70%, 90%, with last 1.5–2% as top extreme
+  const cuts=[0.40,0.70,0.90,0.985];
+  const arr=values.filter(Number.isFinite); if(arr.length<5) return null;
+  const s=arr.slice().sort((a,b)=>a-b);
+  const qLo=ss.quantileSorted(s,tail), qHi=ss.quantileSorted(s,1-tail);
+  const w=s.map(v=>Math.max(qLo, Math.min(qHi, v))).sort((a,b)=>a-b);
+  const wt=w.map(v=>Math.log1p(Math.max(0,v))).sort((a,b)=>a-b);
+  const probs=[0].concat(cuts,1);
+  let edgesT=probs.map(p=> ss.quantileSorted(wt,p));
+  const epsT=(edgesT[edgesT.length-1]-edgesT[0]||1)*1e-9;
+  for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1]>edgesT[i])) edgesT[i+1]=edgesT[i]+epsT; }
+  let edges=edgesT.map(v=>Math.expm1(v));
+  edges[0]=w[0]; edges[edges.length-1]=w[w.length-1];
+  const eps=(edges[edges.length-1]-edges[0]||1)*1e-9;
+  for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1]>edges[i])) edges[i+1]=edges[i]+eps; }
+  return edges;
 }
 
 /* Tiles in view */
@@ -1175,7 +1175,7 @@ function updateLegendFrozen(cfg){
     const a=brks[i], b=brks[i+1];
     const row=document.createElement('div'); row.className='legend-row';
     const sw=document.createElement('div'); sw.className='legend-swatch'; sw.style.background = ramp[i];
-    const lab=document.createElement('span'); lab.textContent = `${nf(a)} – ${nf(b)}`;
+    const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab);
     rows.appendChild(row);
   }
@@ -1214,11 +1214,8 @@ async function buildLayer(){
     const values = await aggregateViewport(pmFile, layerName, predicate, ct);
     if(!values || values.length===0){ bumpToast('No data in view'); hideSpinner(); return; }
 
-    // Breaks (use existing logic)
-    let brks = (function quantileBreaks(values){
-      const sorted=values.slice().sort((a,b)=>a-b);
-      return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
-    })(values);
+    // Breaks (winsorized + log hybrid, heavier first bin, tight top)
+    let brks = winsorizedLogHybridBreaks(values) || quantileBreaks(values);
     const realMax = Math.max(...values);
     if(brks && brks.length) brks[brks.length-1] = Math.max(brks[brks.length-1], realMax);
 
@@ -1238,9 +1235,6 @@ async function buildLayer(){
       vtLayer = L.vectorGrid.protobuf(`pmtiles://${pmFile}/{z}/{x}/{y}.pbf`,{
         rendererFactory: L.canvas.tile,
         interactive:true,
-        /* Display-only simplification for perf (no change to data/filtering) */
-        buffer: 24,
-        tolerance: 5,
         vectorTileLayerStyles: { [layerName]: styleFn },
         getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
       }).addTo(map);
@@ -1250,7 +1244,7 @@ async function buildLayer(){
       vtLayer.redraw(); // same instance, no rebuild
     }
 
-    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts });
+    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
     bumpToast('Layer updated');
   }catch(e){
     console.error(e); bumpToast('Failed to load layer');
@@ -1409,7 +1403,7 @@ function resetAll(){
   updateEstimationVisibility();
   $('counttype').value='weight';
 
-  // basemap: Light
+  // basemap: keep current visually Light
   baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
 
   // taxon & species
@@ -1443,7 +1437,7 @@ updateSummary();
 buildLayer();
 
 /* Keep layer stable on zoom/pan (no rebuild). We still update the scale label. */
-/* (intentionally no buildLayer() on move/zoom) */
+// (intentionally no buildLayer() on move/zoom)
 </script>
 </body>
 </html>
