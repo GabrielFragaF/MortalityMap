@@ -71,7 +71,7 @@ body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .theme-toggle:hover{background:var(--control-bg-hover)}
 
 .rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail-btn svg{width:18px;height:18px;opacity:.9}
+.rail-btn svg{width:18px;height:18px;opacity:.9;display:block}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -153,7 +153,8 @@ body[data-theme="dark"] select{
 
 /* Hex buttons */
 .hex-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;height:62px}
-.hex-btn .hex-icon{display:flex;align-items:center;justify-content:center;flex:1;transition:transform .2s}
+.hex-btn .hex-icon{display:flex;align-items:center;justify-content:center}
+.hex-btn .hex-icon svg{display:block}
 .hex-btn:hover .hex-icon{transform:scale(1.06)}
 .hex-btn .hex-label{font-size:10px;color:var(--text-secondary)}
 
@@ -206,15 +207,21 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 <!-- Icons -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s-1.38.22-1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
+    <!-- Regular hexagon (no distortion) -->
+    <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2 L20.8 7 L20.8 17 L12 22 L3.2 17 L3.2 7 Z"/>
+    </symbol>
+
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
-    <!-- Danger icon -->
+
+    <!-- Clear warning triangle with exclamation (danger) -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <line x1="12" y1="17" x2="12" y2="17"/>
+      <line x1="12" y1="8.5" x2="12" y2="13.5"/>
+      <circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>
     </symbol>
+
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
@@ -268,10 +275,10 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid four" id="grid-size-selector">
-            <button class="hex-btn btn" data-val="r3"><div class="hex-icon"><svg width="30" height="30"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">60 km</span></button>
-            <button class="hex-btn btn active" data-val="r4"><div class="hex-icon"><svg width="24" height="24"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">22.6 km</span></button>
-            <button class="hex-btn btn" data-val="r5"><div class="hex-icon"><svg width="18" height="18"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">8.6 km</span></button>
-            <button class="hex-btn btn" data-val="r6"><div class="hex-icon"><svg width="14" height="14"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">3.2 km</span></button>
+            <button class="hex-btn btn" data-val="r3"><div class="hex-icon"><svg width="30" height="30" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">60 km</span></button>
+            <button class="hex-btn btn active" data-val="r4"><div class="hex-icon"><svg width="24" height="24" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">22.6 km</span></button>
+            <button class="hex-btn btn" data-val="r5"><div class="hex-icon"><svg width="18" height="18" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">8.6 km</span></button>
+            <button class="hex-btn btn" data-val="r6"><div class="hex-icon"><svg width="14" height="14" preserveAspectRatio="xMidYMid meet"><use href="#icon-hexagon"></use></svg></div><span class="hex-label">3.2 km</span></button>
           </div>
         </div>
 
@@ -287,9 +294,9 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
               <option value="estimation">Mortality estimation</option>
             </select>
             <div class="seg disabled" id="estimation-options">
-              <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low">Low</label>
+              <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low">Lower estimate</label>
               <input type="radio" id="est-mean" name="estimation" value="Mean" checked><label for="est-mean">Mean</label>
-              <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high">High</label>
+              <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high">Higher estimate</label>
               <div class="pill"></div>
             </div>
           </div>
@@ -329,6 +336,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
           <div class="section-content">
             <div class="grid two" style="margin-bottom:8px">
               <button class="btn" id="speciesAll">Select all</button>
+              <button class="btn" id="speciesNone">Select none</button>
             </div>
             <div class="grid two" id="speciesChips">
               <button class="btn chip active" data-species="Caretta caretta"><em>Caretta caretta</em></button>
@@ -387,26 +395,26 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
           <div class="section-content grid three disabled" data-button-group="sex">
             <button class="btn chip" data-val="Female">Female</button>
             <button class="btn chip" data-val="Male">Male</button>
-            <button class="btn chip" data-val="Undefined">Undefined</button>
+            <button class="btn chip" data-val="Indetermined">Indetermined</button>
           </div>
         </div>
         <div class="section" data-filter-section="stage">
           <div class="section-header"><h2 class="section-title">Development stage</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid three disabled" data-button-group="stage">
+            <button class="btn chip" data-val="Hatchling">Hatchling</button>
             <button class="btn chip" data-val="Juvenile">Juvenile</button>
             <button class="btn chip" data-val="Adult">Adult</button>
-            <button class="btn chip" data-val="Hatchling">Hatchling</button>
-            <button class="btn chip" data-val="Indeterminate">Indeterminate</button>
+            <button class="btn chip" data-val="Indetermined">Indetermined</button>
           </div>
         </div>
         <div class="section" data-filter-section="decomp">
           <div class="section-header"><h2 class="section-title">Decomposition code</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid five disabled" data-button-group="decomp">
-            <button class="btn chip" data-val="1">1</button>
-            <button class="btn chip" data-val="2">2</button>
-            <button class="btn chip" data-val="3">3</button>
-            <button class="btn chip" data-val="4">4</button>
-            <button class="btn chip" data-val="5">5</button>
+            <button class="btn chip" data-val="1" title="Alive">1</button>
+            <button class="btn chip" data-val="2" title="Fresh carcass">2</button>
+            <button class="btn chip" data-val="3" title="Moderate decomposition">3</button>
+            <button class="btn chip" data-val="4" title="Advanced decomposition">4</button>
+            <button class="btn chip" data-val="5" title="Mummified">5</button>
           </div>
         </div>
       </section>
@@ -556,7 +564,7 @@ function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
 /* pmtiles shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250813c'; }
+function pmUrlWithBust(file){ return file + '?v=20250814a'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -726,6 +734,7 @@ syncSpeciesVisibility();
 /* Species chips */
 const speciesBox=$('speciesChips');
 const speciesAll=$('speciesAll');
+const speciesNone=$('speciesNone');
 speciesBox && speciesBox.addEventListener('click',e=>{
   const btn=e.target.closest('.chip'); if(!btn) return;
   const secContent = speciesBox.closest('.section-content');
@@ -735,6 +744,7 @@ speciesBox && speciesBox.addEventListener('click',e=>{
   btn.classList.toggle('active'); markDirty();
 });
 speciesAll && speciesAll.addEventListener('click',()=>{ speciesBox && speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.add('active')); markDirty(); });
+speciesNone && speciesNone.addEventListener('click',()=>{ speciesBox && speciesBox.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); markDirty(); });
 
 /* Bio multi-select chips */
 document.querySelectorAll('[data-button-group]').forEach(group=>{
@@ -842,8 +852,8 @@ function currentRamp(){
 /* Canonicalization */
 const canonMaps = {
   season:{ 'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter','autumn':'Autumn','spring':'Spring','summer':'Summer','winter':'Winter' },
-  sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','undefined':'Unknown','indefinido':'Unknown','unknown':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
-  stage:{ 'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','indeterminate':'Unknown','unknown':'Unknown' },
+  sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','undefined':'Unknown','indefinido':'Unknown','unknown':'Unknown','indetermined':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
+  stage:{ 'adulto':'Adult','adult':'Adult','juvenil':'Juvenile','juvenile':'Juvenile','filhote':'Hatchling','hatchling':'Hatchling','indeterminado':'Unknown','indeterminate':'Unknown','indetermined':'Unknown','unknown':'Unknown' },
   yesno:{ 'sim':'Yes','não':'No','nao':'No','yes':'Yes','no':'No' }
 };
 function toCanon(str,kind){
@@ -936,8 +946,8 @@ function getMonthRange(){
 function readFilterSelections(caps){
   const sel = {
     species: new Set(getSpecies()),
-    development_stage: new Set(getBioSet('stage').map(v=> v==='Indeterminate' ? 'Unknown' : v)),
-    sex: new Set(getBioSet('sex').map(v=> v==='Undefined' ? 'Unknown' : v)),
+    development_stage: new Set(getBioSet('stage').map(v=> v==='Indetermined' ? 'Unknown' : v)),
+    sex: new Set(getBioSet('sex').map(v=> v==='Indetermined' ? 'Unknown' : v)),
     season: new Set(getSeasons().map(s=> toCanon(s,'season'))),
     decomposition_code: new Set(getBioSet('decomp')),
     year: new Set(getYearRange() || []),
@@ -1027,7 +1037,7 @@ function lockMetricField(sample, ct){
   metricField='sum_val';
 }
 
-/* Unique-per-row helpers for percentages */
+/* Percentage helpers (exclude Unknown) */
 function incObj(obj, key){ obj[key]=(obj[key]||0)+1; }
 
 function computeBinIndex(v, breaks){
@@ -1267,7 +1277,7 @@ function styleFn(props){
   return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
 }
 
-/* ---------- Hover: percentages (exclude Unknown/Indeterminate) ---------- */
+/* ---------- Hover: percentages (exclude Unknown/Indetermined) ---------- */
 let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
 function attachHover(vtg){
   vtg.on('mouseover', showHover);
@@ -1373,7 +1383,8 @@ function collectFilters(){
   if(lv==='observed') out.layer='At-sea mortality of observed strandings';
   else{
     const r=document.querySelector('#estimation-options input:checked');
-    out.layer = `Mortality estimation${r? ' — '+r.value : ''}`;
+    // Keep calculation mapping (low/mean/high) but labels are user-friendly
+    out.layer = `Mortality estimation — ${r? r.labels[0].innerText : 'Mean'}`;
   }
   if(sectionEnabled('species')){
     out.species = [...document.querySelectorAll('#speciesChips .chip.active')].map(b=> getText(b));
@@ -1402,7 +1413,7 @@ function updateSummary(){
     const allNames=["Caretta caretta","Chelonia mydas","Dermochelys coriacea","Eretmochelys imbricata","Lepidochelys olivacea"];
     const allSelected = f.species.length === allNames.length;
     if(allSelected) rows.push('Species: All species');
-    else if(f.species.length){ rows.push('Species: ' + f.species.map(abbrSpecies).join(', ')); }
+    else if(f.species.length){ rows.push('Species: ' + f.species.map(n=> '<em>'+abbrSpecies(n)+'</em>').join(', ')); }
   }
   if(f.sex?.length) rows.push(`Sex: ${f.sex.join(', ')}`);
   if(f.stage?.length) rows.push(`Stage: ${f.stage.join(', ')}`);
@@ -1458,7 +1469,7 @@ applyBtn && applyBtn.addEventListener('click',()=>{
   if(layerSel?.value==='observed') $('counttype').value='weight';
   else{
     const lev = (document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase();
-    $('counttype').value = `new_mortality_est_bf_${lev}`;
+    $('counttype').value = `new_mortality_est_bf_${lev}`; // calculation unchanged
   }
   updateSummary();
   drawer.classList.remove('open');
