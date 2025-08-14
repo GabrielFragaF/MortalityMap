@@ -198,6 +198,8 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .leaflet-popup-hover{pointer-events:none}
 .leaflet-popup-hover .leaflet-popup-content-wrapper{background:var(--panel-bg);backdrop-filter:blur(14px);border:1px solid var(--border)}
 .leaflet-popup-hover .leaflet-popup-content{margin:8px 10px;font-size:12px}
+/* Dark-mode popup text should be white for contrast */
+body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
 </style>
 </head>
 <body>
@@ -205,7 +207,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <!-- Icons -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s-1.38.22-1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
+    <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
     <!-- Danger icon for Anthropogenic interactions -->
@@ -510,7 +512,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 /* =================== MAP & BASEMAPS =================== */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
 
-/* FIX: declare vtLayer BEFORE setBasemap is ever called (avoid TDZ) */
+/* Keep this before setBasemap */
 let vtLayer = null;
 
 const BASEMAPS = {
@@ -527,7 +529,6 @@ function setBasemap(name){
   if (baseLayer.setZIndex) baseLayer.setZIndex(100);
   const lb = document.getElementById('legendBasemap');
   if(lb) lb.textContent = name;
-  // keep hex layer on top if it exists
   if (vtLayer && vtLayer.bringToFront) vtLayer.bringToFront();
 }
 setBasemap('Light');
@@ -614,13 +615,12 @@ function clearSection(sectionEl){
   if(!content) return;
   content.querySelectorAll('.btn, .chip').forEach(b=> b.classList.remove('active'));
   content.querySelectorAll('input[type="radio"]').forEach(r=> r.checked=false);
-  // ensure segmented pills hide when radios cleared
   content.querySelectorAll('.seg').forEach(seg => { syncSegPill(seg); });
   const sel=content.querySelector('select');
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title: show the active tab name */
+/* Dynamic panel title */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
   const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
@@ -658,7 +658,7 @@ themeBtn?.addEventListener('click',()=>{
   setTimeout(()=> map.invalidateSize(), 80);
 });
 
-/* Section toggles: disable + clear selection visuals */
+/* Section toggles */
 document.querySelectorAll('.filter-toggle').forEach(label=>{
   const toggle=label.querySelector('.toggle-input');
   const section=label.closest('[data-filter-section]');
@@ -669,7 +669,6 @@ document.querySelectorAll('.filter-toggle').forEach(label=>{
     const on = toggle.checked;
     content && content.classList.toggle('disabled',!on);
     if(!on){ clearSection(section); }
-    // always resync segmented pills on toggle
     section.querySelectorAll('.seg').forEach(syncSegPill);
     markDirty();
   });
@@ -718,7 +717,7 @@ function syncSegPill(seg){
 function updateEstimationVisibility(){
   const on = (layerSel?.value === 'estimation');
   estimation?.classList.toggle('disabled', !on);
-  if(on) syncSegPill(estimation); else syncSegPill(estimation);
+  syncSegPill(estimation);
 }
 layerSel && layerSel.addEventListener('change',()=>{ updateEstimationVisibility(); markDirty(); });
 document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()=>{ syncSegPill(seg); markDirty(); }));
@@ -824,7 +823,7 @@ function updateYearLabels(){
 makeRange(yWrap,yHL,yStart,yEnd,updateYearLabels);
 
 const mWrap=$('monthWrap'), mHL=$('mHL'), mStart=$('mStart'), mEnd=$('mEnd'), mStartL=$('mStartL'), mEndL=$('mEndL');
-function monthLabel(m){ return new Date(2000,m-1).toLocaleString('en-US',{month:'short'}); }
+function monthLabel(m){ return new Date(2000,Math.max(0,Math.min(11,(m|0)-1))).toLocaleString('en-US',{month:'short'}); }
 function updateMonthLabels(){
   if(!mWrap) return;
   const sf=parseFloat(mWrap.dataset.startFrac||'0'); const ef=parseFloat(mWrap.dataset.endFrac||'1');
@@ -1058,12 +1057,57 @@ function lockMetricField(sample, ct){
   metricField='sum_val';
 }
 
-/* Unique-per-individual counters + row stats */
+/* Robust UID extraction */
+function normalizeUID(v){
+  if(v===null || v===undefined) return '';
+  const s=String(v).trim();
+  if(!s) return '';
+  const low=s.toLowerCase();
+  if(low==='null' || low==='undefined') return '';
+  return s;
+}
+function guessUID(props){
+  // 1) direct common key
+  if('turtle_id' in props){ const u=normalizeUID(props.turtle_id); if(u) return u; }
+  // 2) preferred variants
+  const preferred = ['turtleid','turtle-id','id_turtle','id_tartaruga','tartaruga_id','animal_id','individual_id','individualid','id_individual','tag_id'];
+  const keys = Object.keys(props);
+  for(const k of keys){
+    const lk = k.toLowerCase();
+    if(preferred.includes(lk)){ const u=normalizeUID(props[k]); if(u) return u; }
+  }
+  // 3) heuristic: anything with both "turtle" and "id"
+  for(const k of keys){
+    const lk = k.toLowerCase();
+    if(lk.includes('turtle') && lk.includes('id')){ const u=normalizeUID(props[k]); if(u) return u; }
+  }
+  // 4) heuristic: "individual" + "id"
+  for(const k of keys){
+    const lk = k.toLowerCase();
+    if(lk.includes('individual') && lk.includes('id')){ const u=normalizeUID(props[k]); if(u) return u; }
+  }
+  // 5) heuristic: "animal" + "id"
+  for(const k of keys){
+    const lk = k.toLowerCase();
+    if(lk.includes('animal') && lk.includes('id')){ const u=normalizeUID(props[k]); if(u) return u; }
+  }
+  // 6) heuristic: any *_id that is not hex/cell/tile/h3
+  for(const k of keys){
+    const lk = k.toLowerCase();
+    if(lk.endsWith('_id') && !lk.includes('h3') && !lk.includes('hex') && !lk.includes('cell') && !lk.includes('tile')){
+      const u=normalizeUID(props[k]); if(u) return u;
+    }
+  }
+  // No fallback to generic "id" to avoid using hex ids
+  return '';
+}
+
+/* Unique-per-individual helpers */
 function ensureSet(map, key){ let s=map.get(key); if(!s){ s=new Set(); map.set(key,s); } return s; }
 function addUidOncePerCategory(entry, uid, value, cat){
   const store = entry.uidChosen[cat];
   const prev = store.get(uid);
-  const val = value || 'Unknown';
+  const val = (value==null || value==='') ? 'Unknown' : value;
   if(!prev){
     store.set(uid, val);
     ensureSet(entry.countSets[cat], val).add(uid);
@@ -1107,10 +1151,10 @@ function quantileBreaks(values){
   const sorted=values.slice().sort((a,b)=>a-b);
   return ss.quantileSorted(sorted,[0,0.2,0.4,0.6,0.8,1]);
 }
-/* Winsorized + log hybrid with heavier first bin and very tight top bin */
+/* Winsorized + log hybrid; first bin 50%, enforce first edge >= 1 */
 function winsorizedLogHybridBreaks(values){
-  const tail=0.02; // winsorize 2% tails
-  const cuts=[0.40,0.70,0.90,0.985];
+  const tail=0.02;
+  const cuts=[0.50,0.70,0.90,0.985]; /* first bin at 50% */
   const arr=values.filter(Number.isFinite); if(arr.length<5) return null;
   const s=arr.slice().sort((a,b)=>a-b);
   const qLo=ss.quantileSorted(s,tail), qHi=ss.quantileSorted(s,1-tail);
@@ -1122,6 +1166,8 @@ function winsorizedLogHybridBreaks(values){
   for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1]>edgesT[i])) edgesT[i+1]=edgesT[i]+epsT; }
   let edges=edgesT.map(v=>Math.expm1(v));
   edges[0]=w[0]; edges[edges.length-1]=w[w.length-1];
+  /* Ensure first bin upper edge >= 1 */
+  if(edges.length>1){ edges[1]=Math.max(edges[1], 1); if(edges[0]>=edges[1]) edges[0]=Math.max(0, edges[1]-1e-6); }
   const eps=(edges[edges.length-1]-edges[0]||1)*1e-9;
   for(let i=0;i<edges.length-1;i++){ if(!(edges[i+1]>edges[i])) edges[i+1]=edges[i]+eps; }
   return edges;
@@ -1193,8 +1239,8 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
             sum:0,
             uids:new Set(),
             rowCount:0,
-            uidChosen:{sex:new Map(), stage:new Map(), season:new Map()},
-            countSets:{sex:new Map(), stage:new Map(), season:new Map()},
+            uidChosen:{sex:new Map(), stage:new Map(), season:new Map(), year:new Map(), month:new Map()},
+            countSets:{sex:new Map(), stage:new Map(), season:new Map(), year:new Map(), month:new Map()},
             rowYearCounts:{},
             rowMonthCounts:{},
             rowSeasonCounts:{}
@@ -1206,27 +1252,35 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
         const val = Number(props[metricField]);
         if(Number.isFinite(val)) entry.sum += val;
 
-        // unique individual id
-        const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
-        if(uid) entry.uids.add(uid); else entry.rowCount++;
-
-        // unique-per-individual categories
-        const ssex = toCanon(props.sex,'sex');
-        const sstage = toCanon(props.development_stage,'stage');
-        const sseason = toCanon(props.season,'season');
+        // unique individual id (robust detection)
+        const uid = guessUID(props);
         if(uid){
+          entry.uids.add(uid);
+
+          const ssex = toCanon(props.sex,'sex');
+          const sstage = toCanon(props.development_stage,'stage');
+          const sseason = toCanon(props.season,'season');
+
+          const yStr = canonYear(props.year);
+          const mNum = Number(props.month);
+          const mStr = Number.isFinite(mNum) ? String(mNum) : String(props.month||'');
+
           addUidOncePerCategory(entry, uid, ssex, 'sex');
           addUidOncePerCategory(entry, uid, sstage, 'stage');
           addUidOncePerCategory(entry, uid, sseason, 'season');
+          addUidOncePerCategory(entry, uid, yStr, 'year');
+          addUidOncePerCategory(entry, uid, mStr, 'month');
+        } else {
+          entry.rowCount++;
         }
 
-        // row-based year/month/season counts for hover "mode"
-        const yStr = canonYear(props.year);
-        if(yStr) incObj(entry.rowYearCounts, yStr);
-        const mStr = String(props.month||'').trim();
-        if(mStr) incObj(entry.rowMonthCounts, mStr);
-        const sea = toCanon(props.season,'season');
-        if(sea) incObj(entry.rowSeasonCounts, sea);
+        // row-based counts (kept; popup uses per-UID for stats, except Cell count)
+        const yStr2 = canonYear(props.year);
+        if(yStr2) incObj(entry.rowYearCounts, yStr2);
+        const mStr2 = String(props.month||'').trim();
+        if(mStr2) incObj(entry.rowMonthCounts, mStr2);
+        const sea2 = toCanon(props.season,'season');
+        if(sea2) incObj(entry.rowSeasonCounts, sea2);
       }
     }
   }
@@ -1266,7 +1320,7 @@ async function buildLayer(){
     }
     const caps = await capabilityProbe(pmFile, layerName);
 
-    // Sync year domain, but enforce base min/max 2015–2024
+    // Sync year domain, enforce 2015 minimum visible
     const years = Array.from(caps.observedYears.values()).sort((a,b)=>a-b);
     YEAR.min = BASE_YEAR.min;
     YEAR.max = years.length ? Math.max(BASE_YEAR.max, years[years.length-1]) : BASE_YEAR.max;
@@ -1331,7 +1385,7 @@ function styleFn(props){
   return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
 }
 
-/* Hover info — reorganized content */
+/* Hover info — per-UID counts for all attributes except Cell count */
 let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
 function attachHover(vtg){
   vtg.on('mouseover', showHover);
@@ -1365,35 +1419,37 @@ function showHover(e){
   if(!agg){ map.closePopup(hoverPopup); return; }
   const v = agg.sum;
 
-  const sex = objCountsFromSets(agg.countSets.sex);
-  const stage = objCountsFromSets(agg.countSets.stage);
+  // Per-UID counts
+  const sexCountsObj = objCountsFromSets(agg.countSets.sex);
+  const stageCountsObj = objCountsFromSets(agg.countSets.stage);
+  const seasonCountsUID = objCountsFromSets(agg.countSets.season);
+  const yearCountsUID = objCountsFromSets(agg.countSets.year);
+  const monthCountsUID = objCountsFromSets(agg.countSets.month);
 
-  const sexStr = Object.entries(sex).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
-  const stageStr = Object.entries(stage).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
+  const sexStr = Object.entries(sexCountsObj).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
+  const stageStr = Object.entries(stageCountsObj).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
 
-  const yrMode = modeFromCounts(agg.rowYearCounts);
-  const moMode = modeFromCounts(agg.rowMonthCounts);
+  const yrMode = modeFromCounts(yearCountsUID);
+  const moMode = modeFromCounts(monthCountsUID);
 
   const yearStr = yrMode ? (yrMode.key + ' (' + yrMode.val + ')') : '—';
   const monthStr = moMode ? (monthLabel(parseInt(moMode.key,10)) + ' (' + moMode.val + ')') : '—';
 
-  const seasonCountsStr = (function(){
-    // ensure all seasons listed
-    const merged = {Summer:0,Autumn:0,Winter:0,Spring:0};
-    for(const k in agg.rowSeasonCounts){ merged[k]=agg.rowSeasonCounts[k]; }
-    return seasonOrderCounts(merged);
-  })();
+  // Ensure all seasons present for ordered display
+  const mergedSeason = {Summer:0,Autumn:0,Winter:0,Spring:0};
+  for(const k in seasonCountsUID){ mergedSeason[k]=seasonCountsUID[k]; }
+  const seasonCountsStr = seasonOrderCounts(mergedSeason);
 
   const indCount = agg.uids.size || 0;
 
   const html = `
     <div><strong>Cell count</strong>: ${nf(v)}</div>
-    <div style="margin-top:4px"><em>Number of individuals</em>: ${indCount}</div>
-    <div style="margin-top:4px"><em>Sex</em>: ${sexStr}</div>
-    <div><em>Development stage</em>: ${stageStr}</div>
-    <div><em>Year</em>: ${yearStr}</div>
-    <div><em>Month</em>: ${monthStr}</div>
-    <div><em>Season</em>: ${seasonCountsStr}</div>
+    <div style="margin-top:4px"><strong>Number of individuals</strong>: ${indCount}</div>
+    <div style="margin-top:4px"><strong>Sex</strong>: ${sexStr}</div>
+    <div><strong>Development stage</strong>: ${stageStr}</div>
+    <div><strong>Year</strong>: ${yearStr}</div>
+    <div><strong>Month</strong>: ${monthStr}</div>
+    <div><strong>Season</strong>: ${seasonCountsStr}</div>
   `;
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
