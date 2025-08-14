@@ -1316,21 +1316,33 @@ function objCountsFromSets(mapOfSets){
   return out;
 }
 function showHover(e){
-  const p = e.layer && e.layer.properties || {};
+  const p = e.layer?.properties || {};
   const key = p.h3_index || p.h3 || p.id;
   const agg = key ? aggByHex.get(key) : null;
-  if(!agg){ map.closePopup(hoverPopup); return; }
+
+  if(!agg){
+    map.closePopup(hoverPopup);
+    return;
+  }
+  
+  // Safely access all properties using optional chaining (?.) and nullish coalescing (??)
   const v = agg.sum;
-  const sex = objCountsFromSets(agg.countSets.sex);
-  const stage = objCountsFromSets(agg.countSets.stage);
-  const season = objCountsFromSets(agg.countSets.season);
+  const individuals = agg?.uids?.size ?? 0;
+  const sex = objCountsFromSets(agg?.countSets?.sex);
+  const stage = objCountsFromSets(agg?.countSets?.stage);
+  const season = objCountsFromSets(agg?.countSets?.season);
+  
+  // Read from the DOM once (ideally this would be cached elsewhere, but this is a simple fix)
+  const countTypeLabel = document.getElementById('counttype')?.value.replaceAll('_',' ') ?? 'value';
+
   const html = `
-    <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
-    <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || 0}</div>
-    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>\`\${k}: \${c}\`).join(' · ') || '—'}</div>
-    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>\`\${k}: \${c}\`).join(' · ') || '—'}</div>
-    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>\`\${k}: \${c}\`).join(' · ') || '—'}</div>
+    <div><strong>${nf(v)}</strong> — ${countTypeLabel}</div>
+    <div style="margin-top:4px"><em>Individuals</em>: ${individuals}</div>
+    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
   `;
+  
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
 }
