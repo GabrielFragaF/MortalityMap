@@ -66,25 +66,12 @@ body{
   padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-
-/* BRAND: center the title; keep theme button at right */
-.brand{
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary);
-  text-align:center;
-}
-.theme-toggle{
-  position:absolute; right:8px;
-  border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)
-}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
+.theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
 .theme-toggle:hover{background:var(--control-bg-hover)}
 
 .rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail-btn svg{width:18px;height:18px;opacity:.9;display:block;flex:0 0 18px;min-width:18px} /* keep icon stable */
+.rail-btn svg{width:18px;height:18px;opacity:.9;display:block}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -212,8 +199,10 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .scale-line{height:6px;border:1px solid var(--text-secondary);border-top:none;width:120px}
 .scale-label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
-/* REMOVE histogram + note */
-.hist, .legend-note{display:none !important}
+.hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
+.hist div{flex:1;background:#cbd5e1;border-radius:3px}
+.hist div.active{background:#94a3b8}
+.legend-note{margin-top:6px;font-size:11px;color:var(--text-secondary)}
 
 /* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
@@ -653,11 +642,11 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title (LOCALIZED) */
+/* Dynamic panel title */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
-  const titles = (I18N[currentLang]||I18N['EN']).tabs;
-  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || titles.main || 'Filters';
+  const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
+  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || 'Filters';
 }
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -669,7 +658,7 @@ railBtns.forEach(btn=>{
     railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
     drawer.dataset.tab = tab;
-    setPanelTitleByTab(tab); /* now localized */
+    setPanelTitleByTab(tab);
     if(isSame){ drawer.classList.remove('open'); }
     else { drawer.classList.add('open'); requestAnimationFrame(()=>{ reflowSliders(); }); }
   });
@@ -1056,8 +1045,7 @@ function makePredicate(sel){
 }
 
 /* Aggregation & breaks */
-/* Force English-style numbers (1,234.56) */
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat('en-US',{maximumFractionDigits:digits}).format(v); };
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
 let currentSourceKey=null;
 let layerName='', metricField='sum_val';
@@ -1238,7 +1226,8 @@ function updateLegendFrozen(cfg){
     const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
   }
-  /* histogram removed */
+  const hist=$('histogram'); hist.innerHTML='';
+  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
 }
 
 /* Build / update layer */
@@ -1555,8 +1544,7 @@ const I18N = {
     yes:'Yes', no:'No',
     sexes:{Female:'Female', Male:'Male', Indetermined:'Indetermined'},
     stages:{Hatchling:'Hatchling', Juvenile:'Juvenile', Adult:'Adult', Indetermined:'Indetermined'},
-    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'},
-    decompTips:{1:'Alive',2:'Fresh carcass',3:'Moderate decomposition',4:'Advanced decomposition',5:'Mummified'}
+    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'}
   },
   'PT-BR': {
     code:'PT-BR',
@@ -1597,8 +1585,7 @@ const I18N = {
     yes:'Sim', no:'Não',
     sexes:{Female:'Fêmea', Male:'Macho', Indetermined:'Indeterminado'},
     stages:{Hatchling:'Filhote', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
-    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'},
-    decompTips:{1:'Vivo',2:'Carcaça fresca',3:'Decomposição moderada',4:'Decomposição avançada',5:'Mumificado'}
+    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'}
   },
   'ES': {
     code:'ES',
@@ -1639,8 +1626,7 @@ const I18N = {
     yes:'Sí', no:'No',
     sexes:{Female:'Hembra', Male:'Macho', Indetermined:'Indeterminado'},
     stages:{Hatchling:'Cría', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
-    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'},
-    decompTips:{1:'Vivo',2:'Cadáver fresco',3:'Descomposición moderada',4:'Descomposición avanzada',5:'Momificado'}
+    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'}
   },
   'FR': {
     code:'FR',
@@ -1681,8 +1667,7 @@ const I18N = {
     yes:'Oui', no:'Non',
     sexes:{Female:'Femelle', Male:'Mâle', Indetermined:'Indéterminé'},
     stages:{Hatchling:'Nouveau-né', Juvenile:'Juvénile', Adult:'Adulte', Indetermined:'Indéterminé'},
-    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'},
-    decompTips:{1:'Vivant',2:'Cadavre frais',3:'Décomposition modérée',4:'Décomposition avancée',5:'Momifié'}
+    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'}
   }
 };
 
@@ -1698,9 +1683,10 @@ function applyLanguage(lang){
   $('tabBtnBio').querySelector('span').textContent  = L10N.tabs.bio;
   $('tabBtnAnth').querySelector('span').textContent = L10N.tabs.anth;
 
-  // Panel title depends on active tab (localized)
+  // Panel title depends on active tab
   const activeTab = (document.querySelector('.rail-btn.active')?.dataset.tab) || 'main';
-  setPanelTitleByTab(activeTab);
+  const panelTitles = {main:L10N.tabs.main, bio:L10N.tabs.bio, anth:L10N.tabs.anth};
+  panel.querySelector('.head h1').textContent = panelTitles[activeTab] || L10N.tabs.main;
 
   // Footer & buttons
   $('selectedFiltersTitle').textContent = L10N.selectedFilters;
@@ -1776,25 +1762,14 @@ function applyLanguage(lang){
   $('stageAdult').textContent = L10N.stages.Adult;
   $('stageIndet').textContent = L10N.stages.Indetermined;
 
-  // Decomposition hover titles (localized)
-  const tips = L10N.decompTips || I18N['EN'].decompTips;
-  const dsec = document.querySelector('[data-filter-section="decomp"]');
-  if(dsec){
-    const map = {1:'1',2:'2',3:'3',4:'4',5:'5'};
-    Object.keys(map).forEach(k=>{
-      const btn = dsec.querySelector(`.chip[data-val="${k}"]`);
-      if(btn) btn.title = tips[k];
-    });
-  }
-
   // Language button short code
   $('langBtn').textContent = L10N.code;
 
-  // Recompute summary
+  // Recompute summary (labels inside remain English; can be extended if desired)
   updateSummary();
 }
 
-// Language menu behavior
+// Language menu behavior (no overlay outside rail; clicks won't block map)
 const langBtn = $('langBtn');
 const langMenu = $('langMenu');
 langBtn.addEventListener('click', (e)=>{
