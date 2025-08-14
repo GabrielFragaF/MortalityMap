@@ -205,10 +205,10 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <!-- Icons -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s1.38.22 1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
+    <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16.5c0 .83-.38 1.58-.98 2.08l-6.04 4.16c-.5.34-1.16.56-1.88.56s-1.38-.22-1.88-.56l-6.04-4.16C3.38 18.08 3 17.33 3 16.5v-9c0-.83.38-1.58.98-2.08l6.04-4.16c.5-.34 1.16-.56 1.88-.56s-1.38.22-1.88.56l6.04 4.16c.6.5 1 1.25 1 2.08v9z"/></symbol>
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
-    <!-- Updated: Anthropogenic icon now a "danger" symbol -->
+    <!-- Danger icon for Anthropogenic interactions -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
       <line x1="12" y1="9" x2="12" y2="13"/>
@@ -509,6 +509,10 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 <script>
 /* =================== MAP & BASEMAPS =================== */
 const map = L.map('map',{zoomSnap:0.25,worldCopyJump:true}).setView([-24,-45],5);
+
+/* FIX: declare vtLayer BEFORE setBasemap is ever called (avoid TDZ) */
+let vtLayer = null;
+
 const BASEMAPS = {
   Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }),
   Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors &copy; CARTO' }),
@@ -520,11 +524,18 @@ function setBasemap(name){
   const next = BASEMAPS[name] || BASEMAPS.Light;
   if(baseLayer) map.removeLayer(baseLayer);
   baseLayer = next.addTo(map);
+  if (baseLayer.setZIndex) baseLayer.setZIndex(100);
   const lb = document.getElementById('legendBasemap');
   if(lb) lb.textContent = name;
+  // keep hex layer on top if it exists
+  if (vtLayer && vtLayer.bringToFront) vtLayer.bringToFront();
 }
 setBasemap('Light');
 L.control.scale({ metric:true, imperial:false }).addTo(map);
+
+// dedicated pane for vector hex layer (above tiles)
+map.createPane('hexPane');
+map.getPane('hexPane').style.zIndex = 450;
 
 /* =================== UTILS =================== */
 const $ = (id)=>document.getElementById(id);
@@ -603,6 +614,8 @@ function clearSection(sectionEl){
   if(!content) return;
   content.querySelectorAll('.btn, .chip').forEach(b=> b.classList.remove('active'));
   content.querySelectorAll('input[type="radio"]').forEach(r=> r.checked=false);
+  // ensure segmented pills hide when radios cleared
+  content.querySelectorAll('.seg').forEach(seg => { syncSegPill(seg); });
   const sel=content.querySelector('select');
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
@@ -625,7 +638,7 @@ railBtns.forEach(btn=>{
     railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
     drawer.dataset.tab = tab;
-    setPanelTitleByTab(tab); // update title to active tab
+    setPanelTitleByTab(tab);
     if(isSame){ drawer.classList.remove('open'); }
     else {
       drawer.classList.add('open');
@@ -633,7 +646,6 @@ railBtns.forEach(btn=>{
     }
   });
 });
-// Initial title
 setPanelTitleByTab(drawer.dataset.tab || 'main');
 
 /* Theme toggle */
@@ -657,6 +669,8 @@ document.querySelectorAll('.filter-toggle').forEach(label=>{
     const on = toggle.checked;
     content && content.classList.toggle('disabled',!on);
     if(!on){ clearSection(section); }
+    // always resync segmented pills on toggle
+    section.querySelectorAll('.seg').forEach(syncSegPill);
     markDirty();
   });
 });
@@ -691,7 +705,7 @@ function syncSegPill(seg){
   const pill=seg.querySelector('.pill');
   if(!pill) return;
   const idx=radios.findIndex(r=>r.checked);
-  if(idx<0){ pill.style.opacity='0'; return; }
+  if(idx<0){ pill.style.opacity='0'; pill.style.width='0px'; pill.style.transform='translateX(0)'; return; }
   const lab=labels[idx];
   const segRect=seg.getBoundingClientRect();
   const labRect=lab.getBoundingClientRect();
@@ -704,7 +718,7 @@ function syncSegPill(seg){
 function updateEstimationVisibility(){
   const on = (layerSel?.value === 'estimation');
   estimation?.classList.toggle('disabled', !on);
-  if(on) syncSegPill(estimation);
+  if(on) syncSegPill(estimation); else syncSegPill(estimation);
 }
 layerSel && layerSel.addEventListener('change',()=>{ updateEstimationVisibility(); markDirty(); });
 document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()=>{ syncSegPill(seg); markDirty(); }));
@@ -797,6 +811,7 @@ function makeRange(wrap, hl, startHandle, endHandle, onUpdate){
   // Init
   attach(startHandle,true); attach(endHandle,false); wrap._reflow();
 }
+const BASE_YEAR={min:2015, max:2024};
 const YEAR = {min:2015, max:2024};
 const yWrap=$('yearWrap'), yHL=$('yHL'), yStart=$('yStart'), yEnd=$('yEnd'), yStartL=$('yStartL'), yEndL=$('yEndL');
 function updateYearLabels(){
@@ -1024,7 +1039,6 @@ function makePredicate(sel){
 /* Aggregation & breaks */
 const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
-let vtLayer=null;
 let currentSourceKey=null;
 let layerName='', metricField='sum_val';
 let aggByHex = new Map();
@@ -1044,7 +1058,7 @@ function lockMetricField(sample, ct){
   metricField='sum_val';
 }
 
-/* Unique-per-individual counters inside each hex */
+/* Unique-per-individual counters + row stats */
 function ensureSet(map, key){ let s=map.get(key); if(!s){ s=new Set(); map.set(key,s); } return s; }
 function addUidOncePerCategory(entry, uid, value, cat){
   const store = entry.uidChosen[cat];
@@ -1061,6 +1075,7 @@ function addUidOncePerCategory(entry, uid, value, cat){
     }
   }
 }
+function incObj(obj, key){ obj[key]=(obj[key]||0)+1; }
 
 function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
@@ -1179,7 +1194,10 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
             uids:new Set(),
             rowCount:0,
             uidChosen:{sex:new Map(), stage:new Map(), season:new Map()},
-            countSets:{sex:new Map(), stage:new Map(), season:new Map()}
+            countSets:{sex:new Map(), stage:new Map(), season:new Map()},
+            rowYearCounts:{},
+            rowMonthCounts:{},
+            rowSeasonCounts:{}
           };
           aggByHex.set(key,entry);
         }
@@ -1192,7 +1210,7 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
         const uid = String(props.turtle_id ?? props.id ?? props.uid ?? props.individual_id ?? '');
         if(uid) entry.uids.add(uid); else entry.rowCount++;
 
-        // unique-per-individual categories (first non-Unknown wins)
+        // unique-per-individual categories
         const ssex = toCanon(props.sex,'sex');
         const sstage = toCanon(props.development_stage,'stage');
         const sseason = toCanon(props.season,'season');
@@ -1201,6 +1219,14 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
           addUidOncePerCategory(entry, uid, sstage, 'stage');
           addUidOncePerCategory(entry, uid, sseason, 'season');
         }
+
+        // row-based year/month/season counts for hover "mode"
+        const yStr = canonYear(props.year);
+        if(yStr) incObj(entry.rowYearCounts, yStr);
+        const mStr = String(props.month||'').trim();
+        if(mStr) incObj(entry.rowMonthCounts, mStr);
+        const sea = toCanon(props.season,'season');
+        if(sea) incObj(entry.rowSeasonCounts, sea);
       }
     }
   }
@@ -1240,15 +1266,14 @@ async function buildLayer(){
     }
     const caps = await capabilityProbe(pmFile, layerName);
 
-    // Sync year domain
+    // Sync year domain, but enforce base min/max 2015–2024
     const years = Array.from(caps.observedYears.values()).sort((a,b)=>a-b);
-    if(years.length){
-      YEAR.min = years[0]; YEAR.max = years[years.length-1];
-      $('yStartL').textContent=YEAR.min; $('yEndL').textContent=YEAR.max;
-      yWrap.dataset.startFrac = Math.max(0,Math.min(1, parseFloat(yWrap.dataset.startFrac||'0')));
-      yWrap.dataset.endFrac   = Math.max(parseFloat(yWrap.dataset.startFrac), Math.min(1, parseFloat(yWrap.dataset.endFrac||'1')));
-      reflowSliders();
-    }
+    YEAR.min = BASE_YEAR.min;
+    YEAR.max = years.length ? Math.max(BASE_YEAR.max, years[years.length-1]) : BASE_YEAR.max;
+    $('yStartL').textContent=YEAR.min; $('yEndL').textContent=YEAR.max;
+    yWrap.dataset.startFrac = Math.max(0,Math.min(1, parseFloat(yWrap.dataset.startFrac||'0')));
+    yWrap.dataset.endFrac   = Math.max(parseFloat(yWrap.dataset.startFrac), Math.min(1, parseFloat(yWrap.dataset.endFrac||'1')));
+    reflowSliders();
 
     const sel = readFilterSelections(caps);
     const predicate = makePredicate(sel);
@@ -1278,12 +1303,15 @@ async function buildLayer(){
         rendererFactory: L.canvas.tile,
         interactive:true,
         vectorTileLayerStyles: { [layerName]: styleFn },
-        getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id)
+        getFeatureId: f => f.properties && (f.properties.h3_index || f.properties.h3 || f.properties.id),
+        pane: 'hexPane'
       }).addTo(map);
       vtLayer.__src = currentSourceKey;
+      if (vtLayer.bringToFront) vtLayer.bringToFront();
       attachHover(vtLayer);
     } else {
       vtLayer.redraw();
+      if (vtLayer.bringToFront) vtLayer.bringToFront();
     }
 
     updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
@@ -1303,7 +1331,7 @@ function styleFn(props){
   return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
 }
 
-/* Hover info — unique individuals */
+/* Hover info — reorganized content */
 let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
 function attachHover(vtg){
   vtg.on('mouseover', showHover);
@@ -1315,27 +1343,57 @@ function objCountsFromSets(mapOfSets){
   for(const [k,set] of mapOfSets.entries()){ out[k]=set.size; }
   return out;
 }
+function modeFromCounts(countObj){
+  let bestKey=null, bestVal=-Infinity;
+  for(const k in countObj){ if(countObj[k]>bestVal){ bestVal=countObj[k]; bestKey=k; } }
+  if(bestKey==null) return null;
+  return {key:bestKey, val:countObj[bestKey]};
+}
+function seasonOrderCounts(obj){
+  const order=['Summer','Autumn','Winter','Spring'];
+  const parts=[];
+  for(const s of order){
+    const c = obj[s]||0;
+    parts.push(s + ': ' + c);
+  }
+  return parts.join(' · ');
+}
 function showHover(e){
   const p = e.layer && e.layer.properties || {};
   const key = p.h3_index || p.h3 || p.id;
   const agg = key ? aggByHex.get(key) : null;
   if(!agg){ map.closePopup(hoverPopup); return; }
   const v = agg.sum;
+
   const sex = objCountsFromSets(agg.countSets.sex);
   const stage = objCountsFromSets(agg.countSets.stage);
-  const season = objCountsFromSets(agg.countSets.season);
 
-  // Build inner lists safely without nested template literals
   const sexStr = Object.entries(sex).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
   const stageStr = Object.entries(stage).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
-  const seasonStr = Object.entries(season).map(function(pair){ return pair[0] + ': ' + pair[1]; }).join(' · ') || '—';
+
+  const yrMode = modeFromCounts(agg.rowYearCounts);
+  const moMode = modeFromCounts(agg.rowMonthCounts);
+
+  const yearStr = yrMode ? (yrMode.key + ' (' + yrMode.val + ')') : '—';
+  const monthStr = moMode ? (monthLabel(parseInt(moMode.key,10)) + ' (' + moMode.val + ')') : '—';
+
+  const seasonCountsStr = (function(){
+    // ensure all seasons listed
+    const merged = {Summer:0,Autumn:0,Winter:0,Spring:0};
+    for(const k in agg.rowSeasonCounts){ merged[k]=agg.rowSeasonCounts[k]; }
+    return seasonOrderCounts(merged);
+  })();
+
+  const indCount = agg.uids.size || 0;
 
   const html = `
-    <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
-    <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || 0}</div>
+    <div><strong>Cell count</strong>: ${nf(v)}</div>
+    <div style="margin-top:4px"><em>Number of individuals</em>: ${indCount}</div>
     <div style="margin-top:4px"><em>Sex</em>: ${sexStr}</div>
-    <div><em>Stage</em>: ${stageStr}</div>
-    <div><em>Season</em>: ${seasonStr}</div>
+    <div><em>Development stage</em>: ${stageStr}</div>
+    <div><em>Year</em>: ${yearStr}</div>
+    <div><em>Month</em>: ${monthStr}</div>
+    <div><em>Season</em>: ${seasonCountsStr}</div>
   `;
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
