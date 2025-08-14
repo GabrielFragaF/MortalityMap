@@ -76,7 +76,7 @@ body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
-/* New: push bottom items to the very bottom */
+/* Push bottom items to bottom */
 .rail-spacer{flex:1 1 auto}
 .rail-footer{display:flex;flex-direction:column;gap:8px;margin-top:auto}
 .rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
@@ -92,7 +92,18 @@ body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:va
 .apply-btn[disabled]{opacity:.5;cursor:not-allowed}
 .apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
 body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
-.author{margin:6px 8px 8px;font-size:10px;color:var(--text-secondary)}
+.author{font-size:10px;color:var(--text-secondary)}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;margin:0 8px 8px 8px;gap:8px}
+
+/* Language button + menu */
+.lang-wrap{position:relative}
+#langBtn{padding:4px 8px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;font-size:10px;cursor:pointer;line-height:1}
+body[data-theme="dark"] #langBtn{background:#23262b;color:#fff;border-color:var(--pill-border)}
+.lang-menu{position:absolute;right:0;bottom:110%;background:var(--panel-bg);backdrop-filter:blur(10px);border:1px solid var(--border);box-shadow:0 6px 18px rgba(0,0,0,.12);border-radius:10px;min-width:160px;z-index:1002}
+.lang-menu ul{list-style:none;margin:0;padding:6px}
+.lang-menu li{padding:6px 8px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--text-primary)}
+.lang-menu li:hover{background:var(--control-bg-hover)}
+.lang-menu[hidden]{display:none}
 
 /* Animated panel */
 .panel{
@@ -121,7 +132,6 @@ body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
 .toggle-nub{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform .3s cubic-bezier(.2,1,.2,1)}
 .filter-toggle input:checked + .toggle-track{background:#34C759}
 .filter-toggle input:checked + .toggle-track .toggle-nub{transform:translateX(16px)}
-/* Allow pointer events so titles/tooltips work even when disabled */
 .section-content.disabled{opacity:.45;transition:opacity .25s}
 
 /* Grids */
@@ -235,27 +245,27 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 <!-- Drawer -->
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
-    <div class="brand">
+    <div class="brand" id="brandTitle">
       Marine Megafauna Mortality
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
         <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
       </button>
     </div>
 
-    <button class="rail-btn active" data-tab="main" title="Main">
+    <button class="rail-btn active" data-tab="main" title="Main" id="tabBtnMain">
       <svg><use href="#icon-main" xlink:href="#icon-main"></use></svg><span>Main</span>
     </button>
-    <button class="rail-btn" data-tab="bio" title="Biological parameters">
+    <button class="rail-btn" data-tab="bio" title="Biological parameters" id="tabBtnBio">
       <svg><use href="#icon-bio" xlink:href="#icon-bio"></use></svg><span>Biological parameters</span>
     </button>
-    <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions">
+    <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions" id="tabBtnAnth">
       <svg><use href="#icon-anth" xlink:href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
     <div class="rail-spacer"></div>
 
     <div class="rail-footer">
-      <div class="rail-summary-title">Selected filters</div>
+      <div class="rail-summary-title" id="selectedFiltersTitle">Selected filters</div>
       <ul id="railSummary" class="rail-summary"></ul>
 
       <div class="control-row">
@@ -263,7 +273,21 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
         <button id="applyBtn" class="apply-btn" disabled>Apply</button>
       </div>
 
-      <div class="author">Author: Gabriel Fraga da Fonseca</div>
+      <div class="footer-bottom">
+        <div class="author" id="authorLabel">Author: Gabriel Fraga da Fonseca</div>
+        <div class="lang-wrap">
+          <button id="langBtn" aria-haspopup="true" aria-expanded="false" title="Language">EN</button>
+          <div id="langMenu" class="lang-menu" hidden>
+            <ul>
+              <li data-lang="EN">English</li>
+              <li data-lang="PT-BR">Português-BR</li>
+              <li data-lang="ES">Español</li>
+              <li data-lang="FR">Français</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -274,7 +298,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
       <section class="section tabpane" id="tab-main">
         <div class="section" data-filter-section="grid">
           <div class="section-header">
-            <h2 class="section-title">Cell size (H3)</h2>
+            <h2 class="section-title" id="titleCellSize">Cell size (H3)</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid four" id="grid-size-selector">
@@ -288,7 +312,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
         <!-- Map layer -->
         <div class="section" data-filter-section="layer">
           <div class="section-header">
-            <h2 class="section-title">Map layer</h2>
+            <h2 class="section-title" id="titleMapLayer">Map layer</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid" id="map-layer-selector" style="gap:10px">
@@ -298,9 +322,9 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
             </select>
             <div class="seg disabled" id="estimation-options">
               <!-- Text changed only; values stay Low/High -->
-              <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low">High</label>
-              <input type="radio" id="est-mean" name="estimation" value="Mean" checked><label for="est-mean">Mean</label>
-              <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high">Low</label>
+              <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low" id="estLblLow">High</label>
+              <input type="radio" id="est-mean" name="estimation" value="Mean" checked><label for="est-mean" id="estLblMean">Mean</label>
+              <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high" id="estLblHigh">Low</label>
               <div class="pill"></div>
             </div>
           </div>
@@ -309,32 +333,32 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
         <!-- Basemap -->
         <div class="section" data-filter-section="basemap">
           <div class="section-header">
-            <h2 class="section-title">Basemap</h2>
+            <h2 class="section-title" id="titleBasemap">Basemap</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid four" id="basemapBtns">
-            <button class="btn active" data-map="Light">Light</button>
-            <button class="btn" data-map="Satellite">Satellite</button>
-            <button class="btn" data-map="Terrain">Terrain</button>
-            <button class="btn" data-map="Dark">Dark</button>
+            <button class="btn active" data-map="Light" id="bmLight">Light</button>
+            <button class="btn" data-map="Satellite" id="bmSat">Satellite</button>
+            <button class="btn" data-map="Terrain" id="bmTer">Terrain</button>
+            <button class="btn" data-map="Dark" id="bmDark">Dark</button>
           </div>
         </div>
 
         <!-- Taxonomic group -->
         <div class="section" data-filter-section="taxon">
           <div class="section-header">
-            <h2 class="section-title">Taxonomic group</h2>
+            <h2 class="section-title" id="titleTaxon">Taxonomic group</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content grid one" id="taxonChips">
-            <button class="btn chip active" data-group="Sea turtles">Sea turtles</button>
+            <button class="btn chip active" data-group="Sea turtles" id="taxSeaTurtles">Sea turtles</button>
           </div>
         </div>
 
         <!-- Species -->
         <div class="section" data-filter-section="species">
           <div class="section-header">
-            <h2 class="section-title">Species</h2>
+            <h2 class="section-title" id="titleSpecies">Species</h2>
             <label class="filter-toggle"><input type="checkbox" class="toggle-input" checked><div class="toggle-track"><div class="toggle-nub"></div></div></label>
           </div>
           <div class="section-content">
@@ -354,7 +378,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 
         <!-- Year -->
         <div class="section" data-filter-section="year">
-          <div class="section-header"><h2 class="section-title">Year</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleYear">Year</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="yStartL">2015</span><span id="yEndL">2024</span></div>
             <div class="track-wrap" id="yearWrap" data-start-frac="0" data-end-frac="1">
@@ -368,7 +392,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 
         <!-- Month -->
         <div class="section" data-filter-section="month">
-          <div class="section-header"><h2 class="section-title">Month</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleMonth">Month</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
             <div class="labels"><span id="mStartL">Jan</span><span id="mEndL">Dec</span></div>
             <div class="track-wrap" id="monthWrap" data-start-frac="0" data-end-frac="1">
@@ -382,12 +406,12 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 
         <!-- Seasons -->
         <div class="section" data-filter-section="season">
-          <div class="section-header"><h2 class="section-title">Season <span class="hint">Southern hemisphere</span></h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleSeason">Season <span class="hint" id="titleSeasonHint">Southern hemisphere</span></h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid two disabled" id="seasonBtns">
-            <button class="btn" data-season="summer">Summer (Dec–Feb)</button>
-            <button class="btn" data-season="autumn">Autumn (Mar–May)</button>
-            <button class="btn" data-season="winter">Winter (Jun–Aug)</button>
-            <button class="btn" data-season="spring">Spring (Sep–Nov)</button>
+            <button class="btn" data-season="summer" id="btnSummer">Summer (Dec–Feb)</button>
+            <button class="btn" data-season="autumn" id="btnAutumn">Autumn (Mar–May)</button>
+            <button class="btn" data-season="winter" id="btnWinter">Winter (Jun–Aug)</button>
+            <button class="btn" data-season="spring" id="btnSpring">Spring (Sep–Nov)</button>
           </div>
         </div>
       </section>
@@ -395,24 +419,24 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
       <!-- BIO TAB -->
       <section class="section tabpane" id="tab-bio" hidden>
         <div class="section" data-filter-section="sex">
-          <div class="section-header"><h2 class="section-title">Sex</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleSex">Sex</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid three disabled" data-button-group="sex">
-            <button class="btn chip" data-val="Female">Female</button>
-            <button class="btn chip" data-val="Male">Male</button>
-            <button class="btn chip" data-val="Indetermined">Indetermined</button>
+            <button class="btn chip" data-val="Female" id="sexFemale">Female</button>
+            <button class="btn chip" data-val="Male" id="sexMale">Male</button>
+            <button class="btn chip" data-val="Indetermined" id="sexIndet">Indetermined</button>
           </div>
         </div>
         <div class="section" data-filter-section="stage">
-          <div class="section-header"><h2 class="section-title">Development stage</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleStage">Development stage</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid three disabled" data-button-group="stage">
-            <button class="btn chip" data-val="Hatchling">Hatchling</button>
-            <button class="btn chip" data-val="Juvenile">Juvenile</button>
-            <button class="btn chip" data-val="Adult">Adult</button>
-            <button class="btn chip" data-val="Indetermined">Indetermined</button>
+            <button class="btn chip" data-val="Hatchling" id="stageHatch">Hatchling</button>
+            <button class="btn chip" data-val="Juvenile" id="stageJuv">Juvenile</button>
+            <button class="btn chip" data-val="Adult" id="stageAdult">Adult</button>
+            <button class="btn chip" data-val="Indetermined" id="stageIndet">Indetermined</button>
           </div>
         </div>
         <div class="section" data-filter-section="decomp">
-          <div class="section-header"><h2 class="section-title">Decomposition code</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleDecomp">Decomposition code</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid five disabled" data-button-group="decomp">
             <button class="btn chip" data-val="1" title="Alive">1</button>
             <button class="btn chip" data-val="2" title="Fresh carcass">2</button>
@@ -426,56 +450,56 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
       <!-- ANTH TAB -->
       <section class="section tabpane" id="tab-anth" hidden>
         <div class="section" data-filter-section="fishing">
-          <div class="section-header"><h2 class="section-title">Fishing</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleFishing">Fishing</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="fish">
-            <input type="radio" id="fish-yes" name="fish" value="Yes"><label for="fish-yes">Yes</label>
-            <input type="radio" id="fish-no" name="fish" value="No"><label for="fish-no">No</label>
+            <input type="radio" id="fish-yes" name="fish" value="Yes"><label for="fish-yes" id="lblFishYes">Yes</label>
+            <input type="radio" id="fish-no" name="fish" value="No"><label for="fish-no" id="lblFishNo">No</label>
             <div class="pill"></div>
           </div>
         </div>
 
         <div class="section" data-filter-section="debris">
-          <div class="section-header"><h2 class="section-title">Marine debris</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleDebris">Marine debris</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="debris">
-            <input type="radio" id="debris-yes" name="debris" value="Yes"><label for="debris-yes">Yes</label>
-            <input type="radio" id="debris-no" name="debris" value="No"><label for="debris-no">No</label>
+            <input type="radio" id="debris-yes" name="debris" value="Yes"><label for="debris-yes" id="lblDebYes">Yes</label>
+            <input type="radio" id="debris-no" name="debris" value="No"><label for="debris-no" id="lblDebNo">No</label>
             <div class="pill"></div>
           </div>
         </div>
 
         <div class="section" data-filter-section="boat">
-          <div class="section-header"><h2 class="section-title">Boat collision</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleBoat">Boat collision</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="boat">
-            <input type="radio" id="boat-yes" name="boat" value="Yes"><label for="boat-yes">Yes</label>
-            <input type="radio" id="boat-no" name="boat" value="No"><label for="boat-no">No</label>
+            <input type="radio" id="boat-yes" name="boat" value="Yes"><label for="boat-yes" id="lblBoatYes">Yes</label>
+            <input type="radio" id="boat-no" name="boat" value="No"><label for="boat-no" id="lblBoatNo">No</label>
             <div class="pill"></div>
           </div>
         </div>
 
         <div class="section" data-filter-section="dredge">
-          <div class="section-header"><h2 class="section-title">Dredging</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleDredge">Dredging</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="dredge">
-            <input type="radio" id="dredge-yes" name="dredge" value="Yes"><label for="dredge-yes">Yes</label>
-            <input type="radio" id="dredge-no" name="dredge" value="No"><label for="dredge-no">No</label>
+            <input type="radio" id="dredge-yes" name="dredge" value="Yes"><label for="dredge-yes" id="lblDredYes">Yes</label>
+            <input type="radio" id="dredge-no" name="dredge" value="No"><label for="dredge-no" id="lblDredNo">No</label>
             <div class="pill"></div>
           </div>
         </div>
 
         <div class="section" data-filter-section="aggression">
-          <div class="section-header"><h2 class="section-title">Aggression</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleAggression">Aggression</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="aggression">
-            <input type="radio" id="aggression-yes" name="aggression" value="Yes"><label for="aggression-yes">Yes</label>
-            <input type="radio" id="aggression-no" name="aggression" value="No"><label for="aggression-no">No</label>
+            <input type="radio" id="aggression-yes" name="aggression" value="Yes"><label for="aggression-yes" id="lblAgrYes">Yes</label>
+            <input type="radio" id="aggression-no" name="aggression" value="No"><label for="aggression-no" id="lblAgrNo">No</label>
             <div class="pill"></div>
           </div>
         </div>
 
         <div class="section" data-filter-section="oil">
-          <div class="section-header"><h2 class="section-title">Oil / petrol</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
+          <div class="section-header"><h2 class="section-title" id="titleOil">Oil / petrol</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" id="oilBtns" data-name="oil">
-            <input type="radio" id="oil-oil" name="oil" value="Oil"><label for="oil-oil">Oil</label>
-            <input type="radio" id="oil-petrol" name="oil" value="Petrol"><label for="oil-petrol">Petrol</label>
-            <input type="radio" id="oil-none" name="oil" value="None"><label for="oil-none">None</label>
+            <input type="radio" id="oil-oil" name="oil" value="Oil"><label for="oil-oil" id="lblOil">Oil</label>
+            <input type="radio" id="oil-petrol" name="oil" value="Petrol"><label for="oil-petrol" id="lblPetrol">Petrol</label>
+            <input type="radio" id="oil-none" name="oil" value="None"><label for="oil-none" id="lblNone">None</label>
             <div class="pill"></div>
           </div>
         </div>
@@ -486,15 +510,15 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 
 <!-- Legend -->
 <div id="legend" class="map-overlay">
-  <div class="legend-header">Legend</div>
+  <div class="legend-header" id="legendTitle">Legend</div>
   <div id="legendRows"></div>
   <div class="hist" id="histogram" title="Distribution of cells across bins"></div>
-  <div class="legend-note">Distribution of cells across legend bins (current view)</div>
+  <div class="legend-note" id="legendNote">Distribution of cells across legend bins (current view)</div>
   <div class="legend-scale">
     <div class="scale-line" id="scaleLine"></div>
     <div class="scale-label" id="scaleLabel">≈ 100 km</div>
   </div>
-  <div class="legend-footer">Basemap: <span id="legendBasemap">Light</span></div>
+  <div class="legend-footer" id="legendFooter">Basemap: <span id="legendBasemap">Light</span></div>
 </div>
 
 <div id="spinner">Loading…</div>
@@ -1479,9 +1503,297 @@ applyBtn && applyBtn.addEventListener('click',()=>{
   buildLayer();
 });
 
+/* =================== LANGUAGE SWITCHER (UI TEXT ONLY) =================== */
+const I18N = {
+  'EN': {
+    code:'EN',
+    brand:'Marine Megafauna Mortality',
+    tabs:{main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions'},
+    selectedFilters:'Selected filters',
+    buttons:{reset:'Reset all', apply:'Apply', selectAll:'Select all', selectNone:'Select none'},
+    sections:{
+      cellsize:'Cell size (H3)',
+      maplayer:'Map layer',
+      basemap:'Basemap',
+      taxon:'Taxonomic group',
+      species:'Species',
+      year:'Year',
+      month:'Month',
+      season:'Season',
+      seasonHint:'Southern hemisphere',
+      sex:'Sex',
+      stage:'Development stage',
+      decomp:'Decomposition code',
+      fishing:'Fishing',
+      debris:'Marine debris',
+      boat:'Boat collision',
+      dredge:'Dredging',
+      aggression:'Aggression',
+      oil:'Oil / petrol'
+    },
+    taxSeaTurtles:'Sea turtles',
+    basemaps:{Light:'Light', Satellite:'Satellite', Terrain:'Terrain', Dark:'Dark'},
+    layerSelect:{
+      observed:'At-sea mortality of observed strandings',
+      estimation:'Mortality estimation',
+      estLabels:{Low:'Low', Mean:'Mean', High:'High'},
+      estLabelsSwapped:{lowBtn:'High', meanBtn:'Mean', highBtn:'Low'}
+    },
+    legend:{title:'Legend', note:'Distribution of cells across legend bins (current view)', footerPrefix:'Basemap:'},
+    popup:{cell:'Cell count', sex:'Sex', stage:'Development stage', year:'Year', month:'Month', season:'Season'},
+    yes:'Yes', no:'No',
+    sexes:{Female:'Female', Male:'Male', Indetermined:'Indetermined'},
+    stages:{Hatchling:'Hatchling', Juvenile:'Juvenile', Adult:'Adult', Indetermined:'Indetermined'},
+    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'}
+  },
+  'PT-BR': {
+    code:'PT-BR',
+    brand:'Mortalidade de Megafauna Marinha',
+    tabs:{main:'Principal', bio:'Parâmetros biológicos', anth:'Interações antrópicas'},
+    selectedFilters:'Filtros selecionados',
+    buttons:{reset:'Limpar tudo', apply:'Aplicar', selectAll:'Selecionar tudo', selectNone:'Selecionar nenhum'},
+    sections:{
+      cellsize:'Tamanho da célula (H3)',
+      maplayer:'Camada do mapa',
+      basemap:'Mapa base',
+      taxon:'Grupo taxonômico',
+      species:'Espécies',
+      year:'Ano',
+      month:'Mês',
+      season:'Estação',
+      seasonHint:'Hemisfério sul',
+      sex:'Sexo',
+      stage:'Estágio de desenvolvimento',
+      decomp:'Código de decomposição',
+      fishing:'Pesca',
+      debris:'Detritos marinhos',
+      boat:'Colisão com embarcação',
+      dredge:'Dragagem',
+      aggression:'Agressão',
+      oil:'Óleo / gasolina'
+    },
+    taxSeaTurtles:'Tartarugas marinhas',
+    basemaps:{Light:'Claro', Satellite:'Satélite', Terrain:'Terreno', Dark:'Escuro'},
+    layerSelect:{
+      observed:'Mortalidade no mar de encalhes observados',
+      estimation:'Estimativa de mortalidade',
+      estLabels:{Low:'Baixa', Mean:'Média', High:'Alta'},
+      estLabelsSwapped:{lowBtn:'Alta', meanBtn:'Média', highBtn:'Baixa'}
+    },
+    legend:{title:'Legenda', note:'Distribuição das células por classes (visão atual)', footerPrefix:'Mapa base:'},
+    popup:{cell:'Contagem da célula', sex:'Sexo', stage:'Estágio de desenvolvimento', year:'Ano', month:'Mês', season:'Estação'},
+    yes:'Sim', no:'Não',
+    sexes:{Female:'Fêmea', Male:'Macho', Indetermined:'Indeterminado'},
+    stages:{Hatchling:'Filhote', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
+    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'}
+  },
+  'ES': {
+    code:'ES',
+    brand:'Mortalidad de Megafauna Marina',
+    tabs:{main:'Principal', bio:'Parámetros biológicos', anth:'Interacciones antrópicas'},
+    selectedFilters:'Filtros seleccionados',
+    buttons:{reset:'Restablecer todo', apply:'Aplicar', selectAll:'Seleccionar todo', selectNone:'Seleccionar ninguno'},
+    sections:{
+      cellsize:'Tamaño de celda (H3)',
+      maplayer:'Capa del mapa',
+      basemap:'Mapa base',
+      taxon:'Grupo taxonómico',
+      species:'Especies',
+      year:'Año',
+      month:'Mes',
+      season:'Estación',
+      seasonHint:'Hemisferio sur',
+      sex:'Sexo',
+      stage:'Etapa de desarrollo',
+      decomp:'Código de descomposición',
+      fishing:'Pesca',
+      debris:'Desechos marinos',
+      boat:'Colisión con embarcación',
+      dredge:'Dragado',
+      aggression:'Agresión',
+      oil:'Aceite / gasolina'
+    },
+    taxSeaTurtles:'Tortugas marinas',
+    basemaps:{Light:'Claro', Satellite:'Satélite', Terrain:'Terreno', Dark:'Oscuro'},
+    layerSelect:{
+      observed:'Mortalidad en el mar de varamientos observados',
+      estimation:'Estimación de mortalidad',
+      estLabels:{Low:'Baja', Mean:'Media', High:'Alta'},
+      estLabelsSwapped:{lowBtn:'Alta', meanBtn:'Media', highBtn:'Baja'}
+    },
+    legend:{title:'Leyenda', note:'Distribución de celdas por clases (vista actual)', footerPrefix:'Mapa base:'},
+    popup:{cell:'Conteo de celda', sex:'Sexo', stage:'Etapa de desarrollo', year:'Año', month:'Mes', season:'Estación'},
+    yes:'Sí', no:'No',
+    sexes:{Female:'Hembra', Male:'Macho', Indetermined:'Indeterminado'},
+    stages:{Hatchling:'Cría', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
+    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'}
+  },
+  'FR': {
+    code:'FR',
+    brand:'Mortalité de la mégafaune marine',
+    tabs:{main:'Principal', bio:'Paramètres biologiques', anth:'Interactions anthropiques'},
+    selectedFilters:'Filtres sélectionnés',
+    buttons:{reset:'Réinitialiser', apply:'Appliquer', selectAll:'Tout sélectionner', selectNone:'Ne rien sélectionner'},
+    sections:{
+      cellsize:'Taille de cellule (H3)',
+      maplayer:'Couche de carte',
+      basemap:'Fond de carte',
+      taxon:'Groupe taxonomique',
+      species:'Espèces',
+      year:'Année',
+      month:'Mois',
+      season:'Saison',
+      seasonHint:'Hémisphère sud',
+      sex:'Sexe',
+      stage:'Stade de développement',
+      decomp:'Code de décomposition',
+      fishing:'Pêche',
+      debris:'Déchets marins',
+      boat:'Collision avec bateau',
+      dredge:'Dragage',
+      aggression:'Agression',
+      oil:'Pétrole / essence'
+    },
+    taxSeaTurtles:'Tortues marines',
+    basemaps:{Light:'Clair', Satellite:'Satellite', Terrain:'Relief', Dark:'Sombre'},
+    layerSelect:{
+      observed:'Mortalité en mer des échouages observés',
+      estimation:'Estimation de mortalité',
+      estLabels:{Low:'Faible', Mean:'Moyenne', High:'Élevée'},
+      estLabelsSwapped:{lowBtn:'Élevée', meanBtn:'Moyenne', highBtn:'Faible'}
+    },
+    legend:{title:'Légende', note:'Répartition des cellules par classes (vue actuelle)', footerPrefix:'Fond de carte :'},
+    popup:{cell:'Compte de cellule', sex:'Sexe', stage:'Stade de développement', year:'Année', month:'Mois', season:'Saison'},
+    yes:'Oui', no:'Non',
+    sexes:{Female:'Femelle', Male:'Mâle', Indetermined:'Indéterminé'},
+    stages:{Hatchling:'Nouveau-né', Juvenile:'Juvénile', Adult:'Adulte', Indetermined:'Indéterminé'},
+    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'}
+  }
+};
+
+let currentLang = 'EN';
+
+function applyLanguage(lang){
+  const L10N = I18N[lang] || I18N['EN'];
+  currentLang = lang;
+
+  // Brand & tabs
+  $('brandTitle').firstChild.nodeValue = L10N.brand;
+  $('tabBtnMain').querySelector('span').textContent = L10N.tabs.main;
+  $('tabBtnBio').querySelector('span').textContent  = L10N.tabs.bio;
+  $('tabBtnAnth').querySelector('span').textContent = L10N.tabs.anth;
+
+  // Panel title depends on active tab
+  const activeTab = (document.querySelector('.rail-btn.active')?.dataset.tab) || 'main';
+  const panelTitles = {main:L10N.tabs.main, bio:L10N.tabs.bio, anth:L10N.tabs.anth};
+  panel.querySelector('.head h1').textContent = panelTitles[activeTab] || L10N.tabs.main;
+
+  // Footer & buttons
+  $('selectedFiltersTitle').textContent = L10N.selectedFilters;
+  $('resetBtn').textContent = L10N.buttons.reset;
+  $('applyBtn').textContent = L10N.buttons.apply;
+
+  // Sections
+  $('titleCellSize').textContent = L10N.sections.cellsize;
+  $('titleMapLayer').textContent = L10N.sections.maplayer;
+  $('titleBasemap').textContent = L10N.sections.basemap;
+  $('titleTaxon').textContent   = L10N.sections.taxon;
+  $('titleSpecies').textContent = L10N.sections.species;
+  $('titleYear').textContent    = L10N.sections.year;
+  $('titleMonth').textContent   = L10N.sections.month;
+  $('titleSeason').childNodes[0].nodeValue = L10N.sections.season + ' ';
+  $('titleSeasonHint').textContent = L10N.sections.seasonHint;
+  $('titleSex').textContent     = L10N.sections.sex;
+  $('titleStage').textContent   = L10N.sections.stage;
+  $('titleDecomp').textContent  = L10N.sections.decomp;
+  $('titleFishing').textContent = L10N.sections.fishing;
+  $('titleDebris').textContent  = L10N.sections.debris;
+  $('titleBoat').textContent    = L10N.sections.boat;
+  $('titleDredge').textContent  = L10N.sections.dredge;
+  $('titleAggression').textContent = L10N.sections.aggression;
+  $('titleOil').textContent     = L10N.sections.oil;
+
+  // Taxon chip
+  $('taxSeaTurtles').textContent = L10N.taxSeaTurtles;
+
+  // Species helpers
+  $('speciesAll').textContent = L10N.buttons.selectAll;
+  $('speciesNone').textContent = L10N.buttons.selectNone;
+
+  // Basemap button labels (text only)
+  $('bmLight').textContent = L10N.basemaps.Light;
+  $('bmSat').textContent   = L10N.basemaps.Satellite;
+  $('bmTer').textContent   = L10N.basemaps.Terrain;
+  $('bmDark').textContent  = L10N.basemaps.Dark;
+
+  // Layer select labels (text only)
+  const optObserved = document.querySelector('#layer-type-select option[value="observed"]');
+  const optEstimation = document.querySelector('#layer-type-select option[value="estimation"]');
+  if(optObserved) optObserved.textContent = L10N.layerSelect.observed;
+  if(optEstimation) optEstimation.textContent = L10N.layerSelect.estimation;
+
+  // Estimation segmented labels (we keep underlying values)
+  $('estLblLow').textContent  = L10N.layerSelect.estLabelsSwapped.lowBtn;
+  $('estLblMean').textContent = L10N.layerSelect.estLabelsSwapped.meanBtn;
+  $('estLblHigh').textContent = L10N.layerSelect.estLabelsSwapped.highBtn;
+
+  // Yes/No labels in anth
+  $('lblFishYes').textContent = L10N.yes; $('lblFishNo').textContent = L10N.no;
+  $('lblDebYes').textContent  = L10N.yes; $('lblDebNo').textContent  = L10N.no;
+  $('lblBoatYes').textContent = L10N.yes; $('lblBoatNo').textContent = L10N.no;
+  $('lblDredYes').textContent = L10N.yes; $('lblDredNo').textContent = L10N.no;
+  $('lblAgrYes').textContent  = L10N.yes; $('lblAgrNo').textContent  = L10N.no;
+  $('lblOil').textContent     = (L10N.sections.oil.includes('Óleo')||L10N.sections.oil.includes('Pétrole')) ? (lang==='FR'?'Pétrole':'Óleo') : 'Oil';
+  $('lblPetrol').textContent  = (lang==='FR'?'Essence':(lang==='PT-BR'?'Gasolina':'Petrol'));
+  $('lblNone').textContent    = (lang==='FR'?'Aucun':(lang==='PT-BR'?'Nenhum':(lang==='ES'?'Ninguno':'None')));
+
+  // Legend text elements
+  $('legendTitle').textContent = L10N.legend.title;
+  $('legendNote').textContent  = L10N.legend.note;
+  document.getElementById('legendFooter').childNodes[0].nodeValue = L10N.legend.footerPrefix + ' ';
+
+  // Sex & Stage button labels (text only)
+  $('sexFemale').textContent = L10N.sexes.Female;
+  $('sexMale').textContent   = L10N.sexes.Male;
+  $('sexIndet').textContent  = L10N.sexes.Indetermined;
+
+  $('stageHatch').textContent = L10N.stages.Hatchling;
+  $('stageJuv').textContent   = L10N.stages.Juvenile;
+  $('stageAdult').textContent = L10N.stages.Adult;
+  $('stageIndet').textContent = L10N.stages.Indetermined;
+
+  // Language button short code
+  $('langBtn').textContent = L10N.code;
+
+  // Recompute summary (labels inside remain English; can be extended if desired)
+  updateSummary();
+}
+
+// Language menu behavior (no overlay outside rail; clicks won't block map)
+const langBtn = $('langBtn');
+const langMenu = $('langMenu');
+langBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const isOpen = !langMenu.hasAttribute('hidden');
+  if(isOpen){ langMenu.setAttribute('hidden',''); langBtn.setAttribute('aria-expanded','false'); }
+  else { langMenu.removeAttribute('hidden'); langBtn.setAttribute('aria-expanded','true'); }
+});
+langMenu.addEventListener('click', (e)=>{
+  const li = e.target.closest('li[data-lang]');
+  if(!li) return;
+  const lang = li.dataset.lang;
+  applyLanguage(lang);
+  langMenu.setAttribute('hidden','');
+  langBtn.setAttribute('aria-expanded','false');
+});
+document.addEventListener('click', (e)=>{
+  if(!langMenu.hasAttribute('hidden')){ langMenu.setAttribute('hidden',''); langBtn.setAttribute('aria-expanded','false'); }
+});
+
 /* Initial defaults */
 updateSummary();
 buildLayer();
+applyLanguage('EN');
 </script>
 </body>
 </html>
