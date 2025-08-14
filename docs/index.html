@@ -76,19 +76,14 @@ body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
 
-/* Bottom area */
-.rail-spacer{flex:1 1 auto}
-.rail-footer{display:flex;flex-direction:column;gap:8px;margin-top:auto}
 .rail-summary-title{margin:8px 8px 0;font-size:11px;color:var(--text-secondary);font-weight:600}
 .rail-summary{margin:0 8px;list-style:none;padding:4px 0 0;overflow:auto;max-height:34vh;border-top:1px solid var(--border)}
 .rail-summary li{font-size:11px;padding:6px 2px;border-bottom:1px dashed var(--border)}
 .control-row{display:flex;gap:8px;margin:8px 8px 2px}
-.control-row .btn-small,
-.control-row .apply-btn{flex:1}
 .btn-small{padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer}
 .btn-small[disabled]{opacity:.5;cursor:not-allowed}
 body[data-theme="dark"] .btn-small{background:#23262b;color:#fff;border-color:var(--pill-border)}
-.apply-btn{width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
+.apply-btn{margin:8px 8px 10px;width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-primary)}
 .apply-btn[disabled]{opacity:.5;cursor:not-allowed}
 .apply-btn:not([disabled]):hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
 body[data-theme="dark"] .apply-btn{background:#23262b;color:#fff}
@@ -211,12 +206,6 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M7 8l5 5 5-5"/></symbol>
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
-    <!-- New: danger icon for Anthropogenic interactions tab -->
-    <symbol id="icon-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <line x1="12" y1="17" x2="12" y2="17"/>
-    </symbol>
   </defs>
 </svg>
 
@@ -239,25 +228,17 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
       <svg><use href="#icon-bio"></use></svg><span>Biological parameters</span>
     </button>
     <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions">
-      <!-- Switched to a danger icon per request -->
-      <svg><use href="#icon-danger"></use></svg><span>Anthropogenic interactions</span>
+      <svg><use href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
-    <!-- Push the bottom area down -->
-    <div class="rail-spacer"></div>
+    <div class="rail-summary-title">Selected filters</div>
+    <ul id="railSummary" class="rail-summary"></ul>
 
-    <!-- Bottom area: Selected filters + actions + author -->
-    <div class="rail-footer">
-      <div class="rail-summary-title">Selected filters</div>
-      <ul id="railSummary" class="rail-summary"></ul>
-
-      <div class="control-row">
-        <button id="resetBtn" class="btn-small">Reset all</button>
-        <button id="applyBtn" class="apply-btn" disabled>Apply</button>
-      </div>
-
-      <div class="author">Author: Gabriel Fraga da Fonseca</div>
+    <div class="control-row">
+      <button id="resetBtn" class="btn-small">Reset all</button>
     </div>
+    <button id="applyBtn" class="apply-btn" disabled>Apply</button>
+    <div class="author">Author: Gabriel Fraga da Fonseca</div>
   </div>
 
   <div class="panel" id="panel">
@@ -1318,9 +1299,9 @@ function showHover(e){
   const html = `
     <div><strong>${nf(v)}</strong> — ${document.getElementById('counttype').value.replaceAll('_',' ')}</div>
     <div style="margin-top:4px"><em>Individuals</em>: ${agg.uids.size || 0}</div>
-    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>\`\${k}: \${c}\`).join(' · ') || '—'}</div>
-    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>\`\${k}: \${c}\`).join(' · ') || '—'}</div>
-    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>\`\${k}: \${c}\`).join(' · ') || '—'}</div>
+    <div style="margin-top:4px"><em>Sex</em>: ${Object.entries(sex).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Stage</em>: ${Object.entries(stage).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
+    <div><em>Season</em>: ${Object.entries(season).map(([k,c])=>`${k}: ${c}`).join(' · ') || '—'}</div>
   `;
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
