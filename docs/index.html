@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sea Turtle Mortality — v15 UI (fixed)</title>
+<title>Sea Turtle Mortality — v15 UI</title>
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E">
 
@@ -66,21 +66,12 @@ body{
   padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-.brand{
-  display:flex;align-items:center;justify-content:center; /* centered brand title */
-  gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)
-}
-
-/* Move theme toggle to top-right (out of brand row) */
-.theme-toggle{
-  position:fixed;top:12px;right:12px;z-index:1100;
-  border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;
-  cursor:pointer;color:var(--text-secondary)
-}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
+.theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
 .theme-toggle:hover{background:var(--control-bg-hover)}
 
 .rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail-btn svg{width:18px;height:18px;opacity:.9;display:block;flex:0 0 18px} /* keep icon size stable */
+.rail-btn svg{width:18px;height:18px;opacity:.9;display:block}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -208,8 +199,10 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .scale-line{height:6px;border:1px solid var(--text-secondary);border-top:none;width:120px}
 .scale-label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
-.hist{display:none !important}           /* hide histogram */
-.legend-note{display:none !important}    /* hide histogram note */
+.hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
+.hist div{flex:1;background:#cbd5e1;border-radius:3px}
+.hist div.active{background:#94a3b8}
+.legend-note{margin-top:6px;font-size:11px;color:var(--text-secondary)}
 
 /* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
@@ -218,7 +211,7 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .leaflet-popup-hover{pointer-events:none}
 .leaflet-popup-hover .leaflet-popup-content-wrapper{background:var(--panel-bg);backdrop-filter:blur(14px);border:1px solid var(--border)}
 .leaflet-popup-hover .leaflet-popup-content{margin:8px 10px;font-size:12px}
-body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
+body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} /* dark mode popup text */
 </style>
 </head>
 <body>
@@ -227,6 +220,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
+    <!-- Regular hexagon (no distortion) -->
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 2 L20.8 7 L20.8 17 L12 22 L3.2 17 L3.2 7 Z"/>
     </symbol>
@@ -234,7 +228,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
 
-    <!-- Warning triangle (anth) -->
+    <!-- Warning triangle (danger) -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
       <line x1="12" y1="8.5" x2="12" y2="13.5"/>
@@ -596,10 +590,10 @@ const DISPLAY_Z_CAP = 9;
 function wrapIndex(v,z){ const n=1<<z; return ((v % n) + n) % n; }
 function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
 
-/* pmtiles shim + cache */
+/* pmtiles shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250814c'; }
+function pmUrlWithBust(file){ return file + '?v=20250814b'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -608,9 +602,8 @@ async function getPM(archive){
   return inst;
 }
 window.fetch = async (input, init) => {
-  const url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
-  if (url && url.startsWith('pmtiles://')) {
-    const m = url.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+  if (typeof input === 'string' && input.startsWith('pmtiles://')) {
+    const m = input.match(/^pmtiles:\/\/(.+?)\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
     if (!m) return new Response(null,{status:400});
     let [_, archive, zStr, xStr, yStr] = m;
     let z = parseInt(zStr,10), x = parseInt(xStr,10), y = parseInt(yStr,10);
@@ -652,8 +645,8 @@ function clearSection(sectionEl){
 /* Dynamic panel title */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
-  const L10N = I18N[currentLang] || I18N['EN'];
-  if(panelTitleEl) panelTitleEl.textContent = (L10N.tabs[tabKey] || L10N.tabs.main);
+  const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
+  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || 'Filters';
 }
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -1052,7 +1045,7 @@ function makePredicate(sel){
 }
 
 /* Aggregation & breaks */
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat('en-US',{maximumFractionDigits:digits}).format(v); };
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
 let currentSourceKey=null;
 let layerName='', metricField='sum_val';
@@ -1233,7 +1226,8 @@ function updateLegendFrozen(cfg){
     const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
   }
-  const hist=$('histogram'); if (hist) hist.innerHTML=''; // no-op; hidden by CSS
+  const hist=$('histogram'); hist.innerHTML='';
+  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
 }
 
 /* Build / update layer */
@@ -1369,15 +1363,13 @@ function showHover(e){
   const monthPct = percentageStrings(monthCounts, labelMonthKey);
   const seasonPctText = seasonOrderPercent(seasonCounts);
 
-  const L10N = I18N[currentLang] || I18N['EN'];
-
   const html = `
-    <div><strong>${L10N.popup.cell}</strong>: ${nf(v)}</div>
-    <div style="margin-top:4px"><strong>${L10N.popup.sex}</strong>: ${sexPct.text}</div>
-    <div><strong>${L10N.popup.stage}</strong>: ${stagePct.text}</div>
-    <div><strong>${L10N.popup.year}</strong>: ${yearPct.topKey ? (yearPct.topKey + ' (' + yearPct.topPct + '%)') : '—'}</div>
-    <div><strong>${L10N.popup.month}</strong>: ${monthPct.topKey ? (labelMonthKey(monthPct.topKey) + ' (' + monthPct.topPct + '%)') : '—'}</div>
-    <div><strong>${L10N.popup.season}</strong>: ${seasonPctText}</div>
+    <div><strong>Cell count</strong>: ${nf(v)}</div>
+    <div style="margin-top:4px"><strong>Sex</strong>: ${sexPct.text}</div>
+    <div><strong>Development stage</strong>: ${stagePct.text}</div>
+    <div><strong>Year</strong>: ${yearPct.topKey ? (yearPct.topKey + ' (' + yearPct.topPct + '%)') : '—'}</div>
+    <div><strong>Month</strong>: ${monthPct.topKey ? (labelMonthKey(monthPct.topKey) + ' (' + monthPct.topPct + '%)') : '—'}</div>
+    <div><strong>Season</strong>: ${seasonPctText}</div>
   `;
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
@@ -1552,8 +1544,7 @@ const I18N = {
     yes:'Yes', no:'No',
     sexes:{Female:'Female', Male:'Male', Indetermined:'Indetermined'},
     stages:{Hatchling:'Hatchling', Juvenile:'Juvenile', Adult:'Adult', Indetermined:'Indetermined'},
-    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'},
-    decompTips: { '1':'Alive', '2':'Fresh carcass', '3':'Moderate decomposition', '4':'Advanced decomposition', '5':'Mummified' }
+    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'}
   },
   'PT-BR': {
     code:'PT-BR',
@@ -1594,8 +1585,7 @@ const I18N = {
     yes:'Sim', no:'Não',
     sexes:{Female:'Fêmea', Male:'Macho', Indetermined:'Indeterminado'},
     stages:{Hatchling:'Filhote', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
-    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'},
-    decompTips: { '1':'Vivo', '2':'Carcaça fresca', '3':'Decomposição moderada', '4':'Decomposição avançada', '5':'Mumificado' }
+    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'}
   },
   'ES': {
     code:'ES',
@@ -1636,8 +1626,7 @@ const I18N = {
     yes:'Sí', no:'No',
     sexes:{Female:'Hembra', Male:'Macho', Indetermined:'Indeterminado'},
     stages:{Hatchling:'Cría', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
-    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'},
-    decompTips: { '1':'Vivo', '2':'Cadáver fresco', '3':'Descomposición moderada', '4':'Descomposición avanzada', '5':'Momificado' }
+    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'}
   },
   'FR': {
     code:'FR',
@@ -1678,8 +1667,7 @@ const I18N = {
     yes:'Oui', no:'Non',
     sexes:{Female:'Femelle', Male:'Mâle', Indetermined:'Indéterminé'},
     stages:{Hatchling:'Nouveau-né', Juvenile:'Juvénile', Adult:'Adulte', Indetermined:'Indéterminé'},
-    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'},
-    decompTips: { '1':'Vivant', '2':'Carcasse fraîche', '3':'Décomposition modérée', '4':'Décomposition avancée', '5':'Momifié' }
+    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'}
   }
 };
 
@@ -1774,20 +1762,14 @@ function applyLanguage(lang){
   $('stageAdult').textContent = L10N.stages.Adult;
   $('stageIndet').textContent = L10N.stages.Indetermined;
 
-  // Decomposition code chip tooltips
-  ['1','2','3','4','5'].forEach(k=>{
-    const chip = document.querySelector('[data-filter-section="decomp"] .chip[data-val="'+k+'"]');
-    if (chip && L10N.decompTips && L10N.decompTips[k]) chip.title = L10N.decompTips[k];
-  });
-
   // Language button short code
   $('langBtn').textContent = L10N.code;
 
-  // Recompute summary
+  // Recompute summary (labels inside remain English; can be extended if desired)
   updateSummary();
 }
 
-// Language menu behavior
+// Language menu behavior (no overlay outside rail; clicks won't block map)
 const langBtn = $('langBtn');
 const langMenu = $('langMenu');
 langBtn.addEventListener('click', (e)=>{
@@ -1804,7 +1786,7 @@ langMenu.addEventListener('click', (e)=>{
   langMenu.setAttribute('hidden','');
   langBtn.setAttribute('aria-expanded','false');
 });
-document.addEventListener('click', ()=>{
+document.addEventListener('click', (e)=>{
   if(!langMenu.hasAttribute('hidden')){ langMenu.setAttribute('hidden',''); langBtn.setAttribute('aria-expanded','false'); }
 });
 
