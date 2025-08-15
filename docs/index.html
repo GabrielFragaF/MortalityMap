@@ -33,7 +33,7 @@
   --focus: rgba(0,122,255,.25);
   --pill-border: rgba(0,0,0,.14);
   --label-selected: #0f172a;
-  --rail-w: 200px;
+  --rail-w: 260px; /* widened so the theme button sits beside the title and long tab labels fit */
 }
 body[data-theme="dark"] {
   --panel-bg: rgba(26, 28, 33, 0.88);
@@ -66,14 +66,19 @@ body{
   padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
+.brand{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 8px 6px;color:var(--text-primary)
+}
+#brandText{
+  font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
 
-/* Docked theme toggle (top-right of viewport) */
+/* Theme toggle sits inside the brand row (not docked to viewport) */
 .theme-toggle{
   border:1px solid var(--border);
   background:var(--panel-bg);
   border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary);
-  position:fixed; top:12px; right:12px; z-index:10060; /* <-- docked */
+  position:static; /* <-- inside the brand row */
   box-shadow:0 4px 14px rgba(0,0,0,.12);
 }
 .theme-toggle:hover{background:var(--control-bg-hover)}
@@ -259,9 +264,8 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 <!-- Drawer -->
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
-    <div class="brand" id="brandTitle">
-      Marine Megafauna Mortality
-      <!-- This stays in the DOM, but it's docked top-right via CSS -->
+    <div class="brand" id="brand">
+      <span id="brandText">Marine Megafauna Mortality</span>
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
         <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
       </button>
@@ -564,7 +568,7 @@ const BASEMAPS = {
   Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }),
   Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors &copy; CARTO' }),
   Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{ attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)' }),
-  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
+  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x]',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
 };
 let baseLayer = null;
 function setBasemap(name){
@@ -608,7 +612,7 @@ function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
 /* pmtiles shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250814b'; }
+function pmUrlWithBust(file){ return file + '?v=20250814c'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -657,12 +661,12 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title — now localized and safe before I18N loads */
+/* Dynamic panel title — now localized to selected language */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
   const fallback = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
   try{
-    const pack = (window.I18N && window.I18N[window.currentLang || 'EN']) || null;
+    const pack = (typeof I18N !== 'undefined' && I18N[currentLang || 'EN']) || null;
     const titles = pack ? pack.tabs : fallback;
     if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || titles.main || 'Main';
   }catch(e){
@@ -679,7 +683,7 @@ railBtns.forEach(btn=>{
     railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
     drawer.dataset.tab = tab;
-    setPanelTitleByTab(tab); // localized
+    setPanelTitleByTab(tab); // localized header based on selected language
     if(isSame){ drawer.classList.remove('open'); }
     else { drawer.classList.add('open'); requestAnimationFrame(()=>{ reflowSliders(); }); }
   });
@@ -1700,7 +1704,7 @@ function applyLanguage(lang){
   currentLang = lang;
 
   // Brand & tabs
-  $('brandTitle').firstChild.nodeValue = L10N.brand;
+  $('brandText').textContent = L10N.brand;
   $('tabBtnMain').querySelector('span').textContent = L10N.tabs.main;
   $('tabBtnBio').querySelector('span').textContent  = L10N.tabs.bio;
   $('tabBtnAnth').querySelector('span').textContent = L10N.tabs.anth;
@@ -1786,11 +1790,10 @@ function applyLanguage(lang){
   // Language button short code
   $('langBtn').textContent = L10N.code;
 
-  // Recompute summary (labels inside remain English; can be extended if desired)
   updateSummary();
 }
 
-// Language menu behavior (no overlay outside rail; clicks won't block map)
+// Language menu behavior
 const langBtn = $('langBtn');
 const langMenu = $('langMenu');
 langBtn.addEventListener('click', (e)=>{
