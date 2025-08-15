@@ -66,12 +66,24 @@ body{
   padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
-.theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
+
+/* Brand title centered */
+.brand{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary);
+  text-align:center;width:100%;
+}
+
+/* Theme toggle moved to top-right of the page */
+.theme-toggle{
+  position:fixed;top:12px;right:12px;z-index:2000;
+  border:1px solid var(--border);background:transparent;border-radius:8px;
+  font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)
+}
 .theme-toggle:hover{background:var(--control-bg-hover)}
 
 .rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail-btn svg{width:18px;height:18px;opacity:.9;display:block}
+.rail-btn svg{width:18px;height:18px;min-width:18px;min-height:18px;display:block;flex:0 0 18px}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -199,10 +211,9 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .scale-line{height:6px;border:1px solid var(--text-secondary);border-top:none;width:120px}
 .scale-label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
-.hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
-.hist div{flex:1;background:#cbd5e1;border-radius:3px}
-.hist div.active{background:#94a3b8}
-.legend-note{margin-top:6px;font-size:11px;color:var(--text-secondary)}
+
+/* Hide histogram & its note as requested */
+#histogram, #legendNote{display:none !important}
 
 /* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
@@ -216,6 +227,11 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 </head>
 <body>
 
+<!-- Top-right Theme Toggle (moved out of sidebar) -->
+<button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
+  <svg width="16" height="16" aria-hidden="true"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
+</button>
+
 <!-- Icons -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -226,12 +242,12 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
     </symbol>
 
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
-    <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
+    <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10" vector-effect="non-scaling-stroke"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10" vector-effect="non-scaling-stroke"/></symbol>
 
-    <!-- Warning triangle (danger) -->
+    <!-- Warning triangle (danger) – stabilized with non-scaling stroke -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="8.5" x2="12" y2="13.5"/>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" vector-effect="non-scaling-stroke"/>
+      <line x1="12" y1="8.5" x2="12" y2="13.5" vector-effect="non-scaling-stroke"/>
       <circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>
     </symbol>
 
@@ -245,21 +261,16 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
 <!-- Drawer -->
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
-    <div class="brand" id="brandTitle">
-      Marine Megafauna Mortality
-      <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
-        <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
-      </button>
-    </div>
+    <div class="brand" id="brandTitle">Marine Megafauna Mortality</div>
 
     <button class="rail-btn active" data-tab="main" title="Main" id="tabBtnMain">
-      <svg><use href="#icon-main" xlink:href="#icon-main"></use></svg><span>Main</span>
+      <svg aria-hidden="true"><use href="#icon-main" xlink:href="#icon-main"></use></svg><span>Main</span>
     </button>
     <button class="rail-btn" data-tab="bio" title="Biological parameters" id="tabBtnBio">
-      <svg><use href="#icon-bio" xlink:href="#icon-bio"></use></svg><span>Biological parameters</span>
+      <svg aria-hidden="true"><use href="#icon-bio" xlink:href="#icon-bio"></use></svg><span>Biological parameters</span>
     </button>
     <button class="rail-btn" data-tab="anth" title="Anthropogenic interactions" id="tabBtnAnth">
-      <svg><use href="#icon-anth" xlink:href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
+      <svg aria-hidden="true"><use href="#icon-anth" xlink:href="#icon-anth"></use></svg><span>Anthropogenic interactions</span>
     </button>
 
     <div class="rail-spacer"></div>
@@ -549,7 +560,7 @@ const BASEMAPS = {
   Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }),
   Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors &copy; CARTO' }),
   Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{ attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)' }),
-  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
+  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x]',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
 };
 let baseLayer = null;
 function setBasemap(name){
@@ -642,11 +653,12 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title */
+/* Panel title i18n */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
-  const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
-  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || 'Filters';
+  const L10N = I18N[currentLang] || I18N['EN'];
+  const titles = L10N.tabs || I18N['EN'].tabs;
+  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || titles.main;
 }
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -1045,7 +1057,8 @@ function makePredicate(sel){
 }
 
 /* Aggregation & breaks */
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
+/* English number format (commas thousands, dot decimals) */
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat('en-US',{maximumFractionDigits:digits}).format(v); };
 
 let currentSourceKey=null;
 let layerName='', metricField='sum_val';
@@ -1226,8 +1239,7 @@ function updateLegendFrozen(cfg){
     const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
   }
-  const hist=$('histogram'); hist.innerHTML='';
-  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
+  /* histogram intentionally not drawn (hidden by CSS) */
 }
 
 /* Build / update layer */
@@ -1287,7 +1299,7 @@ async function buildLayer(){
       if (vtLayer.bringToFront) vtLayer.bringToFront();
     }
 
-    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, histCounts: histogramCounts, firstFloorApplied:false });
+    updateLegendFrozen({ breaks: styleConfig.breaks, ramp: styleConfig.ramp, firstFloorApplied:false });
     bumpToast('Layer updated');
   }catch(e){
     console.error(e); bumpToast('Failed to load layer');
@@ -1531,6 +1543,7 @@ const I18N = {
       aggression:'Aggression',
       oil:'Oil / petrol'
     },
+    decompTitles:{'1':'Alive','2':'Fresh carcass','3':'Moderate decomposition','4':'Advanced decomposition','5':'Mummified'},
     taxSeaTurtles:'Sea turtles',
     basemaps:{Light:'Light', Satellite:'Satellite', Terrain:'Terrain', Dark:'Dark'},
     layerSelect:{
@@ -1572,6 +1585,7 @@ const I18N = {
       aggression:'Agressão',
       oil:'Óleo / gasolina'
     },
+    decompTitles:{'1':'Vivo','2':'Cadáver fresco','3':'Decomposição moderada','4':'Decomposição avançada','5':'Mumificado'},
     taxSeaTurtles:'Tartarugas marinhas',
     basemaps:{Light:'Claro', Satellite:'Satélite', Terrain:'Terreno', Dark:'Escuro'},
     layerSelect:{
@@ -1613,6 +1627,7 @@ const I18N = {
       aggression:'Agresión',
       oil:'Aceite / gasolina'
     },
+    decompTitles:{'1':'Vivo','2':'Cadáver fresco','3':'Descomposición moderada','4':'Descomposición avanzada','5':'Momificado'},
     taxSeaTurtles:'Tortugas marinas',
     basemaps:{Light:'Claro', Satellite:'Satélite', Terrain:'Terreno', Dark:'Oscuro'},
     layerSelect:{
@@ -1654,6 +1669,7 @@ const I18N = {
       aggression:'Agression',
       oil:'Pétrole / essence'
     },
+    decompTitles:{'1':'Vivant','2':'Cadavre frais','3':'Décomposition modérée','4':'Décomposition avancée','5':'Momifié'},
     taxSeaTurtles:'Tortues marines',
     basemaps:{Light:'Clair', Satellite:'Satellite', Terrain:'Relief', Dark:'Sombre'},
     layerSelect:{
@@ -1678,15 +1694,14 @@ function applyLanguage(lang){
   currentLang = lang;
 
   // Brand & tabs
-  $('brandTitle').firstChild.nodeValue = L10N.brand;
+  $('brandTitle').textContent = L10N.brand;
   $('tabBtnMain').querySelector('span').textContent = L10N.tabs.main;
   $('tabBtnBio').querySelector('span').textContent  = L10N.tabs.bio;
   $('tabBtnAnth').querySelector('span').textContent = L10N.tabs.anth;
 
   // Panel title depends on active tab
   const activeTab = (document.querySelector('.rail-btn.active')?.dataset.tab) || 'main';
-  const panelTitles = {main:L10N.tabs.main, bio:L10N.tabs.bio, anth:L10N.tabs.anth};
-  panel.querySelector('.head h1').textContent = panelTitles[activeTab] || L10N.tabs.main;
+  setPanelTitleByTab(activeTab);
 
   // Footer & buttons
   $('selectedFiltersTitle').textContent = L10N.selectedFilters;
@@ -1712,6 +1727,15 @@ function applyLanguage(lang){
   $('titleDredge').textContent  = L10N.sections.dredge;
   $('titleAggression').textContent = L10N.sections.aggression;
   $('titleOil').textContent     = L10N.sections.oil;
+
+  // Localize decomposition tooltips (1–5)
+  const dsec = document.querySelector('[data-filter-section="decomp"]');
+  if(dsec && L10N.decompTitles){
+    ['1','2','3','4','5'].forEach(v=>{
+      const btn = dsec.querySelector(`.chip[data-val="${v}"]`);
+      if(btn) btn.title = L10N.decompTitles[v] || btn.title;
+    });
+  }
 
   // Taxon chip
   $('taxSeaTurtles').textContent = L10N.taxSeaTurtles;
@@ -1749,7 +1773,7 @@ function applyLanguage(lang){
 
   // Legend text elements
   $('legendTitle').textContent = L10N.legend.title;
-  $('legendNote').textContent  = L10N.legend.note;
+  $('legendNote').textContent  = L10N.legend.note; // hidden by CSS
   document.getElementById('legendFooter').childNodes[0].nodeValue = L10N.legend.footerPrefix + ' ';
 
   // Sex & Stage button labels (text only)
@@ -1765,11 +1789,10 @@ function applyLanguage(lang){
   // Language button short code
   $('langBtn').textContent = L10N.code;
 
-  // Recompute summary (labels inside remain English; can be extended if desired)
   updateSummary();
 }
 
-// Language menu behavior (no overlay outside rail; clicks won't block map)
+// Language menu behavior
 const langBtn = $('langBtn');
 const langMenu = $('langMenu');
 langBtn.addEventListener('click', (e)=>{
