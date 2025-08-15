@@ -67,11 +67,21 @@ body{
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
-.theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
+
+/* Docked theme toggle (top-right of viewport) */
+.theme-toggle{
+  border:1px solid var(--border);
+  background:var(--panel-bg);
+  border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary);
+  position:fixed; top:12px; right:12px; z-index:10060; /* <-- docked */
+  box-shadow:0 4px 14px rgba(0,0,0,.12);
+}
 .theme-toggle:hover{background:var(--control-bg-hover)}
 
+/* Keep icons (esp. anthropogenic) a fixed size */
+.rail-btn svg{width:18px;height:18px;min-width:18px;min-height:18px;display:block} /* stable */
+
 .rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail-btn svg{width:18px;height:18px;opacity:.9;display:block}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -199,6 +209,10 @@ body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pil
 .scale-line{height:6px;border:1px solid var(--text-secondary);border-top:none;width:120px}
 .scale-label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
+
+/* Hide histogram and its note (per request) */
+#histogram, #legendNote { display:none !important; }
+
 .hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
 .hist div{flex:1;background:#cbd5e1;border-radius:3px}
 .hist div.active{background:#94a3b8}
@@ -228,10 +242,10 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
 
-    <!-- Warning triangle (danger) -->
+    <!-- Warning triangle (danger) — keep size/stroke stable -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="8.5" x2="12" y2="13.5"/>
+      <path vector-effect="non-scaling-stroke" d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line vector-effect="non-scaling-stroke" x1="12" y1="8.5" x2="12" y2="13.5"/>
       <circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>
     </symbol>
 
@@ -247,6 +261,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
   <div class="rail">
     <div class="brand" id="brandTitle">
       Marine Megafauna Mortality
+      <!-- This stays in the DOM, but it's docked top-right via CSS -->
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
         <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
       </button>
@@ -642,11 +657,17 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title */
+/* Dynamic panel title — now localized and safe before I18N loads */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
-  const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
-  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || 'Filters';
+  const fallback = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
+  try{
+    const pack = (window.I18N && window.I18N[window.currentLang || 'EN']) || null;
+    const titles = pack ? pack.tabs : fallback;
+    if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || titles.main || 'Main';
+  }catch(e){
+    if(panelTitleEl) panelTitleEl.textContent = fallback[tabKey] || 'Main';
+  }
 }
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -658,7 +679,7 @@ railBtns.forEach(btn=>{
     railBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     panes.forEach(p=> p.hidden = (p.id !== `tab-${tab}`));
     drawer.dataset.tab = tab;
-    setPanelTitleByTab(tab);
+    setPanelTitleByTab(tab); // localized
     if(isSame){ drawer.classList.remove('open'); }
     else { drawer.classList.add('open'); requestAnimationFrame(()=>{ reflowSliders(); }); }
   });
@@ -1045,7 +1066,8 @@ function makePredicate(sel){
 }
 
 /* Aggregation & breaks */
-const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
+/* Display-only formatter: force en-US locale (no data logic touched) */
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat('en-US',{maximumFractionDigits:digits}).format(v); };
 
 let currentSourceKey=null;
 let layerName='', metricField='sum_val';
@@ -1226,8 +1248,8 @@ function updateLegendFrozen(cfg){
     const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
   }
-  const hist=$('histogram'); hist.innerHTML='';
-  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
+  // histogram is hidden by CSS; we keep update code harmless
+  const hist=$('histogram'); if(hist) hist.innerHTML='';
 }
 
 /* Build / update layer */
@@ -1683,10 +1705,9 @@ function applyLanguage(lang){
   $('tabBtnBio').querySelector('span').textContent  = L10N.tabs.bio;
   $('tabBtnAnth').querySelector('span').textContent = L10N.tabs.anth;
 
-  // Panel title depends on active tab
+  // Panel title depends on active tab — localized
   const activeTab = (document.querySelector('.rail-btn.active')?.dataset.tab) || 'main';
-  const panelTitles = {main:L10N.tabs.main, bio:L10N.tabs.bio, anth:L10N.tabs.anth};
-  panel.querySelector('.head h1').textContent = panelTitles[activeTab] || L10N.tabs.main;
+  setPanelTitleByTab(activeTab);
 
   // Footer & buttons
   $('selectedFiltersTitle').textContent = L10N.selectedFilters;
@@ -1747,7 +1768,7 @@ function applyLanguage(lang){
   $('lblPetrol').textContent  = (lang==='FR'?'Essence':(lang==='PT-BR'?'Gasolina':'Petrol'));
   $('lblNone').textContent    = (lang==='FR'?'Aucun':(lang==='PT-BR'?'Nenhum':(lang==='ES'?'Ninguno':'None')));
 
-  // Legend text elements
+  // Legend text elements (note text hidden by CSS anyway)
   $('legendTitle').textContent = L10N.legend.title;
   $('legendNote').textContent  = L10N.legend.note;
   document.getElementById('legendFooter').childNodes[0].nodeValue = L10N.legend.footerPrefix + ' ';
