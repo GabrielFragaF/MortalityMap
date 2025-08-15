@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sea Turtle Mortality — v16 UI</title>
+<title>Sea Turtle Mortality — v15 UI</title>
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E">
 
@@ -33,7 +33,7 @@
   --focus: rgba(0,122,255,.25);
   --pill-border: rgba(0,0,0,.14);
   --label-selected: #0f172a;
-  --rail-w: 260px; /* widened so theme icon sits beside title and long tab names show fully */
+  --rail-w: 200px;
 }
 body[data-theme="dark"] {
   --panel-bg: rgba(26, 28, 33, 0.88);
@@ -68,11 +68,12 @@ body{
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
 
-/* Theme toggle lives inside the brand row (not docked) */
+/* Docked theme toggle (top-right of viewport) */
 .theme-toggle{
   border:1px solid var(--border);
   background:var(--panel-bg);
   border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary);
+  position:fixed; top:12px; right:12px; z-index:10060; /* <-- docked */
   box-shadow:0 4px 14px rgba(0,0,0,.12);
 }
 .theme-toggle:hover{background:var(--control-bg-hover)}
@@ -260,7 +261,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
   <div class="rail">
     <div class="brand" id="brandTitle">
       Marine Megafauna Mortality
-      <!-- Theme toggle sits beside brand title inside the sidebar -->
+      <!-- This stays in the DOM, but it's docked top-right via CSS -->
       <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
         <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
       </button>
@@ -607,7 +608,7 @@ function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
 /* pmtiles shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250814c'; }
+function pmUrlWithBust(file){ return file + '?v=20250814b'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -636,7 +637,7 @@ window.fetch = async (input, init) => {
   return origFetch(input, init);
 };
 
-/* =================== UI (v16) =================== */
+/* =================== UI (v15) =================== */
 const drawer = $('drawer');
 const panel = $('panel');
 const panes = [...document.querySelectorAll('.tabpane')];
@@ -656,12 +657,12 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title — now truly localized */
+/* Dynamic panel title — now localized and safe before I18N loads */
 const panelTitleEl = panel?.querySelector('.head h1');
 function setPanelTitleByTab(tabKey){
   const fallback = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
   try{
-    const pack = (typeof I18N!=='undefined' && I18N[currentLang]) ? I18N[currentLang] : null;
+    const pack = (window.I18N && window.I18N[window.currentLang || 'EN']) || null;
     const titles = pack ? pack.tabs : fallback;
     if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || titles.main || 'Main';
   }catch(e){
@@ -1130,7 +1131,7 @@ function winsorizedLogHybridBreaks(values){
   const probs=[0].concat(cuts,1);
   let edgesT=probs.map(p=> ss.quantileSorted(wt,p));
   const epsT=(edgesT[edgesT.length-1]-edgesT[0]||1)*1e-9;
-  for(let i=0;i<edgesT.length-1;i++){ if(!(edges[i+1]>edges[i])) edgesT[i+1]=edgesT[i]+epsT; }
+  for(let i=0;i<edgesT.length-1;i++){ if(!(edgesT[i+1]>edgesT[i])) edgesT[i+1]=edgesT[i]+epsT; }
   let edges=edgesT.map(v=>Math.expm1(v));
   edges[0]=w[0]; edges[edges.length-1]=w[w.length-1];
   if(edges.length>1){ edges[1]=Math.max(edges[1], 1); if(edges[0]>=edges[1]) edges[0]=Math.max(0, edges[1]-1e-6); }
@@ -1789,7 +1790,7 @@ function applyLanguage(lang){
   updateSummary();
 }
 
-// Language menu behavior
+// Language menu behavior (no overlay outside rail; clicks won't block map)
 const langBtn = $('langBtn');
 const langMenu = $('langMenu');
 langBtn.addEventListener('click', (e)=>{
