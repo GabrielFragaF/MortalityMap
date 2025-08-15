@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sea Turtle Mortality — v15 UI</title>
 
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E'>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23007AFF'/%3E%3C/svg%3E">
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -66,19 +66,12 @@ body{
   padding:10px 8px;gap:8px
 }
 body[data-theme="dark"] .rail{background:rgba(20,21,24,.75)}
-.brand{
-  display:flex;align-items:center;justify-content:center; /* center title */
-  gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary);text-align:center
-}
-/* floating theme toggle (top-right of page) */
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:12px;margin:2px 8px 6px;color:var(--text-primary)}
 .theme-toggle{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:12px;padding:4px 6px;cursor:pointer;color:var(--text-secondary)}
 .theme-toggle:hover{background:var(--control-bg-hover)}
-.theme-floating{position:fixed;top:12px;right:12px;z-index:2000}
-body[data-theme="dark"] .theme-toggle{border-color:var(--pill-border)}
 
-/* Rail buttons */
 .rail-btn{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:12px;background:transparent;padding:9px 10px;font-weight:600;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail-btn svg{width:18px;height:18px;opacity:.9;display:block;flex-shrink:0;min-width:18px;min-height:18px} /* keep icon stable */
+.rail-btn svg{width:18px;height:18px;opacity:.9;display:block}
 .rail-btn:hover{background:var(--control-bg-hover);color:var(--text-primary)}
 .rail-btn.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 body[data-theme="dark"] .rail-btn.active{background:#23262b;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -114,7 +107,7 @@ body[data-theme="dark"] #langBtn{background:#23262b;color:#fff;border-color:var(
 
 /* Animated panel */
 .panel{
-  position:fixed;left:var(--rail-w);max-height:78vh;width:330px;background:var(--panel-bg);
+  position:fixed;left:var(--rail-w);top:auto;bottom:auto;max-height:78vh;width:330px;background:var(--panel-bg);
   backdrop-filter:blur(28px)saturate(200%);-webkit-backdrop-filter:blur(28px)saturate(200%);
   border:1px solid rgba(255,255,255,.6);box-shadow:12px 12px 48px rgba(0,0,0,.12);display:flex;flex-direction:column;border-radius:14px;
   opacity:0;pointer-events:none;transform:translateX(-14px) scale(.96);transform-origin:left var(--anchorY, 50%);
@@ -127,7 +120,74 @@ body[data-theme="dark"] #langBtn{background:#23262b;color:#fff;border-color:var(
 .tabpane{animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(2px)} to{opacity:1;transform:none}}
 
-/* Sections... (unchanged styles trimmed for brevity) */
+.section{margin-bottom:14px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+.section-title{margin:0;font-size:13px;font-weight:600;color:var(--text-secondary)}
+.hint{font-size:11px;color:var(--text-secondary);font-weight:500;margin-left:6px}
+
+/* Enable/disable toggles */
+.filter-toggle{display:flex;align-items:center;cursor:pointer}
+.filter-toggle input{display:none}
+.toggle-track{width:36px;height:20px;background:#d1d1d6;border-radius:10px;position:relative;transition:background-color .3s}
+.toggle-nub{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform .3s cubic-bezier(.2,1,.2,1)}
+.filter-toggle input:checked + .toggle-track{background:#34C759}
+.filter-toggle input:checked + .toggle-track .toggle-nub{transform:translateX(16px)}
+.section-content.disabled{opacity:.45;transition:opacity .25s}
+
+/* Grids */
+.grid{display:grid;gap:8px}
+.grid.one{grid-template-columns:1fr}
+.grid.two{grid-template-columns:repeat(2,1fr)}
+.grid.three{grid-template-columns:repeat(3,1fr)}
+.grid.four{grid-template-columns:repeat(4,1fr)}
+.grid.five{grid-template-columns:repeat(5,1fr)}
+
+/* Pills & chips */
+.btn,.chip,select{width:100%;padding:7px 10px;border-radius:10px;border:1px solid transparent;background:var(--control-bg);font-weight:600;font-size:12px;cursor:pointer;text-align:center;color:var(--text-primary);transition:all .2s}
+.btn:hover,.chip:hover{background:var(--control-bg-hover)}
+.btn:active,.chip:active{transform:scale(.98)}
+.btn.active,.chip.active{background:#fff;border:1px solid var(--pill-border);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+body[data-theme="dark"] .btn.active, body[data-theme="dark"] .chip.active{background:#23262b;border:1px solid var(--pill-border);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+
+/* Select */
+select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:#fff;border:1px solid var(--border);padding:9px 34px 9px 10px;border-radius:10px;font-weight:600;line-height:1.2;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+select:focus{outline:none;box-shadow:0 0 0 3px var(--focus)}
+#layer-type-select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><polyline points='4,7 10,13 16,7'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:16px
+}
+body[data-theme="dark"] select{
+  background:#23262b;
+  color:var(--text-primary);
+  border:1px solid var(--pill-border);
+}
+
+/* Hex buttons */
+.hex-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;height:62px}
+.hex-btn .hex-icon{display:flex;align-items:center;justify-content:center}
+.hex-btn .hex-icon svg{display:block}
+.hex-btn:hover .hex-icon{transform:scale(1.06)}
+.hex-btn .hex-label{font-size:10px;color:var(--text-secondary)}
+
+/* Segmented control */
+.section-content.seg{max-width:230px;margin:0 auto}
+#tab-anth .section-content.seg{max-width:200px}
+.seg{display:flex;align-items:stretch;background:var(--control-bg);border-radius:10px;padding:2px;position:relative;overflow:hidden}
+.seg.disabled{opacity:.4}
+.seg input{display:none}
+.seg label{flex:1;text-align:center;padding:5px 0;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;z-index:2}
+.seg .pill{position:absolute;top:2px;bottom:2px;left:0;background:#fff;border:1px solid var(--pill-border);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:transform .25s cubic-bezier(.2,.8,.2,1), width .2s;opacity:0;will-change:transform,width}
+.seg input:checked + label{color:var(--label-selected)}
+body[data-theme="dark"] .seg .pill{background:#23262b;border:1px solid var(--pill-border)}
+
+/* Ranges (dual handles) */
+.labels{display:flex;justify-content:space-between;font-weight:700;font-size:11px;color:#374151;margin-bottom:6px}
+.track-wrap{position:relative;height:38px}
+.track,.hl{position:absolute;left:10px;right:10px;top:14px;height:8px;border-radius:6px}
+.track{background:var(--control-bg)}
+.hl{background:var(--accent);z-index:1}
+.handle{position:absolute;top:10px;width:18px;height:18px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:grab;z-index:2;transition:transform .2s}
+.handle:active{cursor:grabbing;transform:scale(1.12)}
 
 /* Legend */
 .map-overlay{position:absolute;background:var(--panel-bg);backdrop-filter:blur(20px)saturate(180%);-webkit-backdrop-filter:blur(20px)saturate(180%);border:1px solid rgba(255,255,255,.5);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);padding:10px 12px;font-size:12px}
@@ -139,8 +199,10 @@ body[data-theme="dark"] #langBtn{background:#23262b;color:#fff;border-color:var(
 .scale-line{height:6px;border:1px solid var(--text-secondary);border-top:none;width:120px}
 .scale-label{font-size:12px;font-weight:600;color:var(--text-secondary)}
 .legend-footer{margin-top:8px;font-size:11px;color:var(--text-secondary)}
-/* Remove histogram (as requested) */
-#histogram, .legend-note{display:none !important}
+.hist{display:flex;align-items:flex-end;gap:3px;margin-top:6px;height:42px}
+.hist div{flex:1;background:#cbd5e1;border-radius:3px}
+.hist div.active{background:#94a3b8}
+.legend-note{margin-top:6px;font-size:11px;color:var(--text-secondary)}
 
 /* Toast, spinner & hover pop */
 .toast{position:absolute;top:16px;left:calc(var(--rail-w) + 16px);background:#111;color:#fff;padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;transform:translateY(-8px);z-index:1003}
@@ -149,25 +211,30 @@ body[data-theme="dark"] #langBtn{background:#23262b;color:#fff;border-color:var(
 .leaflet-popup-hover{pointer-events:none}
 .leaflet-popup-hover .leaflet-popup-content-wrapper{background:var(--panel-bg);backdrop-filter:blur(14px);border:1px solid var(--border)}
 .leaflet-popup-hover .leaflet-popup-content{margin:8px 10px;font-size:12px}
-body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
+body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} /* dark mode popup text */
 </style>
 </head>
 <body>
 
-<!-- Icons (unchanged) -->
+<!-- Icons -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
+    <!-- Regular hexagon (no distortion) -->
     <symbol id="icon-hexagon" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 2 L20.8 7 L20.8 17 L12 22 L3.2 17 L3.2 7 Z"/>
     </symbol>
+
     <symbol id="icon-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
     <symbol id="icon-bio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/></symbol>
+
+    <!-- Warning triangle (danger) -->
     <symbol id="icon-anth" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
       <line x1="12" y1="8.5" x2="12" y2="13.5"/>
       <circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>
     </symbol>
+
     <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
@@ -175,15 +242,15 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
 
 <div id="map"></div>
 
-<!-- Floating dark-mode button (top-right) -->
-<button id="themeBtnTop" class="theme-toggle theme-floating" title="Toggle light/dark">
-  <svg width="16" height="16"><use id="themeIconTop" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
-</button>
-
 <!-- Drawer -->
 <div id="drawer" class="drawer" data-tab="main">
   <div class="rail">
-    <div class="brand" id="brandTitle">Marine Megafauna Mortality</div>
+    <div class="brand" id="brandTitle">
+      Marine Megafauna Mortality
+      <button id="themeBtn" class="theme-toggle" title="Toggle light/dark">
+        <svg width="16" height="16"><use id="themeIcon" href="#icon-moon" xlink:href="#icon-moon"></use></svg>
+      </button>
+    </div>
 
     <button class="rail-btn active" data-tab="main" title="Main" id="tabBtnMain">
       <svg><use href="#icon-main" xlink:href="#icon-main"></use></svg><span>Main</span>
@@ -227,12 +294,8 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
   <div class="panel" id="panel">
     <div class="head"><h1>Main</h1></div>
     <div class="content">
-      <!-- MAIN TAB (unchanged structure) -->
-      <!-- ... all your sections exactly as before ... -->
+      <!-- MAIN TAB -->
       <section class="section tabpane" id="tab-main">
-        <!-- Cell size, Map layer, Basemap, Taxon, Species, Year, Month, Season -->
-        <!-- (unchanged content from your working version) -->
-        <!-- START of copied original content -->
         <div class="section" data-filter-section="grid">
           <div class="section-header">
             <h2 class="section-title" id="titleCellSize">Cell size (H3)</h2>
@@ -246,6 +309,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Map layer -->
         <div class="section" data-filter-section="layer">
           <div class="section-header">
             <h2 class="section-title" id="titleMapLayer">Map layer</h2>
@@ -257,6 +321,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
               <option value="estimation">Mortality estimation</option>
             </select>
             <div class="seg disabled" id="estimation-options">
+              <!-- Text changed only; values stay Low/High -->
               <input type="radio" id="est-low" name="estimation" value="Low"><label for="est-low" id="estLblLow">High</label>
               <input type="radio" id="est-mean" name="estimation" value="Mean" checked><label for="est-mean" id="estLblMean">Mean</label>
               <input type="radio" id="est-high" name="estimation" value="High"><label for="est-high" id="estLblHigh">Low</label>
@@ -265,6 +330,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Basemap -->
         <div class="section" data-filter-section="basemap">
           <div class="section-header">
             <h2 class="section-title" id="titleBasemap">Basemap</h2>
@@ -278,6 +344,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Taxonomic group -->
         <div class="section" data-filter-section="taxon">
           <div class="section-header">
             <h2 class="section-title" id="titleTaxon">Taxonomic group</h2>
@@ -288,6 +355,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Species -->
         <div class="section" data-filter-section="species">
           <div class="section-header">
             <h2 class="section-title" id="titleSpecies">Species</h2>
@@ -308,6 +376,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Year -->
         <div class="section" data-filter-section="year">
           <div class="section-header"><h2 class="section-title" id="titleYear">Year</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
@@ -321,6 +390,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Month -->
         <div class="section" data-filter-section="month">
           <div class="section-header"><h2 class="section-title" id="titleMonth">Month</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content disabled">
@@ -334,6 +404,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
           </div>
         </div>
 
+        <!-- Seasons -->
         <div class="section" data-filter-section="season">
           <div class="section-header"><h2 class="section-title" id="titleSeason">Season <span class="hint" id="titleSeasonHint">Southern hemisphere</span></h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content grid two disabled" id="seasonBtns">
@@ -343,10 +414,9 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
             <button class="btn" data-season="spring" id="btnSpring">Spring (Sep–Nov)</button>
           </div>
         </div>
-        <!-- END original main content -->
       </section>
 
-      <!-- BIO TAB (unchanged structure, tooltips localized) -->
+      <!-- BIO TAB -->
       <section class="section tabpane" id="tab-bio" hidden>
         <div class="section" data-filter-section="sex">
           <div class="section-header"><h2 class="section-title" id="titleSex">Sex</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
@@ -377,9 +447,8 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
         </div>
       </section>
 
-      <!-- ANTH TAB (unchanged structure) -->
+      <!-- ANTH TAB -->
       <section class="section tabpane" id="tab-anth" hidden>
-        <!-- fishing, debris, boat, dredge, aggression, oil blocks unchanged -->
         <div class="section" data-filter-section="fishing">
           <div class="section-header"><h2 class="section-title" id="titleFishing">Fishing</h2><label class="filter-toggle"><input type="checkbox" class="toggle-input"><div class="toggle-track"><div class="toggle-nub"></div></div></label></div>
           <div class="section-content seg disabled" data-name="fish">
@@ -455,7 +524,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff}
 <div id="spinner">Loading…</div>
 <div class="toast" id="toast">Layer updated</div>
 
-<!-- Hidden bridge inputs (unchanged) -->
+<!-- Hidden bridge inputs (pipeline compatibility) -->
 <select id="resolution" style="display:none">
   <option value="r3">≈ 60 km</option>
   <option value="r4" selected>≈ 22.6 km</option>
@@ -500,7 +569,9 @@ map.getPane('hexPane').style.zIndex = 450;
 /* =================== UTILS =================== */
 const $ = (id)=>document.getElementById(id);
 const toast=$('toast'), spinner=$('spinner');
-const bumpToast = (msg='Layer updated')=>{ toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1100); };
+const bumpToast = (msg='Layer updated')=>{
+  toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1100);
+};
 const showSpinner=(m='Loading…')=>{ spinner.textContent=m; spinner.style.display='block'; };
 const hideSpinner=()=>{ spinner.style.display='none'; };
 window.addEventListener('error', hideSpinner);
@@ -522,7 +593,7 @@ function clampIndex(v,z){ const n=1<<z; return Math.max(0, Math.min(n-1, v)); }
 /* pmtiles shim */
 const origFetch = window.fetch.bind(window);
 const pmCache = new Map();
-function pmUrlWithBust(file){ return file + '?v=20250814c'; }
+function pmUrlWithBust(file){ return file + '?v=20250814b'; }
 async function getPM(archive){
   const abs = new URL(archive, new URL('.', location.href)).toString();
   if(pmCache.has(abs)) return pmCache.get(abs);
@@ -571,13 +642,11 @@ function clearSection(sectionEl){
   if(sel && sel.id==='layer-type-select'){ sel.value='observed'; document.getElementById('est-mean').checked=true; syncSegPill(document.getElementById('estimation-options')); }
 }
 
-/* Dynamic panel title (localized) */
+/* Dynamic panel title */
 const panelTitleEl = panel?.querySelector('.head h1');
-let currentLang = 'EN';
 function setPanelTitleByTab(tabKey){
-  const L10N = I18N[currentLang] || I18N['EN'];
-  const t = (L10N.tabs && L10N.tabs[tabKey]) || 'Filters';
-  if(panelTitleEl) panelTitleEl.textContent = t;
+  const titles = { main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions' };
+  if(panelTitleEl) panelTitleEl.textContent = titles[tabKey] || 'Filters';
 }
 railBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -596,18 +665,12 @@ railBtns.forEach(btn=>{
 });
 setPanelTitleByTab(drawer.dataset.tab || 'main');
 
-/* Theme toggle (top-right) */
-function setThemeIcon(isDark){
-  const el = document.querySelector('#themeIconTop');
-  if(!el) return;
-  el.setAttribute('href', isDark ? '#icon-sun' : '#icon-moon');
-  el.setAttribute('xlink:href', isDark ? '#icon-sun' : '#icon-moon');
-}
-const themeBtnTop = $('themeBtnTop');
-themeBtnTop?.addEventListener('click',()=>{
+/* Theme toggle */
+const themeBtn = $('themeBtn'), themeIcon = $('themeIcon');
+themeBtn?.addEventListener('click',()=>{
   const dark = document.body.getAttribute('data-theme') === 'dark';
-  if(dark){ document.body.removeAttribute('data-theme'); } else { document.body.setAttribute('data-theme','dark'); }
-  setThemeIcon(!dark);
+  if(dark){ document.body.removeAttribute('data-theme'); themeIcon?.setAttribute('href','#icon-moon'); themeIcon?.setAttribute('xlink:href','#icon-moon'); }
+  else { document.body.setAttribute('data-theme','dark'); themeIcon?.setAttribute('href','#icon-sun'); themeIcon?.setAttribute('xlink:href','#icon-sun'); }
   document.querySelectorAll('.seg').forEach(syncSegPill);
   setTimeout(()=> map.invalidateSize(), 80);
 });
@@ -678,7 +741,7 @@ document.querySelectorAll('.seg').forEach(seg=> seg.addEventListener('change',()
 document.querySelectorAll('.seg').forEach(syncSegPill);
 updateEstimationVisibility();
 
-/* Taxon -> species availability */
+/* Taxonomic group -> species availability */
 const taxonChips = $('taxonChips');
 function syncSpeciesVisibility(){
   const secSpecies = document.querySelector('[data-filter-section="species"] .section-content');
@@ -720,7 +783,7 @@ document.querySelectorAll('[data-button-group]').forEach(group=>{
   });
 });
 
-/* Dual-range sliders (unchanged) */
+/* Dual-range sliders */
 function makeRange(wrap, hl, startHandle, endHandle, onUpdate){
   if(!wrap||!hl||!startHandle||!endHandle) return;
   let W=0;
@@ -773,12 +836,12 @@ function updateYearLabels(){
 makeRange(yWrap,yHL,yStart,yEnd,updateYearLabels);
 
 const mWrap=$('monthWrap'), mHL=$('mHL'), mStart=$('mStart'), mEnd=$('mEnd'), mStartL=$('mStartL'), mEndL=$('mEndL');
-function monthLabel(m, locale){ return new Date(2000,Math.max(0,Math.min(11,(m|0)-1))).toLocaleString(locale||'en-US',{month:'short'}); }
+function monthLabel(m){ return new Date(2000,Math.max(0,Math.min(11,(m|0)-1))).toLocaleString('en-US',{month:'short'}); }
 function updateMonthLabels(){
   const sf=parseFloat(mWrap.dataset.startFrac||'0'); const ef=parseFloat(mWrap.dataset.endFrac||'1');
   const ms=Math.max(1,Math.min(12, Math.round(1 + sf*11)));
   const me=Math.max(1,Math.min(12, Math.round(1 + ef*11)));
-  mStartL.textContent=monthLabel(ms, getLocale()); mEndL.textContent=monthLabel(me, getLocale());
+  mStartL.textContent=monthLabel(ms); mEndL.textContent=monthLabel(me);
 }
 makeRange(mWrap,mHL,mStart,mEnd,updateMonthLabels);
 function reflowSliders(){ yWrap && yWrap._reflow && yWrap._reflow(); updateYearLabels(); mWrap && mWrap._reflow && mWrap._reflow(); updateMonthLabels(); }
@@ -801,7 +864,7 @@ seasonBox && seasonBox.addEventListener('click',e=>{
 /* =================== DATA PIPELINE =================== */
 function fileFor(res, ct){ return pmUrlWithBust(`hexgrid_${res}_${ct}.pmtiles`); }
 
-/* Color ramps per species (unchanged) */
+/* Color ramps per species */
 const ramps={
   'Caretta caretta':['#feedde','#fdbe85','#fd8d3c','#e6550d','#a63603'],
   'Chelonia mydas':['#edf8e9','#bae4b3','#74c476','#31a354','#006d2c'],
@@ -815,7 +878,7 @@ function currentRamp(){
   return (sp.length===1 && ramps[sp[0]])? ramps[sp[0]] : ramps['multi'];
 }
 
-/* Canonicalization (unchanged) */
+/* Canonicalization */
 const canonMaps = {
   season:{ 'outono':'Autumn','primavera':'Spring','verao':'Summer','verão':'Summer','inverno':'Winter','autumn':'Autumn','spring':'Spring','summer':'Summer','winter':'Winter' },
   sex:{ 'femea':'Female','fêmea':'Female','female':'Female','macho':'Male','male':'Male','undefined':'Unknown','indefinido':'Unknown','unknown':'Unknown','indetermined':'Unknown','': 'Unknown', null:'Unknown', undefined:'Unknown' },
@@ -829,7 +892,7 @@ function toCanon(str,kind){
 }
 function canonYear(y){ if(y==null) return ''; const s=String(y).trim(); return s.endsWith('.0')? s.slice(0,-2) : s; }
 
-/* Capability probe (unchanged) */
+/* Capability probe */
 let header=null;
 async function capabilityProbe(pmFile, layerName){
   const caps = { hasYear:false, observedYears:new Set(), hasMonth:false, hasSex:false, hasStage:false, hasSeason:false };
@@ -871,7 +934,7 @@ async function capabilityProbe(pmFile, layerName){
   return caps;
 }
 
-/* Selection helpers (unchanged) */
+/* Selection helpers */
 function sectionEnabled(key){
   const el = document.querySelector(`[data-filter-section="${key}"] .section-content`);
   return el && !el.classList.contains('disabled');
@@ -901,17 +964,14 @@ function getYearRange(){
 }
 function getMonthRange(){
   if(!sectionEnabled('month')) return null;
-  const mapMon={};
-  for(let i=1;i<=12;i++){
-    mapMon[monthLabel(i, getLocale())]=i;
-  }
+  const mapMon={"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,"Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12};
   const s = mapMon[$('mStartL').textContent]||1;
   const e = mapMon[$('mEndL').textContent]||12;
   const arr=[]; for(let m=s;m<=e;m++) arr.push(String(m));
   return arr;
 }
 
-/* Predicate construction (unchanged) */
+/* Predicate construction */
 function readFilterSelections(caps){
   const sel = {
     species: new Set(getSpecies()),
@@ -985,12 +1045,7 @@ function makePredicate(sel){
 }
 
 /* Aggregation & breaks */
-const nf=(v)=>{ // English standard formatting (1,234.56)
-  if(v===0) return '0';
-  const abs=Math.abs(v);
-  const digits=abs<1?4:abs<10?3:2;
-  return new Intl.NumberFormat('en-US',{maximumFractionDigits:digits}).format(v);
-};
+const nf=(v)=>{ if(v===0) return '0'; const abs=Math.abs(v); const digits=abs<1?4:abs<10?3:2; return new Intl.NumberFormat(undefined,{maximumFractionDigits:digits}).format(v); };
 
 let currentSourceKey=null;
 let layerName='', metricField='sum_val';
@@ -1010,6 +1065,8 @@ function lockMetricField(sample, ct){
   }
   metricField='sum_val';
 }
+
+function incObj(obj, key){ obj[key]=(obj[key]||0)+1; }
 
 function computeBinIndex(v, breaks){
   if(!breaks || !breaks.length || !Number.isFinite(v)) return -1;
@@ -1061,7 +1118,7 @@ function winsorizedLogHybridBreaks(values){
   return edges;
 }
 
-/* Tiles in view helpers (unchanged) */
+/* Tiles in view */
 function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
 function lat2tile(lat,z){const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));}
 function tileRangeForBounds(b,z){
@@ -1100,7 +1157,7 @@ async function detectLayerName(pmFile){
   return 'hexgrid';
 }
 
-/* Aggregate current viewport */
+/* Aggregate current viewport once */
 async function aggregateViewport(pmFile, layerName, predicate, ct){
   aggByHex = new Map();
   const pm = await getPM(pmFile);
@@ -1122,10 +1179,20 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
 
         let entry = aggByHex.get(key);
         if(!entry){
-          entry={sum:0,rowCount:0,rowSexCounts:{},rowStageCounts:{},rowYearCounts:{},rowMonthCounts:{},rowSeasonCounts:{}};
+          entry={
+            sum:0,
+            rowCount:0,
+            rowSexCounts:{},
+            rowStageCounts:{},
+            rowYearCounts:{},
+            rowMonthCounts:{},
+            rowSeasonCounts:{}
+          };
           aggByHex.set(key,entry);
         }
-        const val = Number(props[metricField]); if(Number.isFinite(val)) entry.sum += val;
+
+        const val = Number(props[metricField]);
+        if(Number.isFinite(val)) entry.sum += val;
 
         const ssex = toCanon(props.sex,'sex');
         const sstage = toCanon(props.development_stage,'stage');
@@ -1133,11 +1200,11 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
         const yStr = canonYear(props.year);
         const mStr = String(props.month||'').trim();
 
-        if(ssex) entry.rowSexCounts[ssex]=(entry.rowSexCounts[ssex]||0)+1;
-        if(sstage) entry.rowStageCounts[sstage]=(entry.rowStageCounts[sstage]||0)+1;
-        if(sseason) entry.rowSeasonCounts[sseason]=(entry.rowSeasonCounts[sseason]||0)+1;
-        if(yStr) entry.rowYearCounts[yStr]=(entry.rowYearCounts[yStr]||0)+1;
-        if(mStr) entry.rowMonthCounts[mStr]=(entry.rowMonthCounts[mStr]||0)+1;
+        if(ssex) incObj(entry.rowSexCounts, ssex);
+        if(sstage) incObj(entry.rowStageCounts, sstage);
+        if(sseason) incObj(entry.rowSeasonCounts, sseason);
+        if(yStr) incObj(entry.rowYearCounts, yStr);
+        if(mStr) incObj(entry.rowMonthCounts, mStr);
 
         entry.rowCount++;
       }
@@ -1147,7 +1214,7 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
 }
 
-/* Legend render (histogram kept inert) */
+/* Legend render */
 function updateLegendFrozen(cfg){
   const rows = $('legendRows'); rows.innerHTML='';
   const brks = cfg.breaks, ramp = cfg.ramp;
@@ -1159,7 +1226,8 @@ function updateLegendFrozen(cfg){
     const lab=document.createElement('span'); lab.textContent = (i===0 && cfg.firstFloorApplied) ? `≤ ${nf(b)}` : `${nf(a)} – ${nf(b)}`;
     row.appendChild(sw); row.appendChild(lab); rows.appendChild(row);
   }
-  const hist=$('histogram'); if(hist) hist.innerHTML=''; // safe no-op; CSS hides it
+  const hist=$('histogram'); hist.innerHTML='';
+  (cfg.histCounts||[]).forEach((c)=>{ const bar=document.createElement('div'); bar.style.height = (c>0 ? (10+Math.log10(c+1)*14) : 6)+'px'; hist.appendChild(bar); });
 }
 
 /* Build / update layer */
@@ -1236,7 +1304,7 @@ function styleFn(props){
   return {fill:true, fillColor:color, fillOpacity: styleConfig.opacity, color:color, weight:0.5};
 }
 
-/* Hover popup (localized) */
+/* Hover popup (percentages; exclude Unknown) */
 let hoverPopup = L.popup({ closeButton:false, autoPan:false, className:'leaflet-popup-hover', offset:[0,-6] });
 function attachHover(vtg){
   vtg.on('mouseover', showHover);
@@ -1245,7 +1313,10 @@ function attachHover(vtg){
 }
 function percentageStrings(countsObj, labeler, order){
   const filtered = {};
-  for(const k in countsObj){ if(!k || k==='Unknown') continue; filtered[k]=countsObj[k]; }
+  for(const k in countsObj){
+    if(!k || k==='Unknown') continue;
+    filtered[k]=countsObj[k];
+  }
   const denom = Object.values(filtered).reduce((a,b)=>a+b,0);
   if(!denom) return { text:'—', topKey:null, topPct:0 };
   let entries = Object.entries(filtered);
@@ -1254,7 +1325,8 @@ function percentageStrings(countsObj, labeler, order){
   }else{
     entries.sort((a,b)=> b[1]-a[1]);
   }
-  const parts=[]; let topKey=null, topPct=0;
+  const parts=[];
+  let topKey=null, topPct=0;
   entries.forEach(([k,c],idx)=>{
     const pct = Math.round((c/denom)*100);
     if(idx===0){ topKey=k; topPct=pct; }
@@ -1263,33 +1335,41 @@ function percentageStrings(countsObj, labeler, order){
   });
   return { text: parts.join(' · '), topKey, topPct };
 }
-function getLocale(){ return currentLang==='PT-BR'?'pt-BR': currentLang==='ES'?'es-ES': currentLang==='FR'?'fr-FR':'en-US'; }
 function labelMonthKey(k){
   const n = parseInt(k,10);
-  if(isFinite(n) && n>=1 && n<=12) return new Date(2000,n-1).toLocaleString(getLocale(),{month:'short'});
+  if(isFinite(n) && n>=1 && n<=12) return new Date(2000,n-1).toLocaleString('en-US',{month:'short'});
   return String(k);
 }
+function seasonOrderPercent(countsObj){
+  const order=['Summer','Autumn','Winter','Spring'];
+  return percentageStrings(countsObj, null, order).text;
+}
 function showHover(e){
-  const L10N = I18N[currentLang] || I18N['EN'];
   const p = e.layer && e.layer.properties || {};
   const key = p.h3_index || p.h3 || p.id;
   const agg = key ? aggByHex.get(key) : null;
   if(!agg){ map.closePopup(hoverPopup); return; }
   const v = agg.sum;
 
-  const sexPct = percentageStrings(agg.rowSexCounts || {}, (k)=> (L10N.sexes[k] || k));
-  const stagePct = percentageStrings(agg.rowStageCounts || {}, (k)=> (L10N.stages[k] || k));
-  const yearPct = percentageStrings(agg.rowYearCounts || {});
-  const monthPct = percentageStrings(agg.rowMonthCounts || {}, labelMonthKey);
-  const seasonPct = percentageStrings(agg.rowSeasonCounts || {}, (k)=> (L10N.seasons[k] || k), ['Summer','Autumn','Winter','Spring']);
+  const sexCounts = agg.rowSexCounts || {};
+  const stageCounts = agg.rowStageCounts || {};
+  const yearCounts = agg.rowYearCounts || {};
+  const monthCounts = agg.rowMonthCounts || {};
+  const seasonCounts = agg.rowSeasonCounts || {};
+
+  const sexPct = percentageStrings(sexCounts);
+  const stagePct = percentageStrings(stageCounts);
+  const yearPct = percentageStrings(yearCounts);
+  const monthPct = percentageStrings(monthCounts, labelMonthKey);
+  const seasonPctText = seasonOrderPercent(seasonCounts);
 
   const html = `
-    <div><strong>${L10N.popup.cell}</strong>: ${nf(v)}</div>
-    <div style="margin-top:4px"><strong>${L10N.popup.sex}</strong>: ${sexPct.text}</div>
-    <div><strong>${L10N.popup.stage}</strong>: ${stagePct.text}</div>
-    <div><strong>${L10N.popup.year}</strong>: ${yearPct.topKey ? (yearPct.topKey + ' (' + yearPct.topPct + '%)') : '—'}</div>
-    <div><strong>${L10N.popup.month}</strong>: ${monthPct.topKey ? (labelMonthKey(monthPct.topKey) + ' (' + monthPct.topPct + '%)') : '—'}</div>
-    <div><strong>${L10N.popup.season}</strong>: ${seasonPct.text}</div>
+    <div><strong>Cell count</strong>: ${nf(v)}</div>
+    <div style="margin-top:4px"><strong>Sex</strong>: ${sexPct.text}</div>
+    <div><strong>Development stage</strong>: ${stagePct.text}</div>
+    <div><strong>Year</strong>: ${yearPct.topKey ? (yearPct.topKey + ' (' + yearPct.topPct + '%)') : '—'}</div>
+    <div><strong>Month</strong>: ${monthPct.topKey ? (labelMonthKey(monthPct.topKey) + ' (' + monthPct.topPct + '%)') : '—'}</div>
+    <div><strong>Season</strong>: ${seasonPctText}</div>
   `;
   hoverPopup.setLatLng(e.latlng).setContent(html);
   if(!hoverPopup.isOpen()) hoverPopup.openOn(map);
@@ -1378,7 +1458,7 @@ function updateSummary(){
   const legendBasemap=$('legendBasemap'); if(legendBasemap && f.basemap) legendBasemap.textContent = f.basemap;
 }
 
-/* Reset all -> defaults (unchanged) */
+/* Reset all -> defaults (r4 + observed) */
 function resetAll(){
   document.querySelectorAll('[data-filter-section]').forEach(sec=>{
     const toggle = sec.querySelector('.toggle-input');
@@ -1411,19 +1491,19 @@ function resetAll(){
 }
 resetBtn && resetBtn.addEventListener('click', resetAll);
 
-/* Apply */
+/* Apply -> bridge UI to hidden selects, then build */
 applyBtn && applyBtn.addEventListener('click',()=>{
   if(layerSel?.value==='observed') $('counttype').value='weight';
   else{
     const lev = (document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase();
-    $('counttype').value = `new_mortality_est_bf_${lev}`;
+    $('counttype').value = `new_mortality_est_bf_${lev}`; // calculation unchanged
   }
   updateSummary();
   drawer.classList.remove('open');
   buildLayer();
 });
 
-/* =================== LANGUAGE SWITCHER =================== */
+/* =================== LANGUAGE SWITCHER (UI TEXT ONLY) =================== */
 const I18N = {
   'EN': {
     code:'EN',
@@ -1431,17 +1511,40 @@ const I18N = {
     tabs:{main:'Main', bio:'Biological parameters', anth:'Anthropogenic interactions'},
     selectedFilters:'Selected filters',
     buttons:{reset:'Reset all', apply:'Apply', selectAll:'Select all', selectNone:'Select none'},
-    sections:{cellsize:'Cell size (H3)', maplayer:'Map layer', basemap:'Basemap', taxon:'Taxonomic group', species:'Species', year:'Year', month:'Month', season:'Season', seasonHint:'Southern hemisphere', sex:'Sex', stage:'Development stage', decomp:'Decomposition code', fishing:'Fishing', debris:'Marine debris', boat:'Boat collision', dredge:'Dredging', aggression:'Aggression', oil:'Oil / petrol'},
+    sections:{
+      cellsize:'Cell size (H3)',
+      maplayer:'Map layer',
+      basemap:'Basemap',
+      taxon:'Taxonomic group',
+      species:'Species',
+      year:'Year',
+      month:'Month',
+      season:'Season',
+      seasonHint:'Southern hemisphere',
+      sex:'Sex',
+      stage:'Development stage',
+      decomp:'Decomposition code',
+      fishing:'Fishing',
+      debris:'Marine debris',
+      boat:'Boat collision',
+      dredge:'Dredging',
+      aggression:'Aggression',
+      oil:'Oil / petrol'
+    },
     taxSeaTurtles:'Sea turtles',
     basemaps:{Light:'Light', Satellite:'Satellite', Terrain:'Terrain', Dark:'Dark'},
-    layerSelect:{ observed:'At-sea mortality of observed strandings', estimation:'Mortality estimation', estLabels:{Low:'Low', Mean:'Mean', High:'High'}, estLabelsSwapped:{lowBtn:'High', meanBtn:'Mean', highBtn:'Low'} },
+    layerSelect:{
+      observed:'At-sea mortality of observed strandings',
+      estimation:'Mortality estimation',
+      estLabels:{Low:'Low', Mean:'Mean', High:'High'},
+      estLabelsSwapped:{lowBtn:'High', meanBtn:'Mean', highBtn:'Low'}
+    },
     legend:{title:'Legend', note:'Distribution of cells across legend bins (current view)', footerPrefix:'Basemap:'},
     popup:{cell:'Cell count', sex:'Sex', stage:'Development stage', year:'Year', month:'Month', season:'Season'},
     yes:'Yes', no:'No',
     sexes:{Female:'Female', Male:'Male', Indetermined:'Indetermined'},
     stages:{Hatchling:'Hatchling', Juvenile:'Juvenile', Adult:'Adult', Indetermined:'Indetermined'},
-    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'},
-    decompHints:{'1':'Alive','2':'Fresh carcass','3':'Moderate decomposition','4':'Advanced decomposition','5':'Mummified'}
+    seasons:{Summer:'Summer', Autumn:'Autumn', Winter:'Winter', Spring:'Spring'}
   },
   'PT-BR': {
     code:'PT-BR',
@@ -1449,17 +1552,40 @@ const I18N = {
     tabs:{main:'Principal', bio:'Parâmetros biológicos', anth:'Interações antrópicas'},
     selectedFilters:'Filtros selecionados',
     buttons:{reset:'Limpar tudo', apply:'Aplicar', selectAll:'Selecionar tudo', selectNone:'Selecionar nenhum'},
-    sections:{cellsize:'Tamanho da célula (H3)', maplayer:'Camada do mapa', basemap:'Mapa base', taxon:'Grupo taxonômico', species:'Espécies', year:'Ano', month:'Mês', season:'Estação', seasonHint:'Hemisfério sul', sex:'Sexo', stage:'Estágio de desenvolvimento', decomp:'Código de decomposição', fishing:'Pesca', debris:'Detritos marinhos', boat:'Colisão com embarcação', dredge:'Dragagem', aggression:'Agressão', oil:'Óleo / gasolina'},
+    sections:{
+      cellsize:'Tamanho da célula (H3)',
+      maplayer:'Camada do mapa',
+      basemap:'Mapa base',
+      taxon:'Grupo taxonômico',
+      species:'Espécies',
+      year:'Ano',
+      month:'Mês',
+      season:'Estação',
+      seasonHint:'Hemisfério sul',
+      sex:'Sexo',
+      stage:'Estágio de desenvolvimento',
+      decomp:'Código de decomposição',
+      fishing:'Pesca',
+      debris:'Detritos marinhos',
+      boat:'Colisão com embarcação',
+      dredge:'Dragagem',
+      aggression:'Agressão',
+      oil:'Óleo / gasolina'
+    },
     taxSeaTurtles:'Tartarugas marinhas',
     basemaps:{Light:'Claro', Satellite:'Satélite', Terrain:'Terreno', Dark:'Escuro'},
-    layerSelect:{ observed:'Mortalidade no mar de encalhes observados', estimation:'Estimativa de mortalidade', estLabels:{Low:'Baixa', Mean:'Média', High:'Alta'}, estLabelsSwapped:{lowBtn:'Alta', meanBtn:'Média', highBtn:'Baixa'} },
+    layerSelect:{
+      observed:'Mortalidade no mar de encalhes observados',
+      estimation:'Estimativa de mortalidade',
+      estLabels:{Low:'Baixa', Mean:'Média', High:'Alta'},
+      estLabelsSwapped:{lowBtn:'Alta', meanBtn:'Média', highBtn:'Baixa'}
+    },
     legend:{title:'Legenda', note:'Distribuição das células por classes (visão atual)', footerPrefix:'Mapa base:'},
     popup:{cell:'Contagem da célula', sex:'Sexo', stage:'Estágio de desenvolvimento', year:'Ano', month:'Mês', season:'Estação'},
     yes:'Sim', no:'Não',
     sexes:{Female:'Fêmea', Male:'Macho', Indetermined:'Indeterminado'},
     stages:{Hatchling:'Filhote', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
-    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'},
-    decompHints:{'1':'Vivo','2':'Carcaça fresca','3':'Decomposição moderada','4':'Decomposição avançada','5':'Mumificado'}
+    seasons:{Summer:'Verão', Autumn:'Outono', Winter:'Inverno', Spring:'Primavera'}
   },
   'ES': {
     code:'ES',
@@ -1467,17 +1593,40 @@ const I18N = {
     tabs:{main:'Principal', bio:'Parámetros biológicos', anth:'Interacciones antrópicas'},
     selectedFilters:'Filtros seleccionados',
     buttons:{reset:'Restablecer todo', apply:'Aplicar', selectAll:'Seleccionar todo', selectNone:'Seleccionar ninguno'},
-    sections:{cellsize:'Tamaño de celda (H3)', maplayer:'Capa del mapa', basemap:'Mapa base', taxon:'Grupo taxonómico', species:'Especies', year:'Año', month:'Mes', season:'Estación', seasonHint:'Hemisferio sur', sex:'Sexo', stage:'Etapa de desarrollo', decomp:'Código de descomposición', fishing:'Pesca', debris:'Desechos marinos', boat:'Colisión con embarcación', dredge:'Dragado', aggression:'Agresión', oil:'Aceite / gasolina'},
+    sections:{
+      cellsize:'Tamaño de celda (H3)',
+      maplayer:'Capa del mapa',
+      basemap:'Mapa base',
+      taxon:'Grupo taxonómico',
+      species:'Especies',
+      year:'Año',
+      month:'Mes',
+      season:'Estación',
+      seasonHint:'Hemisferio sur',
+      sex:'Sexo',
+      stage:'Etapa de desarrollo',
+      decomp:'Código de descomposición',
+      fishing:'Pesca',
+      debris:'Desechos marinos',
+      boat:'Colisión con embarcación',
+      dredge:'Dragado',
+      aggression:'Agresión',
+      oil:'Aceite / gasolina'
+    },
     taxSeaTurtles:'Tortugas marinas',
     basemaps:{Light:'Claro', Satellite:'Satélite', Terrain:'Terreno', Dark:'Oscuro'},
-    layerSelect:{ observed:'Mortalidad en el mar de varamientos observados', estimation:'Estimación de mortalidad', estLabels:{Low:'Baja', Mean:'Media', High:'Alta'}, estLabelsSwapped:{lowBtn:'Alta', meanBtn:'Media', highBtn:'Baja'} },
+    layerSelect:{
+      observed:'Mortalidad en el mar de varamientos observados',
+      estimation:'Estimación de mortalidad',
+      estLabels:{Low:'Baja', Mean:'Media', High:'Alta'},
+      estLabelsSwapped:{lowBtn:'Alta', meanBtn:'Media', highBtn:'Baja'}
+    },
     legend:{title:'Leyenda', note:'Distribución de celdas por clases (vista actual)', footerPrefix:'Mapa base:'},
     popup:{cell:'Conteo de celda', sex:'Sexo', stage:'Etapa de desarrollo', year:'Año', month:'Mes', season:'Estación'},
     yes:'Sí', no:'No',
     sexes:{Female:'Hembra', Male:'Macho', Indetermined:'Indeterminado'},
     stages:{Hatchling:'Cría', Juvenile:'Juvenil', Adult:'Adulto', Indetermined:'Indeterminado'},
-    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'},
-    decompHints:{'1':'Vivo','2':'Carcasa fresca','3':'Descomposición moderada','4':'Descomposición avanzada','5':'Momificado'}
+    seasons:{Summer:'Verano', Autumn:'Otoño', Winter:'Invierno', Spring:'Primavera'}
   },
   'FR': {
     code:'FR',
@@ -1485,34 +1634,59 @@ const I18N = {
     tabs:{main:'Principal', bio:'Paramètres biologiques', anth:'Interactions anthropiques'},
     selectedFilters:'Filtres sélectionnés',
     buttons:{reset:'Réinitialiser', apply:'Appliquer', selectAll:'Tout sélectionner', selectNone:'Ne rien sélectionner'},
-    sections:{cellsize:'Taille de cellule (H3)', maplayer:'Couche de carte', basemap:'Fond de carte', taxon:'Groupe taxonomique', species:'Espèces', year:'Année', month:'Mois', season:'Saison', seasonHint:'Hémisphère sud', sex:'Sexe', stage:'Stade de développement', decomp:'Code de décomposition', fishing:'Pêche', debris:'Déchets marins', boat:'Collision avec bateau', dredge:'Dragage', aggression:'Agression', oil:'Pétrole / essence'},
+    sections:{
+      cellsize:'Taille de cellule (H3)',
+      maplayer:'Couche de carte',
+      basemap:'Fond de carte',
+      taxon:'Groupe taxonomique',
+      species:'Espèces',
+      year:'Année',
+      month:'Mois',
+      season:'Saison',
+      seasonHint:'Hémisphère sud',
+      sex:'Sexe',
+      stage:'Stade de développement',
+      decomp:'Code de décomposition',
+      fishing:'Pêche',
+      debris:'Déchets marins',
+      boat:'Collision avec bateau',
+      dredge:'Dragage',
+      aggression:'Agression',
+      oil:'Pétrole / essence'
+    },
     taxSeaTurtles:'Tortues marines',
     basemaps:{Light:'Clair', Satellite:'Satellite', Terrain:'Relief', Dark:'Sombre'},
-    layerSelect:{ observed:'Mortalité en mer des échouages observés', estimation:'Estimation de mortalité', estLabels:{Low:'Faible', Mean:'Moyenne', High:'Élevée'}, estLabelsSwapped:{lowBtn:'Élevée', meanBtn:'Moyenne', highBtn:'Faible'} },
+    layerSelect:{
+      observed:'Mortalité en mer des échouages observés',
+      estimation:'Estimation de mortalité',
+      estLabels:{Low:'Faible', Mean:'Moyenne', High:'Élevée'},
+      estLabelsSwapped:{lowBtn:'Élevée', meanBtn:'Moyenne', highBtn:'Faible'}
+    },
     legend:{title:'Légende', note:'Répartition des cellules par classes (vue actuelle)', footerPrefix:'Fond de carte :'},
     popup:{cell:'Compte de cellule', sex:'Sexe', stage:'Stade de développement', year:'Année', month:'Mois', season:'Saison'},
     yes:'Oui', no:'Non',
     sexes:{Female:'Femelle', Male:'Mâle', Indetermined:'Indéterminé'},
     stages:{Hatchling:'Nouveau-né', Juvenile:'Juvénile', Adult:'Adulte', Indetermined:'Indéterminé'},
-    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'},
-    decompHints:{'1':'Vivant','2':'Cadavre frais','3':'Décomposition modérée','4':'Décomposition avancée','5':'Momifié'}
+    seasons:{Summer:'Été', Autumn:'Automne', Winter:'Hiver', Spring:'Printemps'}
   }
 };
+
+let currentLang = 'EN';
 
 function applyLanguage(lang){
   const L10N = I18N[lang] || I18N['EN'];
   currentLang = lang;
 
   // Brand & tabs
-  const brandEl = $('brandTitle');
-  if(brandEl && brandEl.firstChild) brandEl.firstChild.nodeValue = L10N.brand; else if(brandEl) brandEl.textContent = L10N.brand;
+  $('brandTitle').firstChild.nodeValue = L10N.brand;
   $('tabBtnMain').querySelector('span').textContent = L10N.tabs.main;
   $('tabBtnBio').querySelector('span').textContent  = L10N.tabs.bio;
   $('tabBtnAnth').querySelector('span').textContent = L10N.tabs.anth;
 
   // Panel title depends on active tab
   const activeTab = (document.querySelector('.rail-btn.active')?.dataset.tab) || 'main';
-  setPanelTitleByTab(activeTab);
+  const panelTitles = {main:L10N.tabs.main, bio:L10N.tabs.bio, anth:L10N.tabs.anth};
+  panel.querySelector('.head h1').textContent = panelTitles[activeTab] || L10N.tabs.main;
 
   // Footer & buttons
   $('selectedFiltersTitle').textContent = L10N.selectedFilters;
@@ -1539,12 +1713,6 @@ function applyLanguage(lang){
   $('titleAggression').textContent = L10N.sections.aggression;
   $('titleOil').textContent     = L10N.sections.oil;
 
-  // Decomposition chip tooltips (localized)
-  const decompHints = L10N.decompHints || {};
-  document.querySelectorAll('[data-button-group="decomp"] .chip').forEach(ch=>{
-    const v=ch.getAttribute('data-val'); if(decompHints[v]) ch.title = decompHints[v];
-  });
-
   // Taxon chip
   $('taxSeaTurtles').textContent = L10N.taxSeaTurtles;
 
@@ -1564,7 +1732,7 @@ function applyLanguage(lang){
   if(optObserved) optObserved.textContent = L10N.layerSelect.observed;
   if(optEstimation) optEstimation.textContent = L10N.layerSelect.estimation;
 
-  // Estimation segmented labels
+  // Estimation segmented labels (we keep underlying values)
   $('estLblLow').textContent  = L10N.layerSelect.estLabelsSwapped.lowBtn;
   $('estLblMean').textContent = L10N.layerSelect.estLabelsSwapped.meanBtn;
   $('estLblHigh').textContent = L10N.layerSelect.estLabelsSwapped.highBtn;
@@ -1579,16 +1747,12 @@ function applyLanguage(lang){
   $('lblPetrol').textContent  = (lang==='FR'?'Essence':(lang==='PT-BR'?'Gasolina':'Petrol'));
   $('lblNone').textContent    = (lang==='FR'?'Aucun':(lang==='PT-BR'?'Nenhum':(lang==='ES'?'Ninguno':'None')));
 
-  // Legend text elements (guarded)
-  $('legendTitle') && ($('legendTitle').textContent = L10N.legend.title);
-  $('legendNote') && ($('legendNote').textContent  = L10N.legend.note);
-  const lf = $('legendFooter');
-  if(lf){
-    // set the text node safely
-    lf.innerHTML = `${L10N.legend.footerPrefix} <span id="legendBasemap">${$('legendBasemap')?.textContent || 'Light'}</span>`;
-  }
+  // Legend text elements
+  $('legendTitle').textContent = L10N.legend.title;
+  $('legendNote').textContent  = L10N.legend.note;
+  document.getElementById('legendFooter').childNodes[0].nodeValue = L10N.legend.footerPrefix + ' ';
 
-  // Sex & Stage button labels
+  // Sex & Stage button labels (text only)
   $('sexFemale').textContent = L10N.sexes.Female;
   $('sexMale').textContent   = L10N.sexes.Male;
   $('sexIndet').textContent  = L10N.sexes.Indetermined;
@@ -1601,14 +1765,11 @@ function applyLanguage(lang){
   // Language button short code
   $('langBtn').textContent = L10N.code;
 
-  // Update month labels to new locale
-  updateMonthLabels();
-
-  // Recompute summary
+  // Recompute summary (labels inside remain English; can be extended if desired)
   updateSummary();
 }
 
-// Language menu behavior
+// Language menu behavior (no overlay outside rail; clicks won't block map)
 const langBtn = $('langBtn');
 const langMenu = $('langMenu');
 langBtn.addEventListener('click', (e)=>{
@@ -1625,7 +1786,7 @@ langMenu.addEventListener('click', (e)=>{
   langMenu.setAttribute('hidden','');
   langBtn.setAttribute('aria-expanded','false');
 });
-document.addEventListener('click', ()=>{
+document.addEventListener('click', (e)=>{
   if(!langMenu.hasAttribute('hidden')){ langMenu.setAttribute('hidden',''); langBtn.setAttribute('aria-expanded','false'); }
 });
 
