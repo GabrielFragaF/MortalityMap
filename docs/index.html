@@ -259,7 +259,7 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
       <circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>
     </symbol>
 
-    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41-1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
     <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   </defs>
 </svg>
@@ -573,7 +573,7 @@ const BASEMAPS = {
   Light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors' }),
   Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors &copy; CARTO' }),
   Terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{ attribution:'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)' }),
-  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x]',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
+  Satellite: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{ attribution:'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics' })
 };
 let baseLayer = null;
 function setBasemap(name){
@@ -1188,27 +1188,69 @@ async function detectLayerName(pmFile){
   return 'hexgrid';
 }
 
-/* Aggregate current viewport once */
+/* NEW: dedup signature helpers */
+const SIG_FIELDS = [
+  'species','development_stage','sex',
+  'Fishing','Marine_Debris','Agression','Aggression',
+  'Boat_collision','Dredging','Oil','Petrol',
+  'decomposition_code','season','year','month'
+];
+function featureSig(props, hexKey){
+  const parts = [hexKey];
+  for(const f of SIG_FIELDS){ parts.push(String(props[f] ?? '')); }
+  return parts.join('|');
+}
+
+/* Aggregate current viewport once (pre-lock metric + de-duplicate across tiles) */
 async function aggregateViewport(pmFile, layerName, predicate, ct){
   aggByHex = new Map();
   const pm = await getPM(pmFile);
   const hdr = header || await pm.getHeader();
   const zView = Math.min(Math.max(6, hdr.minZoom), hdr.maxZoom);
   const {minX,maxX,minY,maxY} = tileRangeForBounds(map.getBounds(), zView);
-  let sampleProps=[];
+
+  // PASS 0: sample to lock metricField before summing
+  const sampleProps=[];
+  outer: for(let x=minX;x<=maxX;x++){
+    for(let y=minY;y<=maxY;y++){
+      const resp = await pm.getZxy(zView, wrapX(x,zView), y);
+      if(!resp || !resp.data) continue;
+      const vt = new window.VectorTile(new window.Pbf(resp.data));
+      const lyr = vt.layers[layerName]; if(!lyr) continue;
+      for(let i=0;i<lyr.length && sampleProps.length<50;i++){
+        const p = lyr.feature(i).properties || {};
+        if(!predicate(p)) continue;
+        sampleProps.push(p);
+      }
+      if(sampleProps.length>=50) break outer;
+    }
+  }
+  lockMetricField(sampleProps, $('counttype').value);
+
+  // PASS 1: aggregate with de-duplication across tiles
+  const seenSig = new Set();
+
   for(let x=minX;x<=maxX;x++){
     for(let y=minY;y<=maxY;y++){
       const resp = await pm.getZxy(zView, wrapX(x,zView), y);
       if(!resp || !resp.data) continue;
       const vt = new window.VectorTile(new window.Pbf(resp.data));
       const lyr = vt.layers[layerName]; if(!lyr) continue;
+
       for(let i=0;i<lyr.length;i++){
         const f=lyr.feature(i); const props=f.properties||{};
-        if(sampleProps.length<50) sampleProps.push(props);
-        const key = props.h3_index ?? props.h3 ?? props.id; if(!key) continue;
+        const hexKey = props.h3_index ?? props.h3 ?? props.id;
+        if(!hexKey) continue;
         if(!predicate(props)) continue;
 
-        let entry = aggByHex.get(key);
+        const sig = featureSig(props, hexKey);
+        if(seenSig.has(sig)) continue;
+        seenSig.add(sig);
+
+        const val = Number(props[metricField]);
+        if(!Number.isFinite(val)) continue;
+
+        let entry = aggByHex.get(hexKey);
         if(!entry){
           entry={
             sum:0,
@@ -1219,11 +1261,11 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
             rowMonthCounts:{},
             rowSeasonCounts:{}
           };
-          aggByHex.set(key,entry);
+          aggByHex.set(hexKey,entry);
         }
 
-        const val = Number(props[metricField]);
-        if(Number.isFinite(val)) entry.sum += val;
+        entry.sum += val;
+        entry.rowCount++;
 
         const ssex = toCanon(props.sex,'sex');
         const sstage = toCanon(props.development_stage,'stage');
@@ -1236,12 +1278,9 @@ async function aggregateViewport(pmFile, layerName, predicate, ct){
         if(sseason) incObj(entry.rowSeasonCounts, sseason);
         if(yStr) incObj(entry.rowYearCounts, yStr);
         if(mStr) incObj(entry.rowMonthCounts, mStr);
-
-        entry.rowCount++;
       }
     }
   }
-  lockMetricField(sampleProps, $('counttype').value);
   return Array.from(aggByHex.values()).map(d=>d.sum).filter(Number.isFinite);
 }
 
