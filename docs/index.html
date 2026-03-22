@@ -556,10 +556,10 @@ body[data-theme="dark"] .leaflet-popup-hover .leaflet-popup-content{color:#fff} 
   <option value="r6">≈ 3.2 km</option>
 </select>
 <select id="counttype" style="display:none">
-  <option value="weight" selected>At-sea mortality of observed strandings</option>
-  <option value="new_mortality_est_bf_low">Mortality estimation (low)</option>
-  <option value="new_mortality_est_bf_mean">Mortality estimation (mean)</option>
-  <option value="new_mortality_est_bf_high">Mortality estimation (high)</option>
+  <option value="weight_csp" selected>At-sea mortality of observed strandings</option>
+  <option value="mortality_est_csp_low">Mortality estimation (low)</option>
+  <option value="mortality_est_csp_mean">Mortality estimation (mean)</option>
+  <option value="mortality_est_csp_high">Mortality estimation (high)</option>
 </select>
 <input id="opacity" type="range" min="0.30" max="0.90" step="0.01" value="0.65" style="display:none">
 <input id="top10" type="checkbox" style="display:none">
@@ -1084,10 +1084,10 @@ let aggByHex = new Map();
 let jenksBreaks=[0,1,2,3,4,5], activeRamp=['#fee','#fca','#fb6','#d22','#a10'], histogramCounts=[0,0,0,0,0], top10Threshold=null;
 
 const metricCandidates = {
-  weight: ['weight','sum_val'],
-  new_mortality_est_bf_mean: ['new_mortality_est_bf_mean','sum_val'],
-  new_mortality_est_bf_low: ['new_mortality_est_bf_low','sum_val'],
-  new_mortality_est_bf_high: ['new_mortality_est_bf_high','sum_val']
+  weight_csp: ['weight_csp','sum_val'],
+  mortality_est_csp_mean: ['mortality_est_csp_mean','sum_val'],
+  mortality_est_csp_low: ['mortality_est_csp_low','sum_val'],
+  mortality_est_csp_high: ['mortality_est_csp_high','sum_val']
 };
 function lockMetricField(sample, ct){
   const cands = metricCandidates[ct] || ['sum_val'];
@@ -1545,7 +1545,7 @@ function resetAll(){
 
   layerSel.value='observed';
   updateEstimationVisibility();
-  $('counttype').value='weight';
+  $('counttype').value='weight_csp';
 
   baseBox.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.map==='Light'));
 
@@ -1563,10 +1563,10 @@ resetBtn && resetBtn.addEventListener('click', resetAll);
 
 /* Apply -> bridge UI to hidden selects, then build */
 applyBtn && applyBtn.addEventListener('click',()=>{
-  if(layerSel?.value==='observed') $('counttype').value='weight';
+  if(layerSel?.value==='observed') $('counttype').value='weight_csp';
   else{
     const lev = (document.querySelector('#estimation-options input:checked')?.value || 'Mean').toLowerCase();
-    $('counttype').value = `new_mortality_est_bf_${lev}`; // calculation unchanged
+    $('counttype').value = `mortality_est_csp_${lev}`;
   }
   updateSummary();
   drawer.classList.remove('open');
